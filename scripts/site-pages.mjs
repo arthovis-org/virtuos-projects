@@ -48,7 +48,7 @@ h1 { margin: 6px 0 8px; font-size: clamp(26px, 4vw, 34px); letter-spacing: -.02e
   display: flex; flex-direction: column; overflow: hidden;
   border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow);
 }
-.thumb { aspect-ratio: 16 / 9; background: var(--chip); display: grid; place-items: center; overflow: hidden; }
+.thumb { text-decoration: none; aspect-ratio: 16 / 9; background: var(--chip); display: grid; place-items: center; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb span { font-size: 40px; font-weight: 700; color: var(--muted); letter-spacing: -.02em; }
 .body { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px 20px; flex: 1; }

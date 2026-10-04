@@ -5,10 +5,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { validateManifest, SDK_VERSION } from '../manifest.js';
 import { discoverAddons } from '../testing/run-addons.js';
 
-const ADDONS = path.resolve(new URL('../../', import.meta.url).pathname);
+// fileURLToPath, not URL.pathname: the latter gives /D:/… on Windows.
+const ADDONS = fileURLToPath(new URL('../../', import.meta.url));
 
 test('every add-on manifest validates, ids and prefixes are unique, entry and styles exist', () => {
   const addons = discoverAddons();
