@@ -1,0 +1,158 @@
+/* Start card, top left of the viewer. */
+.card {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(300px, calc(100% - 32px));
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.description {
+  margin: 0 0 4px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Toolbar while a workspace runs, top centre. */
+.top {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  /* Only the controls themselves take pointer input; the rest of the strip is the view. */
+  pointer-events: none;
+}
+
+.top > * {
+  pointer-events: auto;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.name {
+  margin: 0 4px 0 8px;
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+}
+
+.tab {
+  padding: 0.3125rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.tab[aria-checked='true'] {
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.button {
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition:
+    background-color var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.button:hover {
+  background: var(--surface-hover);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.primary:hover {
+  background: var(--accent);
+  opacity: 0.9;
+}
+
+.card .button {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.ghost {
+  position: fixed;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  pointer-events: none;
+  transform: translate(12px, 12px);
+  box-shadow: var(--shadow-soft);
+}
+
+.ghostTarget {
+  font-weight: 400;
+  opacity: 0.8;
+}

@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+npm-debug.log*
+.eslintcache
+
+# Blender autosaves and backups
+*.blend1
+*.blend2
+
+# Personal Claude Code settings and dev-server config
+.claude/settings.local.json
+.claude/launch.json

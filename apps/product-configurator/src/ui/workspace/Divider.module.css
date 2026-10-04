@@ -1,0 +1,46 @@
+/* The gap between two windows, with a line that lights up when it can be dragged. */
+.divider {
+  position: relative;
+  flex: 0 0 14px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.divider[data-stacked] {
+  cursor: row-resize;
+}
+
+.divider::after {
+  position: absolute;
+  inset: 20% 5px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 22%);
+  content: '';
+  transition: background-color 120ms ease;
+}
+
+.divider[data-stacked]::after {
+  inset: 5px 20%;
+}
+
+.divider:hover::after,
+.divider:focus-visible::after,
+:global(.ws-resizing) .divider:not([data-stacked])::after,
+:global(.ws-resizing-rows) .divider[data-stacked]::after {
+  background: #4c8dff;
+}
+
+.divider:focus-visible {
+  outline: none;
+}
+
+/* Keep the resize cursor while dragging over the sites. */
+:global(.ws-resizing),
+:global(.ws-resizing) * {
+  cursor: col-resize !important;
+}
+
+:global(.ws-resizing-rows),
+:global(.ws-resizing-rows) * {
+  cursor: row-resize !important;
+}

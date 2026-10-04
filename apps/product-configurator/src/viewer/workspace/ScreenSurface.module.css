@@ -1,0 +1,43 @@
+/* The desktop of one monitor: windows tile side by side, or stacked on portrait screens. */
+.screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  box-sizing: border-box;
+  padding: 4px;
+  overflow: hidden;
+  background: #1d2433;
+  container-type: inline-size;
+  pointer-events: auto;
+  /* Seen from behind the monitor, a screen shows nothing. */
+  backface-visibility: hidden;
+}
+
+.screen[data-portrait] {
+  flex-direction: column;
+}
+
+/* Where a dragged window would land. */
+.dropPreview {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  border: 6px solid #4c8dff;
+  border-radius: 12px;
+  background: rgb(76 141 255 / 28%);
+  pointer-events: none;
+}
+
+.dropLabel {
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: #4c8dff;
+  color: #ffffff;
+  font:
+    600 28px/1.2 'Inter Variable',
+    system-ui,
+    sans-serif;
+}

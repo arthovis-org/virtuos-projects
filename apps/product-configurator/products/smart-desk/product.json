@@ -1,0 +1,79 @@
+{
+  "name": "Smart Desk",
+  "description": "Motorised sit-stand desk with three-stage legs and an integrated monitor setup.",
+  "currency": "USD",
+  "basePrice": 749,
+  "options": {
+    "SideMonitors": {
+      "label": "Side monitors",
+      "description": "A pair of monitors on hinged arms, left and right.",
+      "price": 399,
+      "includes": ["MonitorLeft", "MonitorRight"],
+      "parts": {
+        "on": ["MainBackplatewithSideMonitors", "SideMonitorsBackplate"],
+        "off": ["MainBackplate"]
+      }
+    },
+    "MonitorBottom": {
+      "label": "Desk monitor",
+      "price": 299,
+      "parts": { "on": ["DeskBase_withHinge", "DeskHinge"], "off": ["DeskBase"] }
+    }
+  },
+  "decals": [
+    {
+      "image": "images/virtuos_text_alpha.png",
+      "objects": ["MainBackplate", "MainBackplatewithSideMonitors"],
+      "width": 0.096,
+      "side": "back",
+      "offset": [0, 0.02]
+    }
+  ],
+  "height": {
+    "label": "Desk height",
+    "reference": "DeskBase",
+    "min": 70,
+    "max": 113,
+    "presets": { "Sit": 72, "Stand": 110 }
+  },
+  "materials": {
+    "DeskMat": {
+      "label": "Desk top",
+      "default": "american-oak",
+      "original": "White laminate",
+      "choices": {
+        "american-oak": { "price": 120 },
+        "walnut": { "price": 180 }
+      }
+    }
+  },
+  "screens": {
+    "tilt": 15,
+    "labels": {
+      "MainMonitor": "Main",
+      "MonitorLeft": "Left",
+      "MonitorRight": "Right",
+      "MonitorBottom": "Desk"
+    }
+  },
+  "workspaces": {
+    "office": {
+      "label": "Office",
+      "description": "Calendar, research, notes and a whiteboard, each on its own screen.",
+      "windows": [
+        {
+          "title": "Calendar",
+          "url": "https://calendar.google.com/calendar/embed?src=en.usa%23holiday%40group.v.calendar.google.com&mode=WEEK",
+          "screen": "MonitorBottom"
+        },
+        {
+          "title": "Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Multi-monitor",
+          "screen": "MonitorLeft"
+        },
+        { "title": "Notes", "url": "https://stackedit.io/app", "screen": "MonitorRight" },
+        { "title": "Whiteboard", "url": "https://excalidraw.com/", "screen": "MainMonitor" }
+      ]
+    }
+  }
+}
