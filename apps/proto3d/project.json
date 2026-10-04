@@ -1,0 +1,46 @@
+{
+  "name": "Proto3D",
+  "summary": "A 3D project-management workspace where components run: boards, timelines, AI generation and client hubs on a 3D canvas.",
+  "order": 2,
+  "site": {
+    "exclude": ["node_modules", "test-results", "playwright-report", ".playwright", "project.json"]
+  },
+  "links": [
+    {
+      "label": "Workspace",
+      "path": "",
+      "audience": "team",
+      "description": "The Proto3D workspace with its starter templates and showcase."
+    },
+    {
+      "label": "Client hubs",
+      "path": "addons/hubs/",
+      "audience": "team",
+      "description": "Every client's deliverable pages (site, app, staff desks, docs) on one 3D canvas."
+    },
+    {
+      "label": "Jev decisions",
+      "path": "addons/jev/",
+      "audience": "team",
+      "description": "Jev decision components with demos and a tutorial."
+    },
+    {
+      "label": "Gateway credits",
+      "path": "addons/gateway-credits/",
+      "audience": "team",
+      "description": "Shared prepaid credits for provider-calling nodes, with an admin ledger."
+    },
+    {
+      "label": "Add-on catalog",
+      "path": "addons/",
+      "audience": "developers",
+      "description": "All add-ons and how they plug into the core."
+    },
+    {
+      "label": "Documentation",
+      "url": "https://github.com/arthovis-org/virtuos-projects/blob/main/apps/proto3d/README.md",
+      "audience": "developers",
+      "description": "Everything Proto3D can do and how it is built."
+    }
+  ]
+}

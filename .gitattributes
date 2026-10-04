@@ -1,0 +1,10 @@
+# One line ending everywhere, whatever the machine's Git settings (some tests read source text).
+* text=auto eol=lf
+*.glb binary
+*.gltf binary
+*.blend binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.woff2 binary

@@ -1,0 +1,32 @@
+# Checks for apps/product-configurator: types, lint, formatting and a production build.
+name: product-configurator
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/product-configurator/**', '.github/workflows/product-configurator.yml']
+  pull_request:
+    paths: ['apps/product-configurator/**', '.github/workflows/product-configurator.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/product-configurator
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/product-configurator/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build
+      - run: npm run inspect -- smart-desk

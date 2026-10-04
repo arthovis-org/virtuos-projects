@@ -2,7 +2,7 @@
 
 A demo of how Imagine OS builds a complete client deliverable hub on the Proto3D canvas: the public website, the customer app, the staff surfaces by role, the ops manual, docs, plan, design system and dev tools, mockups and the machine surface, **embedded live as nodes**, with the canvas re-arrangeable into different flows. Five real clients on imagine-os.github.io are included: CTL OS (`cal-tenant-law`, tenant law firm), Petrock (`petrock`, dog hotel and spa), HoyOS (`hoy`, wellness center, Spanish), Llave OS (`dorum-lifestyle`, real-estate agency, a static multi-page site) and Aluzina (`aluzina`, interior design studio in Medellín; 24 pages, iframe-embeddable like the others).
 
-Page: `addons/hubs/index.html` (SDK shell). Live: https://arthovis-org.github.io/Proto3D/addons/hubs/
+Page: `addons/hubs/index.html` (SDK shell). Live: https://arthovis-org.github.io/virtuos-projects/proto3d/addons/hubs/
 
 ## What is on the canvas
 

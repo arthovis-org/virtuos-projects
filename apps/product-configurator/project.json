@@ -1,0 +1,29 @@
+{
+  "name": "Smart Desk configurator",
+  "summary": "Configure the VIRTUOS Smart Desk in 3D: finishes, monitors and height, with live prices and a workspace demo with real websites on the monitors.",
+  "order": 1,
+  "site": {
+    "build": "npm run build -- --base={base}",
+    "output": "dist"
+  },
+  "links": [
+    {
+      "label": "Configurator",
+      "path": "",
+      "audience": "public",
+      "description": "The customer-facing 3D configurator."
+    },
+    {
+      "label": "Adding a product",
+      "url": "https://github.com/arthovis-org/virtuos-projects/blob/main/apps/product-configurator/products/README.md",
+      "audience": "developers",
+      "description": "How a Blender model becomes a configurable product: naming, materials, prices, screens."
+    },
+    {
+      "label": "How it works",
+      "url": "https://github.com/arthovis-org/virtuos-projects/blob/main/apps/product-configurator/docs/ARCHITECTURE.md",
+      "audience": "developers",
+      "description": "The code's architecture."
+    }
+  ]
+}

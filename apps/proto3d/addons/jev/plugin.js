@@ -20,7 +20,7 @@ import { makeFramer } from './frame.js';
 export const WORLD_KEY = 'proto3d.jev.world.v1';
 export const DEMO_KEY = 'proto3d.jev.demo.v1';
 const TITLE = 'Jev add-on — Proto3D';
-const LIVE_URL = 'https://arthovis-org.github.io/Proto3D/addons/jev/';
+const LIVE_URL = 'https://arthovis-org.github.io/virtuos-projects/proto3d/addons/jev/';
 const $ = (id) => document.getElementById(id);
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch (_) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (_) { /* private mode */ } };

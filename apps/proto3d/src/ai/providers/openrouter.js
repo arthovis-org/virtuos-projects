@@ -20,7 +20,7 @@ const BASE = 'https://openrouter.ai/api/v1';
 const LABEL = 'OpenRouter';
 const headers = (key) => ({
   Authorization: `Bearer ${key}`,
-  'HTTP-Referer': typeof location !== 'undefined' ? location.origin + location.pathname : 'https://arthovis-org.github.io/Proto3D/',
+  'HTTP-Referer': typeof location !== 'undefined' ? location.origin + location.pathname : 'https://arthovis-org.github.io/virtuos-projects/proto3d/',
   'X-Title': 'Proto3D',
 });
 

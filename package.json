@@ -1,0 +1,15 @@
+{
+  "name": "virtuos-projects",
+  "private": true,
+  "description": "Every VIRTUOS project in one repository, published together as one site with a gallery and a hub per project.",
+  "type": "module",
+  "scripts": {
+    "install:all": "npm ci --prefix apps/product-configurator && npm ci --prefix apps/proto3d",
+    "build": "node scripts/build-site.mjs",
+    "serve": "node scripts/serve-site.mjs",
+    "check": "npm run lint --prefix apps/product-configurator && npm run format:check --prefix apps/product-configurator && npm test --prefix apps/proto3d"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

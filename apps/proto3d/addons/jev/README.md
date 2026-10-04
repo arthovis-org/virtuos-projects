@@ -1,6 +1,6 @@
 # Jev for Proto3D — a decision layer for the node system
 
-Live: **https://arthovis-org.github.io/Proto3D/addons/jev/** · core: https://arthovis-org.github.io/Proto3D/
+Live: **https://arthovis-org.github.io/virtuos-projects/proto3d/addons/jev/** · core: https://arthovis-org.github.io/virtuos-projects/proto3d/
 
 An add-on page that boots the unmodified Proto3D core and adds a **Jev** category of five components,
 a TypeSafe Jev provider card in Connections, an "Ask to add" bar (Ctrl+J) that lets Jev choose and

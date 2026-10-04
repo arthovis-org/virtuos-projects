@@ -1,0 +1,13 @@
+node_modules/
+dist/
+_site/
+test-results/
+playwright-report/
+.playwright/
+*.log
+.DS_Store
+.eslintcache
+
+# Personal Claude Code settings and dev-server config
+.claude/settings.local.json
+.claude/launch.json

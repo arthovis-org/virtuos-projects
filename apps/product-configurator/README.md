@@ -75,7 +75,7 @@ docs/ARCHITECTURE.md       data flow in more detail
 ## Deployment
 
 Every push to `main` builds the app and deploys it to GitHub Pages at
-<https://arthovis-org.github.io/ProductConfigurator/> through the
+<https://arthovis-org.github.io/virtuos-projects/product-configurator/> through the
 `.github/workflows/deploy-pages.yml` GitHub Actions workflow (build with
 `--base=/ProductConfigurator/`, then `actions/deploy-pages`). The workflow can also be run by hand
 from the repository's **Actions** tab via _Run workflow_. Product files are bundled from
