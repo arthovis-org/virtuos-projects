@@ -65,14 +65,12 @@ export function pressDesk(
       document.body.classList.add('ws-dragging');
     }
     e.preventDefault();
-    useDesksStore
-      .getState()
-      .setDeskDrag({
-        deskId,
-        x: e.clientX,
-        y: e.clientY,
-        over: deskAt(e.clientX, e.clientY, deskId),
-      });
+    useDesksStore.getState().setDeskDrag({
+      deskId,
+      x: e.clientX,
+      y: e.clientY,
+      over: deskAt(e.clientX, e.clientY, deskId),
+    });
   };
   const end = (e: PointerEvent) => {
     window.removeEventListener('pointermove', move);
