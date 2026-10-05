@@ -82,6 +82,15 @@ Held sideways (a landscape screen under 500 px tall, at any width), a phone gets
 the viewer at full height with the options in a narrow column beside it, a slim header, and the
 same compact toolbars.
 
+## Feedback
+
+The header's **Feedback** button sends a message (with an optional screenshot) to the feedback
+Worker in [`services/feedback-worker`](../../services/feedback-worker), which files it as an issue
+in the private `arthovis-org/virtuos-feedback` repository. Each report carries the exact page
+link, the view the visitor was in, their device and browser, and recent page errors
+(`src/feedback/errorLog.ts`). The Worker's address is `VITE_FEEDBACK_URL` in `.env`; without it
+the button is hidden.
+
 ## Performance
 
 - The viewer (Three.js is most of the bundle) loads lazily, so the panel renders first; the

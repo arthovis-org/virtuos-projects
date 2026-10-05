@@ -1,0 +1,11 @@
+# The feedback Worker (Cloudflare). Deploy: `npx wrangler deploy` in this folder.
+# The GitHub token is a secret, never in this file: `npx wrangler secret put GITHUB_TOKEN`.
+name = "virtuos-feedback"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Where feedback is filed (a private repository; the token can only write there).
+REPO = "arthovis-org/virtuos-feedback"
+# Sites allowed to send feedback: the published site and local development servers.
+ALLOWED_ORIGINS = "https://arthovis-org.github.io,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,http://127.0.0.1:4180"

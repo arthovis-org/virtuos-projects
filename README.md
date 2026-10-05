@@ -25,6 +25,8 @@ is and lists its pages; the build reads them all.
 apps/<project>/          one folder per project, each with its own tools and dependencies
   project.json           name, summary, how it is published, its pages (for the gallery and hub)
   thumbnail.jpg          the gallery picture (optional; 16:9)
+services/feedback-worker the Cloudflare Worker behind the sites' Feedback button (files issues
+                         in the private arthovis-org/virtuos-feedback repository)
 scripts/build-site.mjs   builds every project and generates the gallery and hubs into _site/
 scripts/site-pages.mjs   the gallery and hub page templates
 .github/workflows/       deploy.yml publishes the site; one checks workflow per project
@@ -63,6 +65,17 @@ files published as they are. Each is published at `/<folder name>/`.
 
 Everything on GitHub Pages is public. Admin and staff pages that must stay private need a host
 with logins (and a backend for real admin actions); the hub can still link to them.
+
+## Feedback
+
+Sites with a **Feedback** button (the configurator, for now) send what visitors write, with the
+exact page link, their device and any page errors, to
+[`services/feedback-worker`](services/feedback-worker), which files it as an issue in the private
+repository `arthovis-org/virtuos-feedback`:
+
+```bash
+gh issue list --repo arthovis-org/virtuos-feedback --label feedback
+```
 
 ## Working locally
 

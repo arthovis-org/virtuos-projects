@@ -7,3 +7,12 @@ declare module 'virtual:catalog' {
   /** Problems found per product folder. */
   export const issues: Readonly<Record<string, readonly string[]>>;
 }
+
+interface ImportMetaEnv {
+  /** The feedback Worker's address (services/feedback-worker); no Feedback button without it. */
+  readonly VITE_FEEDBACK_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
