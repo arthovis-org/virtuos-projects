@@ -137,7 +137,9 @@ a seated view (looking down a little when a screen lies on the desk), and they c
 zoom to one screen (⤢), or drag a window by its title bar onto another one: dropped on the
 window's edge the two share the screen side by side (stacked on a portrait screen), dropped on its
 middle they swap screens. The line between two windows on one screen can be dragged to share the space differently (double click makes them equal). Windows can be closed (×); an empty screen offers to reopen them,
-a few suggested sites that allow embedding, or any https address. "Look around" hands the camera
+the sites of every workspace (this one first) and a few tools, or any https address. While the
+desk height changes, or the pointer is on the height control, a small side view of the desk shows
+the legs extending, with the height. "Look around" hands the camera
 back while the sites stay on; "Close" turns them off.
 
 **Screens** are found automatically: every object whose mesh uses the Blender material
@@ -213,7 +215,8 @@ switcher, the name tags or Ctrl + ← / →, and change a desk's workspace from 
 
 Only the desk the visitor is at runs live sites; the screens of the others show a poster of
 their workspace, so the room stays light however many desks it has (up to `MAX_DESKS`, 36).
-Desks are never priced. Each desk has its own height; the height control moves the desk the
+Leaving for one desk keeps the room: coming back brings back every desk with its workspace,
+windows, configuration and height. Desks are never priced. Each desk has its own height; the height control moves the desk the
 visitor is at. The room is part of the link:
 `?product=smart-desk&desks=finance,crypto~toggle-side-monitors:without&desk=2` lists each
 desk's workspace and the options that differ from the defaults; `desk` is the one the visitor is

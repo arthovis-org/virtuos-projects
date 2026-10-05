@@ -21,7 +21,11 @@ interface DeskLabelProps {
 export function DeskLabel({ deskId, name, number, workspace, height, active }: DeskLabelProps) {
   const selectDesk = useDesksStore((s) => s.selectDesk);
   return (
-    <Html position={[0, height, 0]} center zIndexRange={[150, 100]}>
+    // Nearer tags cover farther ones: drei orders them by distance over the camera's whole
+    // depth range, so the range must be wide; a narrow one (it was 50 steps) gave desks a few
+    // metres apart the same order, and a farther tag could cover a nearer one. They stay under
+    // the viewer's controls whatever the number: the canvas they live in is a layer below them.
+    <Html position={[0, height, 0]} center zIndexRange={[16777271, 0]}>
       <button
         type="button"
         className={styles.label}

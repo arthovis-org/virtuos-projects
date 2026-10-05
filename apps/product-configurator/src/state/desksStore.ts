@@ -47,11 +47,16 @@ interface DesksState {
   activeDeskId: string | null;
   /** The single desk's configuration while the room is open, restored when it closes. */
   singleSelections: Selections | null;
+  /** The room as the visitor left it for the single desk, brought back when they return. */
+  parked: { desks: readonly Desk[]; activeDeskId: string | null } | null;
   room: Room;
 
-  /** Opens the room: the current desk becomes the first one, with a few themed desks next to it. */
+  /**
+   * Opens the room: as the visitor left it, or the first time with the current desk as the
+   * first one and a few themed desks next to it.
+   */
   enterDesks: () => void;
-  /** Back to the single desk as it was. */
+  /** Back to the single desk as it was; the room is kept for coming back. */
   exitDesks: () => void;
   /** Adds a desk with a workspace and sits down at it. */
   addDesk: (workspaceId: string) => void;
@@ -140,12 +145,20 @@ export const useDesksStore = create<DesksState>()((set, get) => {
     desks: linked?.desks ?? [],
     activeDeskId: linked?.activeDeskId ?? null,
     singleSelections: null,
+    parked: null,
     room: { width: 0, depth: 0 },
 
     enterDesks: () => {
       if (get().mode === 'desks') return;
       const product = currentProduct();
       const selections = useConfiguratorStore.getState().selections;
+      const { parked } = get();
+      const back = parked?.desks.find((d) => d.id === parked.activeDeskId) ?? parked?.desks[0];
+      if (parked && back) {
+        set({ mode: 'desks', desks: parked.desks, singleSelections: selections, parked: null });
+        goTo(back, false);
+        return;
+      }
       const workspace = useWorkspaceStore.getState();
       // The desk the visitor configured comes along as the first desk, with the workspace
       // they were trying, if any.
@@ -170,9 +183,15 @@ export const useDesksStore = create<DesksState>()((set, get) => {
     },
 
     exitDesks: () => {
-      const { mode, singleSelections } = get();
+      const { mode, singleSelections, desks, activeDeskId } = get();
       if (mode !== 'desks') return;
-      set({ mode: 'single', desks: [], activeDeskId: null, singleSelections: null });
+      set({
+        mode: 'single',
+        desks: [],
+        activeDeskId: null,
+        singleSelections: null,
+        parked: { desks, activeDeskId },
+      });
       useMotionStore.getState().setDesk(SINGLE_DESK_KEY);
       useWorkspaceStore.getState().leaveDesks();
       if (singleSelections) useConfiguratorStore.getState().setSelections(singleSelections);
@@ -270,7 +289,8 @@ useConfiguratorStore.subscribe((state) => {
   const desks = useDesksStore.getState();
   if (state.productId !== desks.productId) {
     desks.exitDesks();
-    useDesksStore.setState({ productId: state.productId });
+    // The room belongs to the product it was made with.
+    useDesksStore.setState({ productId: state.productId, parked: null });
     return;
   }
   if (desks.mode !== 'desks') return;

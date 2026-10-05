@@ -27,9 +27,15 @@ interface MotionState {
   targets: Readonly<Record<string, number>>;
   /** Where each motion is now, by `motionKey`, written by the viewer while it animates. */
   current: Readonly<Record<string, number>>;
+  /** The visitor is on the controls (pointer or keyboard): the side view shows. */
+  peek: boolean;
+  /** The side view of the desk is on show (while it moves, and a moment after). */
+  insetOpen: boolean;
 
   resetFor: (product: ProductDefinition) => void;
   setDesk: (deskKey: string) => void;
+  setPeek: (peek: boolean) => void;
+  setInsetOpen: (open: boolean) => void;
   /** Gives desk `to` the values of desk `from` (the single desk becoming the first of a room). */
   copyDesk: (from: string, to: string) => void;
   /** Moves the active desk. */
@@ -48,6 +54,8 @@ export const useMotionStore = create<MotionState>()((set, get) => ({
   deskKey: SINGLE_DESK_KEY,
   targets: {},
   current: {},
+  peek: false,
+  insetOpen: false,
 
   resetFor: (product) => {
     if (get().productId === product.id) return;
@@ -60,6 +68,8 @@ export const useMotionStore = create<MotionState>()((set, get) => ({
   },
 
   setDesk: (deskKey) => set({ deskKey }),
+  setPeek: (peek) => set({ peek }),
+  setInsetOpen: (insetOpen) => set({ insetOpen }),
 
   copyDesk: (from, to) => {
     const { productId, current, targets } = get();

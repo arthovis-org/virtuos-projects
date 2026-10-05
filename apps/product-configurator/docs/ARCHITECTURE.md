@@ -88,7 +88,16 @@ remounted, so the seated camera keeps its state while flying between desks), and
 store keeps each other desk's windows in `saved`. The other desks' screens show posters
 (`DeskPosters` inside the canvas, `PosterSurface` in the screen layer): DOM surfaces positioned
 by the same projection as the live sites, from a shared registry of frames in `cssProjection`,
-but nothing loads. `shareLink.ts` writes the room to the URL.
+but nothing loads. `shareLink.ts` writes the room to the URL. Leaving the room parks it (`parked` in the desks
+store, the windows in the workspace store's `saved`) for coming back.
+
+**Side view of the height (`viewer/HeightInset.tsx`)**
+While the desk the visitor is at moves (or they are on the height control), a second camera
+shows it from the side in a corner of the viewer. It draws into the same canvas: mounted only
+while shown, it takes over the frame (main view, then the side view in a scissored corner) with
+the other desks hidden and the screen holes made opaque, so the sites under the canvas don't
+show through the inset. `HeightInsetFrame` (outside the canvas) decides when it shows and draws
+its bezel and readout.
 
 **UI (`src/ui`)**
 `ConfiguratorPanel` shows motions first, then maps option groups to `OptionGroupControl`:

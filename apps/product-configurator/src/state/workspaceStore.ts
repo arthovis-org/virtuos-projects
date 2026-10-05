@@ -165,7 +165,10 @@ interface WorkspaceState {
   showDesk: (deskId: string, workspaceId: string, seat: boolean) => void;
   /** Forgets a desk's windows (the desk was removed or given another workspace). */
   forgetDesk: (deskId: string) => void;
-  /** Back to the single desk, with the windows it had, and the sites off. */
+  /**
+   * Back to the single desk, with the windows it had, and the sites off. The room's desks
+   * keep theirs (the one the visitor was at too) for when the visitor comes back.
+   */
   leaveDesks: () => void;
   startDrag: (window: WorkspaceWindow, fromScreen: string, x: number, y: number) => void;
   updateDrag: (x: number, y: number) => void;
@@ -365,9 +368,14 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     const state = get();
     const single = state.deskId === SINGLE_DESK ? snapshot(state) : state.saved[SINGLE_DESK];
     const workspace = workspaceById(currentProduct(state), single?.workspaceId ?? null);
+    const saved = Object.fromEntries(
+      Object.entries({ ...state.saved, [state.deskId]: snapshot(state) }).filter(
+        ([id]) => id !== SINGLE_DESK,
+      ),
+    );
     set({
       deskId: SINGLE_DESK,
-      saved: {},
+      saved,
       ...(single ?? { workspaceId: workspace?.id ?? null, ...initialWindows(workspace) }),
       active: false,
       seated: false,

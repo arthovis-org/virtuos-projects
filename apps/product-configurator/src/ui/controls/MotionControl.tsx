@@ -26,6 +26,7 @@ export function MotionControl({ motion }: MotionControlProps) {
   );
   const setTarget = useMotionStore((state) => state.setTarget);
   const stop = useMotionStore((state) => state.stop);
+  const setPeek = useMotionStore((state) => state.setPeek);
 
   const decimals = decimalsFor(motion.step);
   const format = (value: number | undefined) =>
@@ -49,7 +50,14 @@ export function MotionControl({ motion }: MotionControlProps) {
   });
 
   return (
-    <div className={styles.control}>
+    // On the controls, the viewer shows the desk from the side (see HeightInset).
+    <div
+      className={styles.control}
+      onPointerEnter={() => setPeek(true)}
+      onPointerLeave={() => setPeek(false)}
+      onFocus={() => setPeek(true)}
+      onBlur={() => setPeek(false)}
+    >
       <div className={styles.pad}>
         <button
           type="button"

@@ -1,15 +1,16 @@
 import { useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo } from 'react';
-import { Vector3, type Object3D } from 'three';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Vector3, type Group, type Object3D } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
 import { useProduct, useSelections } from '@/state/configuratorStore';
 import { resolveConfiguration, type Selections } from '@/state/derive';
 import { activeDesk, deskName, useDesksStore, type Desk } from '@/state/desksStore';
 import { useModelIssuesStore } from '@/state/modelIssuesStore';
-import { SINGLE_DESK_KEY } from '@/state/motionStore';
+import { SINGLE_DESK_KEY, useMotionStore } from '@/state/motionStore';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import { Decals } from './Decals';
 import { DeskLabel } from './DeskLabel';
+import { HeightInset } from './HeightInset';
 import { deskArcs } from './deskLayout';
 import { MaterialAppearance } from './MaterialAppearance';
 import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskModel } from './models';
@@ -151,6 +152,9 @@ function DeskInstance({
   const { scene, index } = model;
   const config = useMemo(() => resolveConfiguration(product, selections), [product, selections]);
   const invalidate = useThree((state) => state.invalidate);
+  const group = useRef<Group>(null);
+  // The side view of the height control shows the desk the visitor is at.
+  const showsInset = useMotionStore((s) => s.insetOpen) && (!desk || desk.active);
 
   const partNodes = useMemo(() => {
     const nodes = new Map<string, Object3D>();
@@ -219,6 +223,10 @@ function DeskInstance({
         : motionEnvelope(bounds, motions, product.model.scale),
     [bounds, motions, product.model.scale],
   );
+  const reach = useMemo(
+    () => envelope.clone().translate(new Vector3(...offset)),
+    [envelope, offset],
+  );
   const framing = useMemo(() => {
     if (motions.length === 0 || envelope.isEmpty()) return null;
     return {
@@ -228,7 +236,7 @@ function DeskInstance({
   }, [envelope, motions.length]);
 
   return (
-    <group position={position} rotation={[0, rotation, 0]}>
+    <group ref={group} position={position} rotation={[0, rotation, 0]}>
       <group position={offset}>
         <Suspense fallback={null}>
           <Decals
@@ -257,6 +265,7 @@ function DeskInstance({
           ))}
         </group>
       </group>
+      {showsInset && !reach.isEmpty() && <HeightInset desk={group} reach={reach} />}
       {desk && !desk.active && (
         <DeskPosters
           product={product}

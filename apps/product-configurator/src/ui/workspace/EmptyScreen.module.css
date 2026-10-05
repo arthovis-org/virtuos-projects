@@ -7,6 +7,7 @@
   box-sizing: border-box;
   width: 100%;
   max-width: 720px;
+  max-height: 100%;
   margin: auto;
   padding: 32px;
   color: rgb(255 255 255 / 85%);
@@ -110,4 +111,14 @@
 
 .chip:hover {
   background: rgb(255 255 255 / 20%);
+}
+
+/* Every workspace's sites: more than a screen holds, so they scroll. */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
