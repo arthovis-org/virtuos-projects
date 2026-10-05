@@ -34,6 +34,8 @@ interface MotionState {
 
   resetFor: (product: ProductDefinition) => void;
   setDesk: (deskKey: string) => void;
+  /** Sets values by `motionKey` (a saved layout's heights); the desks move there. */
+  setValues: (values: Readonly<Record<string, number>>) => void;
   setPeek: (peek: boolean) => void;
   setInsetOpen: (open: boolean) => void;
   /** Gives desk `to` the values of desk `from` (the single desk becoming the first of a room). */
@@ -68,6 +70,11 @@ export const useMotionStore = create<MotionState>()((set, get) => ({
   },
 
   setDesk: (deskKey) => set({ deskKey }),
+  setValues: (values) =>
+    set((state) => ({
+      current: { ...state.current, ...values },
+      targets: { ...state.targets, ...values },
+    })),
   setPeek: (peek) => set({ peek }),
   setInsetOpen: (insetOpen) => set({ insetOpen }),
 

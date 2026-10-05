@@ -82,6 +82,16 @@ Held sideways (a landscape screen under 500 px tall, at any width), a phone gets
 the viewer at full height with the options in a narrow column beside it, a slim header, and the
 same compact toolbars.
 
+## Saved layouts
+
+The header's **Layouts** button saves the whole set-up under a name: the single desk and the room
+of desks, with every desk's workspace, setup, height and the windows on its screens. Layouts are
+stored online by [`services/layouts-worker`](../../services/layouts-worker) (Cloudflare D1), so
+they open on any device from their link (`?layout=<id>`). There are no accounts: the browser that
+saved a layout keeps its edit key and the list of its layouts (local storage), and only it can
+update, rename or delete them; anyone with the link can open one. The format is in
+`src/layouts/layoutData.ts`; the Worker's address is `VITE_LAYOUTS_URL` in `.env`.
+
 ## Feedback
 
 The header's **Feedback** button sends a message (with an optional screenshot) to the feedback

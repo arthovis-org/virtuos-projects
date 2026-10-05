@@ -11,6 +11,8 @@ declare module 'virtual:catalog' {
 interface ImportMetaEnv {
   /** The feedback Worker's address (services/feedback-worker); no Feedback button without it. */
   readonly VITE_FEEDBACK_URL?: string;
+  /** The layouts Worker's address (services/layouts-worker); no Layouts button without it. */
+  readonly VITE_LAYOUTS_URL?: string;
 }
 
 interface ImportMeta {

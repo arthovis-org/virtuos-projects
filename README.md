@@ -27,6 +27,8 @@ apps/<project>/          one folder per project, each with its own tools and dep
   thumbnail.jpg          the gallery picture (optional; 16:9)
 services/feedback-worker the Cloudflare Worker behind the sites' Feedback button (files issues
                          in the private arthovis-org/virtuos-feedback repository)
+services/layouts-worker  the Cloudflare Worker and D1 database that keep the configurator's
+                         saved layouts
 scripts/build-site.mjs   builds every project and generates the gallery and hubs into _site/
 scripts/site-pages.mjs   the gallery and hub page templates
 .github/workflows/       deploy.yml publishes the site; one checks workflow per project

@@ -11,8 +11,9 @@ import { getProduct } from '@/catalog';
 import type { ProductDefinition, Workspace } from '@/catalog/schema';
 import { useConfiguratorStore } from './configuratorStore';
 import { defaultSelections, sanitizeSelections, type Selections } from './derive';
-import { SINGLE_DESK_KEY, useMotionStore } from './motionStore';
-import { useWorkspaceStore } from './workspaceStore';
+import type { LayoutData } from '@/layouts/layoutData';
+import { motionKey, SINGLE_DESK_KEY, useMotionStore } from './motionStore';
+import { SINGLE_DESK, useWorkspaceStore, type DeskWindows } from './workspaceStore';
 
 export type DeskMode = 'single' | 'desks';
 
@@ -81,6 +82,11 @@ interface DesksState {
   stepDesk: (step: number) => void;
   setDeskWorkspace: (deskId: string, workspaceId: string) => void;
   setRoom: (room: Room) => void;
+  /**
+   * Brings a saved layout back: the single desk and the room of desks (new desk ids), their
+   * configurations, heights and windows, in the mode it was saved in.
+   */
+  loadLayout: (layout: LayoutData) => void;
   setDeskDrag: (drag: DeskDrag | null) => void;
   /** Two desks trade places in the room (and in the switcher). */
   swapDesks: (a: string, b: string) => void;
@@ -286,6 +292,55 @@ export const useDesksStore = create<DesksState>()((set, get) => {
       const second = desks.find((d) => d.id === b);
       if (!first || !second || first === second) return;
       set({ desks: desks.map((d) => (d === first ? second : d === second ? first : d)) });
+    },
+
+    loadLayout: (layout) => {
+      const product = currentProduct();
+      const motion = product.motions[0];
+      const windows: Record<string, DeskWindows> = {};
+      const heights: Record<string, number> = {};
+      const keep = (deskKey: string, windowKey: string, saved: LayoutData['single']) => {
+        if (saved.windows) windows[windowKey] = saved.windows;
+        if (motion && typeof saved.height === 'number') {
+          heights[motionKey(deskKey, motion.id)] = saved.height;
+        }
+      };
+
+      // Desks whose workspace this product no longer has are left out.
+      const saved = layout.room?.desks ?? [];
+      const desks: Desk[] = [];
+      let active: Desk | undefined;
+      saved.forEach((entry, i) => {
+        if (!knownWorkspace(product, entry.workspaceId)) return;
+        const desk: Desk = {
+          id: newDeskId(),
+          workspaceId: entry.workspaceId,
+          selections: sanitizeSelections(product, entry.selections),
+        };
+        desks.push(desk);
+        keep(desk.id, desk.id, entry);
+        if (i === layout.room?.active) active = desk;
+      });
+      keep(SINGLE_DESK_KEY, SINGLE_DESK, layout.single);
+      const single = sanitizeSelections(product, layout.single.selections);
+
+      useMotionStore.getState().setValues(heights);
+      useWorkspaceStore.getState().importWindows(windows);
+      if (layout.mode === 'desks' && desks.length > 0) {
+        set({ mode: 'desks', desks, activeDeskId: null, singleSelections: single, parked: null });
+        if (active) goTo(active, false);
+      } else {
+        set({
+          mode: 'single',
+          desks: [],
+          activeDeskId: null,
+          singleSelections: null,
+          // The room comes back behind the switch, as the visitor left it.
+          parked: desks.length > 0 ? { desks, activeDeskId: active?.id ?? null } : null,
+        });
+        useMotionStore.getState().setDesk(SINGLE_DESK_KEY);
+        useConfiguratorStore.getState().setSelections(single);
+      }
     },
 
     setRoom: (room) => {

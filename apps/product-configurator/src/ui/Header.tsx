@@ -5,6 +5,7 @@ import { DISPLAY_CURRENCIES, useCurrencyStore } from '@/state/currencyStore';
 import { useDesksStore } from '@/state/desksStore';
 import { shareSearch } from '@/state/shareLink';
 import { Feedback } from './Feedback';
+import { Layouts } from './Layouts';
 import styles from './Header.module.css';
 
 export function Header() {
@@ -61,6 +62,7 @@ export function Header() {
         )}
       </div>
       <div className={styles.actions}>
+        <Layouts />
         <Feedback />
         {hasWorkspaces && (
           <div className={styles.modes} role="radiogroup" aria-label="Desks">

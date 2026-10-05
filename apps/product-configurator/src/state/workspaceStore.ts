@@ -174,6 +174,13 @@ interface WorkspaceState {
   showDesk: (deskId: string, workspaceId: string, seat: boolean) => void;
   /** Forgets a desk's windows (the desk was removed or given another workspace). */
   forgetDesk: (deskId: string) => void;
+  /** Every desk's windows (the one on show and the kept ones), for saving a layout. */
+  exportWindows: () => Record<string, DeskWindows>;
+  /**
+   * Windows from a saved layout, by desk id: the single desk's go on show (with the sites
+   * off), the others are kept for when the visitor moves to their desk.
+   */
+  importWindows: (windows: Readonly<Record<string, DeskWindows>>) => void;
   /**
    * Back to the single desk, with the windows it had, and the sites off. The room's desks
    * keep theirs (the one the visitor was at too) for when the visitor comes back.
@@ -331,7 +338,8 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     set((state) => ({ sizes: { ...state.sizes, [screenId]: { windows, weights } } })),
 
   openWindow: (screenId, site) => {
-    const id = site.id ?? `site-${++openedCount}`;
+    // Unique beyond this page: saved layouts bring opened sites back next to new ones.
+    const id = site.id ?? `site-${Date.now().toString(36)}-${++openedCount}`;
     set((state) => ({
       closed: state.closed.filter((w) => w !== id),
       opened: site.id
@@ -376,6 +384,27 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     set((state) => ({
       saved: Object.fromEntries(Object.entries(state.saved).filter(([id]) => id !== deskId)),
     })),
+
+  exportWindows: () => {
+    const state = get();
+    return { ...state.saved, [state.deskId]: snapshot(state) };
+  },
+
+  importWindows: (windows) => {
+    const single = windows[SINGLE_DESK];
+    const workspace = workspaceById(currentProduct(get()), single?.workspaceId ?? null);
+    set({
+      saved: Object.fromEntries(Object.entries(windows).filter(([id]) => id !== SINGLE_DESK)),
+      deskId: SINGLE_DESK,
+      ...(single ?? { workspaceId: workspace?.id ?? null, ...initialWindows(workspace) }),
+      active: false,
+      seated: false,
+      aroundDesk: false,
+      focus: null,
+      menu: null,
+      drag: null,
+    });
+  },
 
   leaveDesks: () => {
     const state = get();
