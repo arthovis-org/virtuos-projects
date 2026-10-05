@@ -266,7 +266,8 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
       if (flat) back = tilted(back, MathUtils.degToRad(tilt));
     }
     const corners = (focused ? [focused] : screens).flatMap(worldCorners);
-    const inset = Math.min(0.3, hudInset / Math.max(1, size.height));
+    // Up to 40% of the view for the toolbar: a phone's viewer is short and wide toolbars are tall.
+    const inset = Math.min(0.4, hudInset / Math.max(1, size.height));
     const insetBottom = Math.min(0.25, hudInsetBottom / Math.max(1, size.height));
     move.current = planMove(current(), fitPose(corners, back, camera, inset, insetBottom));
     invalidate();

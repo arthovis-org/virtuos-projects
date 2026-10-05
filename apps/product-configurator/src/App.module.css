@@ -32,10 +32,10 @@
       'panel';
   }
 
-  /* A bottom sheet: just its bar until opened, then up to about half the screen. The viewer
-     gives it the room (it never covers the desk) and the camera reframes to what is left. */
+  /* A bottom sheet: just its bar until opened, then under half the screen. The viewer gives it
+     the room (it never covers the desk) and the camera reframes to what is left. */
   .panel {
-    max-height: 56dvh;
+    max-height: 44dvh;
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;

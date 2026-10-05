@@ -227,6 +227,43 @@
   .bar .name:not(.prompt) {
     display: none;
   }
+
+  /* One slim row on a phone, swiped sideways if it doesn't fit: a second row would cover the
+     top of the monitors in a viewer this short. */
+  .top {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+  }
+
+  .bar {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px;
+    max-width: 100%;
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bar > * {
+    flex-shrink: 0;
+  }
+
+  .tab,
+  .button,
+  .select {
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .select {
+    max-width: 8.5rem;
+  }
 }
 
 /* Long labels, or short ones on a phone. */
