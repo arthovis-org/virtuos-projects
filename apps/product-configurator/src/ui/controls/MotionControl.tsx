@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import type { Motion } from '@/catalog/schema';
 import { motionKey, useMotionStore } from '@/state/motionStore';
 import styles from './MotionControl.module.css';
@@ -27,6 +27,11 @@ export function MotionControl({ motion }: MotionControlProps) {
   const setTarget = useMotionStore((state) => state.setTarget);
   const stop = useMotionStore((state) => state.stop);
   const setPeek = useMotionStore((state) => state.setPeek);
+  // The slider shows where the desk is, moving with it (holding ▲/▼ or a preset sets a far
+  // target, and the thumb would jump there); only while the visitor drags it does it follow
+  // their finger, the target.
+  const [sliding, setSliding] = useState(false);
+  const sliderValue = (sliding ? target : current) ?? motion.min;
 
   const decimals = decimalsFor(motion.step);
   const format = (value: number | undefined) =>
@@ -89,10 +94,15 @@ export function MotionControl({ motion }: MotionControlProps) {
         min={motion.min}
         max={motion.max}
         step={motion.step}
-        value={target ?? motion.min}
+        value={sliderValue}
         disabled={!ready}
         aria-label={motion.label}
-        aria-valuetext={`${format(target)} ${motion.unit}`}
+        aria-valuetext={`${format(current)} ${motion.unit}`}
+        onPointerDown={() => setSliding(true)}
+        onPointerUp={() => setSliding(false)}
+        onPointerCancel={() => setSliding(false)}
+        onLostPointerCapture={() => setSliding(false)}
+        onBlur={() => setSliding(false)}
         onChange={(event) => setTarget(motion, Number(event.target.value))}
       />
       <div className={styles.range} aria-hidden="true">

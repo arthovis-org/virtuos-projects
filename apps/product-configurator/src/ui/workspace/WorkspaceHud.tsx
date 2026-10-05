@@ -234,6 +234,22 @@ export function WorkspaceHud() {
               </button>
             </>
           )}
+          {!desksMode && others.length > 0 && (
+            // The way into the room once the demo card has given way to this toolbar (on a
+            // phone the header has no room for the switch).
+            <button
+              type="button"
+              className={styles.button}
+              onClick={enterDesks}
+              aria-label="Unlimited desks"
+              title="A desk for every workspace"
+            >
+              <span className={styles.long}>Unlimited desks</span>
+              <span className={styles.short} aria-hidden="true">
+                ∞ Desks
+              </span>
+            </button>
+          )}
           <button
             type="button"
             className={`${styles.button} ${styles.primary}`}
