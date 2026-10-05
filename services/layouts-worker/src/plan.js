@@ -1,6 +1,8 @@
 /**
- * Plans command centers with Cloudflare Workers AI (free daily allowance on the Workers free
- * plan; past it, requests fail until the next day rather than cost anything).
+ * Plans command centers with a free AI: Groq (Llama 3.3 70B, 1,000 requests a day free) when a
+ * GROQ_API_KEY secret is set, and Cloudflare Workers AI (the same model, a smaller free daily
+ * allowance) otherwise or once Groq's daily limit is reached. Neither bills on its free plan:
+ * past the limits, requests fail until the next day.
  *
  *   POST /plan  { workflow, product, current? }  -> 200 { csv }
  *
@@ -8,8 +10,64 @@
  * the page only says what the visitor does, so this can't be used as a general chatbot.
  */
 
-/** The model; any Workers AI text model taking chat messages works. */
+/** The Workers AI model; any Workers AI text model taking chat messages works. */
 const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+/** The Groq model (OpenAI-style chat API). */
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+/** An AI that couldn't answer, and whether it was because of its free limits. */
+class AiError extends Error {
+  constructor(message, limited) {
+    super(message);
+    this.limited = limited;
+  }
+}
+
+/** Asks Groq; throws AiError (limited on 429: its per-minute or daily cap). */
+async function askGroq(env, messages) {
+  const response = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: env.GROQ_MODEL || GROQ_MODEL,
+      messages,
+      max_tokens: 2048,
+      temperature: 0.4,
+    }),
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new AiError(
+      `Groq ${response.status}: ${detail.slice(0, 200)}`,
+      response.status === 429,
+    );
+  }
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
+/** Asks Workers AI; throws AiError (limited once the daily allowance is used up). */
+async function askWorkersAI(env, messages) {
+  if (!env.AI) throw new AiError("Workers AI is not bound", false);
+  try {
+    const result = await env.AI.run(env.AI_MODEL || DEFAULT_MODEL, {
+      messages,
+      max_tokens: 2048,
+      temperature: 0.4,
+    });
+    return typeof result?.response === "string" ? result.response : "";
+  } catch (error) {
+    const message = String(error?.message ?? error);
+    throw new AiError(
+      message,
+      /limit|quota|neuron|4006|capacity/i.test(message),
+    );
+  }
+}
 /** Plans a visitor may ask for per window; counts live in this Worker instance only. */
 const RATE = { max: 12, windowMs: 10 * 60 * 1000 };
 const asked = new Map();
@@ -17,7 +75,9 @@ const MAX_WORKFLOW = 1500;
 const MAX_CURRENT = 12 * 1024;
 
 const text = (value, max) =>
-  typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "";
+  typeof value === "string"
+    ? value.replace(/\s+/g, " ").trim().slice(0, max)
+    : "";
 
 /** The page's description of the product, checked and trimmed. */
 function readProduct(input) {
@@ -28,18 +88,34 @@ function readProduct(input) {
     .filter((s) => s.label);
   const themes = (Array.isArray(product.themes) ? product.themes : [])
     .slice(0, 40)
-    .map((t) => ({ label: text(t?.label, 30), description: text(t?.description, 200) }))
+    .map((t) => ({
+      label: text(t?.label, 30),
+      description: text(t?.description, 200),
+    }))
     .filter((t) => t.label);
   const h = product.height;
   const height =
-    h && typeof h === "object" && Number.isFinite(h.min) && Number.isFinite(h.max)
+    h &&
+    typeof h === "object" &&
+    Number.isFinite(h.min) &&
+    Number.isFinite(h.max)
       ? { unit: text(h.unit, 8) || "cm", min: h.min, max: h.max }
       : null;
   const sites = (Array.isArray(product.sites) ? product.sites : [])
     .slice(0, 150)
-    .map((s) => ({ id: text(s?.id, 60), title: text(s?.title, 50), theme: text(s?.theme, 30) }))
+    .map((s) => ({
+      id: text(s?.id, 60),
+      title: text(s?.title, 50),
+      theme: text(s?.theme, 30),
+    }))
     .filter((s) => /^[a-z0-9-]+\/[a-z0-9-]+$/.test(s.id) && s.title);
-  return { name: text(product.name, 60) || "desk", screens, themes, height, sites };
+  return {
+    name: text(product.name, 60) || "desk",
+    screens,
+    themes,
+    height,
+    sites,
+  };
 }
 
 function instructions(product) {
@@ -89,12 +165,19 @@ Rules:
 }
 
 export async function plan(request, env, reply) {
-  if (!env.AI) return reply(503, { error: "The AI is not set up on this site" });
+  if (!env.AI && !env.GROQ_API_KEY) {
+    return reply(503, { error: "The AI is not set up on this site" });
+  }
   const visitor = request.headers.get("CF-Connecting-IP") ?? "unknown";
   const now = Date.now();
-  const recent = (asked.get(visitor) ?? []).filter((t) => now - t < RATE.windowMs);
+  const recent = (asked.get(visitor) ?? []).filter(
+    (t) => now - t < RATE.windowMs,
+  );
   if (recent.length >= RATE.max) {
-    return reply(429, { error: "That's a lot of plans in a short time; try again in a few minutes" });
+    return reply(429, {
+      error:
+        "That's a lot of plans in a short time; try again in a few minutes",
+    });
   }
 
   let body;
@@ -104,43 +187,51 @@ export async function plan(request, env, reply) {
     return reply(400, { error: "Expected JSON" });
   }
   const workflow =
-    typeof body.workflow === "string" ? body.workflow.trim().slice(0, MAX_WORKFLOW) : "";
+    typeof body.workflow === "string"
+      ? body.workflow.trim().slice(0, MAX_WORKFLOW)
+      : "";
   if (!workflow) return reply(400, { error: "Say what you do first" });
   const product = readProduct(body.product);
   if (product.screens.length === 0 || product.themes.length === 0) {
     return reply(400, { error: "Unknown product" });
   }
   const current =
-    typeof body.current === "string" ? body.current.trim().slice(0, MAX_CURRENT) : "";
+    typeof body.current === "string"
+      ? body.current.trim().slice(0, MAX_CURRENT)
+      : "";
   recent.push(now);
   asked.set(visitor, recent);
 
   const ask = current
     ? `My current sheet:\n${current}\n\nChange it as I ask, keeping the rest, and answer with the whole updated sheet:\n${workflow}`
     : `My workflows:\n${workflow}`;
-  let result;
-  try {
-    result = await env.AI.run(env.AI_MODEL || DEFAULT_MODEL, {
-      messages: [
-        { role: "system", content: instructions(product) },
-        { role: "user", content: ask },
-      ],
-      max_tokens: 2048,
-      temperature: 0.4,
-    });
-  } catch (error) {
-    console.error(error);
-    const message = String(error?.message ?? error);
-    // The free allowance is daily: past it, Workers AI refuses until the next day.
-    if (/limit|quota|neuron|4006|capacity/i.test(message)) {
-      return reply(429, {
-        error:
-          "The free AI has used up today's allowance. Try again tomorrow, or copy the prompt into another AI.",
-      });
+  const messages = [
+    { role: "system", content: instructions(product) },
+    { role: "user", content: ask },
+  ];
+  // Groq first when it is set up; Workers AI when it isn't, or can't answer.
+  const services = [
+    ...(env.GROQ_API_KEY ? [askGroq] : []),
+    ...(env.AI ? [askWorkersAI] : []),
+  ];
+  let answer = "";
+  let limited = true;
+  for (const service of services) {
+    try {
+      answer = await service(env, messages);
+      if (answer.trim()) break;
+    } catch (error) {
+      console.error(error);
+      limited &&= error instanceof AiError && error.limited;
     }
-    return reply(502, { error: "The AI could not answer; try again" });
   }
-  const answer = typeof result?.response === "string" ? result.response : "";
-  if (!answer.trim()) return reply(502, { error: "The AI gave no answer; try again" });
+  if (!answer.trim()) {
+    return limited
+      ? reply(429, {
+          error:
+            "The free AI has used up today's allowance. Try again tomorrow, or copy the prompt into another AI.",
+        })
+      : reply(502, { error: "The AI could not answer; try again" });
+  }
   return reply(200, { csv: answer });
 }

@@ -631,7 +631,7 @@ function AiPanel({
         </button>
       </div>
       <p className={styles.note}>
-        {canPlanWithAI && 'A free AI (Llama 3.3 on Cloudflare), with a daily limit. '}
+        {canPlanWithAI && 'A free AI (Llama 3.3), with a daily limit. '}
         Prefer another AI?{' '}
         <button
           type="button"
