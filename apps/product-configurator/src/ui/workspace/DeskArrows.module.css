@@ -1,27 +1,27 @@
-/* The viewer's area; only the side strips and the arrows take the pointer. */
+/* Between the toolbar and the desk switcher (set inline). Takes no pointer itself. */
 .area {
   position: absolute;
-  inset: 0;
+  right: 0;
+  left: 0;
   z-index: 190;
   pointer-events: none;
 }
 
-/* A strip along each side, the full height between the toolbar and the desk switcher (set
-   inline): hovering it shows that side's arrow. Wide enough to find, narrow enough to leave
-   the side monitors' sites usable. */
-.edge {
+/* A hairline at the viewer's very edge: notices the mouse where a website would hide it from
+   the page, without covering the side monitors. */
+.strip {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 72px;
+  width: 12px;
   pointer-events: auto;
 }
 
-.edge[data-side='left'] {
+.strip[data-side='left'] {
   left: 0;
 }
 
-.edge[data-side='right'] {
+.strip[data-side='right'] {
   right: 0;
 }
 
@@ -46,16 +46,16 @@
     transform var(--duration) var(--ease);
 }
 
-.edge[data-side='left'] .arrow {
+.arrow[data-side='left'] {
   left: 12px;
 }
 
-.edge[data-side='right'] .arrow {
+.arrow[data-side='right'] {
   right: 12px;
 }
 
-/* The arrow is inside its strip, so moving onto it keeps it shown. */
-.edge:hover .arrow,
+/* Shown while the mouse is near its side; only then does it take clicks. */
+.arrow[data-shown],
 .arrow:focus-visible {
   opacity: 1;
   pointer-events: auto;
@@ -83,8 +83,8 @@
 /* Touch screens have no hover: the arrows stay, small and see-through, and the strips let
    touches through to the screens. */
 @media (pointer: coarse) {
-  .edge {
-    pointer-events: none;
+  .strip {
+    display: none;
   }
 
   .arrow {
@@ -93,11 +93,11 @@
     pointer-events: auto;
   }
 
-  .edge[data-side='left'] .arrow {
+  .arrow[data-side='left'] {
     left: 6px;
   }
 
-  .edge[data-side='right'] .arrow {
+  .arrow[data-side='right'] {
     right: 6px;
   }
 

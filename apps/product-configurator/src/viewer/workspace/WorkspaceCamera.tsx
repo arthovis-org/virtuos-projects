@@ -45,6 +45,12 @@ const FOLLOW_LAG = 0.6;
 /** Space around the screens; small, so they fill the view. */
 const MARGIN = 1.03;
 const WORLD_UP = new Vector3(0, 1, 0);
+/**
+ * Looking around a desk in the room: from a three-quarter view (turned this far from the
+ * screens' front, and looking down this much), far enough back to see the whole desk, aimed a
+ * little below the screens so the legs are in view too.
+ */
+const AROUND = { turn: MathUtils.degToRad(35), tilt: MathUtils.degToRad(22), pull: 1.9, drop: 0.3 };
 
 /** Corners of a screen's display surface in world space. */
 function worldCorners({ frame }: CameraTarget): Vector3[] {
@@ -297,13 +303,50 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     invalidate,
   ]);
 
+  /** A view of the whole desk (its screens and below), to orbit it; null without screens. */
+  const aroundPose = (): Pose | null => {
+    const facing = screens.find((s) => s.id === primaryId) ?? screens[0];
+    if (!facing) return null;
+    const back = tilted(worldFront(facing).applyAxisAngle(WORLD_UP, AROUND.turn), AROUND.tilt);
+    const fit = fitPose(screens.flatMap(worldCorners), back, camera, 0);
+    const target = fit.target.clone().addScaledVector(WORLD_UP, -AROUND.drop);
+    const distance = fit.position.distanceTo(fit.target) * AROUND.pull;
+    return { position: target.clone().addScaledVector(back, distance), target };
+  };
+
+  // In the room, from the overview to looking around the desk (the camera is already free):
+  // fly there with the orbit controls paused, then orbit it.
+  const aroundDesk = useWorkspaceStore((s) => s.aroundDesk);
+  useEffect(() => {
+    if (seated || !aroundDesk || saved.current) return;
+    const around = aroundPose();
+    if (!around) return;
+    if (controls) controls.enabled = false;
+    move.current = planMove(current(), around, () => {
+      if (controls) controls.enabled = true;
+    });
+    invalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aroundDesk]);
+
   // Leaving: fly back, then hand the camera back to the orbit controls.
   useEffect(() => {
     if (seated || !saved.current) return;
     const back = saved.current;
-    // In the room the camera is handed back at once and flies to the overview from here
-    // (Refit): the pose before sitting down may be anywhere, even inside the room.
     if (useDesksStore.getState().mode === 'desks') {
+      // Looking around this desk: fly to a view of it, then orbit it like the single desk.
+      const around = useWorkspaceStore.getState().aroundDesk ? aroundPose() : null;
+      if (around) {
+        move.current = planMove(current(), around, () => {
+          if (controls) Object.assign(controls, { ...back.limits, enabled: true });
+          saved.current = null;
+          setCameraFree(true);
+        });
+        invalidate();
+        return;
+      }
+      // The whole room: the camera is handed back at once and flies to the overview from
+      // here (Refit); the pose before sitting down may be anywhere, even inside the room.
       if (controls) Object.assign(controls, { ...back.limits, enabled: true });
       saved.current = null;
       setCameraFree(true);

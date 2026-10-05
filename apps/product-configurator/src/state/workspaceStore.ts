@@ -105,6 +105,11 @@ interface WorkspaceState {
   active: boolean;
   /** The camera sits in front of the screens with orbiting off; otherwise it moves freely. */
   seated: boolean;
+  /**
+   * In the room, standing up to look around the desk the visitor is at (orbiting it, as on
+   * the single desk) rather than the whole room.
+   */
+  aroundDesk: boolean;
   /** The camera is back under the orbit controls (false from sitting down until the move back ends). */
   cameraFree: boolean;
   workspaceId: string | null;
@@ -140,7 +145,8 @@ interface WorkspaceState {
   /** Turns the workspace on and takes the seat in front of the screens. */
   enter: (workspaceId?: string) => void;
   /** Leaves the seat and hands the camera back; the sites stay on. */
-  standUp: () => void;
+  /** Leaves the seat; in the room, to look around this desk (`aroundDesk`) or the whole room. */
+  standUp: (aroundDesk?: boolean) => void;
   sit: () => void;
   /** Turns the workspace off. */
   close: () => void;
@@ -244,6 +250,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   saved: {},
   active: false,
   seated: false,
+  aroundDesk: false,
   cameraFree: true,
   workspaceId: null,
   placement: {},
@@ -292,8 +299,8 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     });
   },
 
-  standUp: () => set({ seated: false, focus: null }),
-  sit: () => set({ seated: true, cameraFree: false }),
+  standUp: (aroundDesk = false) => set({ seated: false, aroundDesk, focus: null }),
+  sit: () => set({ seated: true, aroundDesk: false, cameraFree: false }),
   close: () => set({ active: false, seated: false, focus: null, drag: null }),
 
   select: (workspaceId) => {
@@ -360,6 +367,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
       active: true,
       focus: null,
       drag: null,
+      aroundDesk: false,
       ...(seat ? { seated: true, cameraFree: false } : { seated: false }),
     });
   },

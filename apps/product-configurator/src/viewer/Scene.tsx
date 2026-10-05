@@ -73,6 +73,9 @@ function Refit() {
   const cameraFree = useWorkspaceStore((s) => s.cameraFree);
   const desksMode = useDesksStore((s) => s.mode === 'desks');
   const deskCount = useDesksStore((s) => s.desks.length);
+  // Looking around the desk the visitor is at: the camera is theirs, not the room's.
+  const aroundDesk = useWorkspaceStore((s) => s.aroundDesk);
+  const wasAround = useRef(false);
   const fitted = useRef<string | null>(null);
   const flight = useRef<Flight | null>(null);
   const wasSeated = useRef(false);
@@ -81,9 +84,11 @@ function Refit() {
     const key = `${width}x${height}:${desksMode ? deskCount : 'single'}`;
     // The camera was just handed back in the room (the visitor stood up): to the overview,
     // never back to wherever the camera was before they sat down.
-    const backInRoom = desksMode && cameraFree && wasSeated.current;
+    const backInRoom =
+      desksMode && cameraFree && !aroundDesk && (wasSeated.current || wasAround.current);
     wasSeated.current = !cameraFree;
-    if (!cameraFree) return;
+    wasAround.current = aroundDesk;
+    if (!cameraFree || (aroundDesk && fitted.current !== null)) return;
     // The first framing is the only one: this, not `Bounds fit`, which could run alongside a
     // seated camera's flight when a desk was picked before the model had loaded.
     const first = fitted.current === null;
@@ -110,7 +115,18 @@ function Refit() {
       started: false,
     };
     invalidate();
-  }, [bounds, camera, controls, invalidate, width, height, cameraFree, desksMode, deskCount]);
+  }, [
+    bounds,
+    camera,
+    controls,
+    invalidate,
+    width,
+    height,
+    cameraFree,
+    desksMode,
+    deskCount,
+    aroundDesk,
+  ]);
 
   // Dragging takes the camera over.
   useEffect(() => {

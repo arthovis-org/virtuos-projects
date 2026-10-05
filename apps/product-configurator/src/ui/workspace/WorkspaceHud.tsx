@@ -26,6 +26,7 @@ export function WorkspaceHud() {
   const drag = useWorkspaceStore((s) => s.drag);
   const enter = useWorkspaceStore((s) => s.enter);
   const seated = useWorkspaceStore((s) => s.seated);
+  const aroundDesk = useWorkspaceStore((s) => s.aroundDesk);
   const standUp = useWorkspaceStore((s) => s.standUp);
   const sit = useWorkspaceStore((s) => s.sit);
   const close = useWorkspaceStore((s) => s.close);
@@ -216,16 +217,29 @@ export function WorkspaceHud() {
                   </span>
                   <span className={styles.short}>{seated && focus ? 'All' : 'Seat'}</span>
                 </button>
+                {/* Orbiting the desk; in the room, the desk the visitor is at. */}
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={!seated}
+                  aria-checked={!seated && (!desksMode || aroundDesk)}
                   className={styles.tab}
-                  onClick={standUp}
+                  onClick={() => standUp(desksMode)}
                 >
-                  <span className={styles.long}>{desksMode ? 'All desks' : 'Look around'}</span>
-                  <span className={styles.short}>{desksMode ? 'Desks' : 'Orbit'}</span>
+                  <span className={styles.long}>Look around</span>
+                  <span className={styles.short}>Orbit</span>
                 </button>
+                {desksMode && (
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={!seated && !aroundDesk}
+                    className={styles.tab}
+                    onClick={() => standUp(false)}
+                  >
+                    <span className={styles.long}>All desks</span>
+                    <span className={styles.short}>Desks</span>
+                  </button>
+                )}
               </div>
               <button
                 type="button"
