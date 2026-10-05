@@ -12,7 +12,8 @@
     "test:sdk": "node --test \"addons/sdk/test/*.test.js\"",
     "test:addons": "node addons/sdk/testing/run-addons.js",
     "test:browser": "node --test --test-concurrency=1 \"addons/sdk/test/browser/*.test.js\" \"addons/*/test/browser/*.test.js\"",
-    "test:all": "npm test && npm run test:browser",
+    "test:jev": "node addons/jev/test/check.mjs",
+    "test:all": "npm test && npm run test:browser && npm run test:jev",
     "drift-guard": "node addons/sdk/testing/drift-guard.js"
   },
   "devDependencies": {

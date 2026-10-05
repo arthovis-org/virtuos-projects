@@ -4,25 +4,25 @@
 //   node addons/jev/test/check.mjs                 run every check, PASS / FAIL per line, exit 1 on any failure
 //   node addons/jev/test/check.mjs --shots <dir>   also save a dark + light screenshot of each demo and one of the tutorial mid-drag
 //   node addons/jev/test/check.mjs --video <dir>   also record jev-walkthrough.webm (~55 s, real latencies): route, guard, triage, Smart Add, dragging the card
-//   --port <n>           static server port (default 8123)
 //   --three <dir>        serve three r160 from a local copy (dir holds build/ and examples/jsm/) instead of unpkg
 //   --chromium <path>    Chromium executable (default: playwright's, or /opt/pw-browsers/chromium-*/chrome-linux/chrome)
 //
 // `playwright` is resolved from the working directory, then from the global npm root; the repo
-// itself has no dependencies. The static server is `python3 -m http.server` at the repo root.
+// itself has no dependencies. The static server is the SDK's (sdk/testing/browser.js: node:http at
+// the repo root, on a free port), so the checks run the same on Linux, macOS and Windows.
 import { createRequire } from 'node:module';
-import { spawn, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { startServer } from '../../sdk/testing/browser.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..', '..', '..');
 const args = process.argv.slice(2);
 const opt = (k, d = null) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
-const PORT = +opt('--port', 8123);
 const SHOTS = opt('--shots'), VIDEO = opt('--video'), THREE_DIR = opt('--three');
-const BASE = `http://127.0.0.1:${PORT}`;
+let BASE = '';   // set once the server is up
 
 /* ---------- playwright + chromium ---------- */
 function loadPlaywright() {
@@ -101,8 +101,8 @@ const setParam = (page, title, key, value) => ev(page, ([t, k, v]) => { const p 
 
 /* ---------- main ---------- */
 const pw = loadPlaywright();
-const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ROOT, stdio: 'ignore' });
-await sleep(600);
+const server = await startServer(ROOT);
+BASE = server.url;
 const browser = await pw.chromium.launch({ executablePath: chromiumPath(), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -133,7 +133,7 @@ try {
   /* demo 1: routing */
   await check('demo 1 routes the four sample messages (returns, shipping, billing, unsure)', async () => {
     await loadDemo(page, 'route-message');
-    const { SAMPLE_MESSAGES, EXPECTED_LANES } = await import(`${ROOT}/addons/jev/scenes/route-message.js`);
+    const { SAMPLE_MESSAGES, EXPECTED_LANES } = await import(pathToFileURL(path.join(ROOT, 'addons/jev/scenes/route-message.js')).href);
     const got = [];
     for (let i = 0; i < SAMPLE_MESSAGES.length; i++) {
       await setParam(page, 'Customer message', 'text', SAMPLE_MESSAGES[i]);
@@ -150,7 +150,7 @@ try {
   /* demo 2: guard */
   await check('demo 2 pass prompt runs a Demo generation, fail prompt does not', async () => {
     await loadDemo(page, 'guard-generation');
-    const { PASS_PROMPT, FAIL_PROMPT } = await import(`${ROOT}/addons/jev/scenes/guard-generation.js`);
+    const { PASS_PROMPT, FAIL_PROMPT } = await import(pathToFileURL(path.join(ROOT, 'addons/jev/scenes/guard-generation.js')).href);
     const jobsOf = () => ev(page, () => window.__proto.ai.jobs.jobs.filter((j) => j.provider === 'demo').length);
     await waitFor(page, () => window.__proto.ai.jobs.jobs.some((j) => j.provider === 'demo'), null, 8000).catch(() => {});   // the initial (clean) request generates once
     await waitFor(page, () => window.__proto.ai.jobs.jobs.every((j) => j.done), null, 15000);
@@ -203,9 +203,12 @@ try {
     const hb = await head.boundingBox();
     const sx = hb.x + hb.width * 0.45, sy = hb.y + hb.height / 2;
     await page.mouse.move(sx, sy); await page.mouse.down();
+    // Measured after the press, right before the small move: a docked card can still re-seat
+    // between `settled` and the press, which is not a drag.
+    const rDown = await page.locator('#jev-tutorial').boundingBox();
     await page.mouse.move(sx + 3, sy + 2);                  // inside the dead zone: no move yet
     const rDead = await page.locator('#jev-tutorial').boundingBox();
-    assert(Math.abs(rDead.x - r0.x) < 1 && Math.abs(rDead.y - r0.y) < 1, 'moved inside the 6 px dead zone');
+    assert(Math.abs(rDead.x - rDown.x) < 1 && Math.abs(rDead.y - rDown.y) < 1, 'moved inside the 6 px dead zone');
     await page.mouse.move(sx - 300, sy - 250, { steps: 12 });
     if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, 'tutorial-drag.png') }); }
     await page.mouse.move(sx - 5000, sy - 5000, { steps: 4 });   // far past the edge: must clamp
@@ -326,7 +329,7 @@ try {
     });
   }
 } finally {
-  await browser.close(); server.kill();
+  await browser.close(); await server.close();
 }
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length} / ${results.length} checks passed${failed.length ? ` — FAILED: ${failed.map((f) => f.name).join('; ')}` : ''}`);

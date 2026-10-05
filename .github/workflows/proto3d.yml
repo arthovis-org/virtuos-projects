@@ -5,6 +5,7 @@
 #               unit + engine tests under plain `node --test`
 #   browser     Playwright: every add-on page boots on the real core with zero errors, isolated storage
 #   core-smoke  Playwright: the core page itself boots with zero errors and no add-on types
+#   jev         Playwright: the Jev page (its own boot, not the SDK shell) passes addons/jev/test/check.mjs
 # (Moved from the Proto3D repository; runs in apps/proto3d and only when it changes.)
 name: proto3d
 
@@ -85,3 +86,15 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: core page boots with zero errors
         run: node --test addons/sdk/test/browser/core-smoke.test.js
+
+  jev:
+    name: jev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/proto3d/package-lock.json }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Jev page boots on today's core and its checks pass
+        run: node addons/jev/test/check.mjs

@@ -46,7 +46,7 @@
       </section>
       <section>
         <h2>Wiring is optional</h2>
-        <p class="help-p">Ports and cables are hidden until you turn <b>Wiring</b> on (<kbd>P</kbd>). Without them, <b>drop a component onto another</b> to link them — a Person onto a board, a Board onto a Timeline, a Media onto a Media Grid or a screen — and the workspace tells you what the link means. A block can show its own ports with the eye icon in its panel header.</p>
+        <p class="help-p">Ports and cables are hidden until you turn <b>Wiring</b> on (<kbd>P</kbd>, or the Wiring button in the header at the top of the viewport). Without them, <b>drop a component onto another</b> to link them — a Person onto a board, a Board onto a Timeline, a Media onto a Media Grid or a screen — and the workspace tells you what the link means. A block can show its own ports with the eye icon in its panel header.</p>
       </section>
       <section>
         <h2>Ports</h2>
@@ -60,7 +60,8 @@
         <ol id="wiring-rules" class="rules">
           <li>Cables run <b>left → right</b>: from an <b>OUT</b> pin on the right of a node to an <b>IN</b> pin on the left of another.</li>
           <li><b>Colours must match</b>: same type fits, <i>any</i> fits everything, <i>number</i> fits <i>text</i>; a <i>person</i> cable only fits a <i>person</i> slot. Lit pins fit; dimmed ones do not.</li>
-          <li><b>Drag</b> a pin to connect (either direction), <b>grab a cable end</b> to move it, drop it on empty space to <b>disconnect</b>.</li>
+          <li><b>Drag</b> a pin to connect (either direction); drop the new cable on <b>empty space</b> to pick a component that fits and connect it. <b>Grab a cable end</b> to move it; drop it on empty space to <b>disconnect</b>.</li>
+          <li><b>Drag the middle of a cable</b> to add a waypoint and route it by hand; drop a handle on another cable's handle or on a trunk to run the cables together. <b>View → Cables</b> picks Smooth, Orthogonal (90° turns) or Straight and whether parallel cables bundle.</li>
         </ol>
       </section>
       <section>
@@ -72,6 +73,7 @@
           <dt>2D</dt><dd><kbd>2</kbd> toggles the 2D editing mode: a top-down plan · left-drag box-selects · middle-drag or <kbd>Space</kbd>+drag pans · wheel zooms · <kbd>L</kbd> auto-layout</dd>
           <dt>Link</dt><dd>drop a component onto another · or, with wiring on, drag from a pin to a lit pin</dd>
           <dt>Re-route</dt><dd>grab a cable end and drop it on another pin · empty space disconnects · <kbd>Esc</kbd> puts it back</dd>
+          <dt>Route</dt><dd>drag the middle of a cable to add a waypoint · drag a handle to move it · drop it on another handle or a bundle to share it · <kbd>Alt</kbd>+click removes · double-click resets · <b>View → Cables</b>: style, rounding, thickness, bundling</dd>
           <dt>Edit</dt><dd><kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate · <kbd>Del</kbd> delete · <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> undo / redo</dd>
           <dt>Group</dt><dd><kbd>Ctrl</kbd>+<kbd>G</kbd> group · <kbd>C</kbd> collapse / expand · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> ungroup</dd>
           <dt>Edit in place</dt><dd>double-click text on a face (a note, a prompt, a card title, a name, a date) to edit it right there · <kbd>Enter</kbd> saves (<kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line) · <kbd>Esc</kbd> cancels · <kbd>Tab</kbd> next field · <kbd>Enter</kbd> on a selected block edits its first field</dd>
@@ -95,8 +97,12 @@
   </div>
   <!-- Start panel (ui/start-panel.js): blank project, starter templates, recent projects, open a file -->
   <div id="start" hidden></div>
+  <!-- Viewport header: Wiring · Snap · Gizmo · Cables (ui/viewport-header.js fills it) -->
+  <div id="vp-header"></div>
   <!-- One-line hint for a starter template (ui/hint-bar.js) -->
   <div id="hint-bar" hidden></div>
+  <!-- Home page (ui/home.js); the core builds it even though this page keeps it closed -->
+  <div id="home" hidden></div>
   <div id="conn-label" hidden></div>
   <div id="marquee" hidden></div>
   <!-- Snap and alignment guides while a block is dragged (ui/guides.js) -->
