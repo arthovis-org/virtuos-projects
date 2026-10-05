@@ -19,6 +19,8 @@ interface ConfiguratorState {
   /** Switches product and resets selections to that product's defaults. */
   selectProduct: (productId: string) => void;
   selectOption: (groupId: string, optionId: string) => void;
+  /** Replaces every selection at once, e.g. when the visitor moves to another desk. */
+  setSelections: (selections: Selections) => void;
   resetToDefaults: () => void;
   /** Query string (`?product=…&c=…`) describing the current configuration. */
   serialize: () => string;
@@ -46,6 +48,10 @@ export const useConfiguratorStore = create<ConfiguratorState>()((set, get) => ({
     set((state) => ({
       selections: sanitizeSelections(product, { ...state.selections, [groupId]: optionId }),
     }));
+  },
+
+  setSelections: (selections) => {
+    set({ selections: sanitizeSelections(getProduct(get().productId), selections) });
   },
 
   resetToDefaults: () => {

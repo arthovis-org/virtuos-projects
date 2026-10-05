@@ -1,0 +1,29 @@
+{
+  "label": "Streamer",
+  "icon": "🎮",
+  "accent": "#9146ff",
+  "order": 70,
+  "description": "A live Twitch stream with its chat, background music and run-of-show notes.",
+  "windows": [
+    {
+      "title": "Twitch",
+      "url": "https://player.twitch.tv/?channel=monstercat&parent={host}&muted=true",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Lo-fi beats",
+      "url": "https://open.spotify.com/embed/playlist/37i9dQZF1DWWQRwui0ExPn?theme=0",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Chat",
+      "url": "https://www.twitch.tv/embed/monstercat/chat?parent={host}&darkpopout",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Run of show",
+      "url": "https://stackedit.io/app",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

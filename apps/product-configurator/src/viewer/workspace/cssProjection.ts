@@ -1,4 +1,13 @@
-import { Matrix4, Quaternion, Vector3, type PerspectiveCamera } from 'three';
+import {
+  Matrix4,
+  MeshBasicMaterial,
+  NoBlending,
+  type Material,
+  type Mesh,
+  Quaternion,
+  Vector3,
+  type PerspectiveCamera,
+} from 'three';
 import type { ScreenFrame } from './screenFrame';
 
 /**
@@ -11,12 +20,15 @@ const PX_PER_METRE = 1000;
 
 /**
  * The DOM elements the viewer positions every frame: the camera element (inside the layer
- * that sets the perspective) and one element per screen. Registered by the screen layer,
- * which lives outside the canvas.
+ * that sets the perspective) and one element per screen, registered by the screen layer,
+ * which lives outside the canvas; and the display surface each one is laid over, by the
+ * same id, registered from inside the canvas (the live screens, and in unlimited desks mode
+ * the posters on the other desks).
  */
 export const cssProjection = {
   camera: null as HTMLElement | null,
   surfaces: new Map<string, HTMLElement>(),
+  frames: new Map<string, ScreenFrame>(),
   /** Asks the canvas for a frame, e.g. when an element was just mounted. */
   invalidate: null as (() => void) | null,
 };
@@ -42,9 +54,9 @@ const unit = new Vector3(1, 1, 1);
 export function updateCssProjection(
   camera: PerspectiveCamera,
   size: { width: number; height: number },
-  frames: ReadonlyMap<string, ScreenFrame>,
   pixelsPerMetre: number,
 ) {
+  const { frames } = cssProjection;
   const cameraElement = cssProjection.camera;
   const layer = cameraElement?.parentElement;
   if (!cameraElement || !layer) return;
@@ -87,4 +99,47 @@ export function updateCssProjection(
         w[12] * k, w[13] * k, w[14] * k, 1,
       ]);
   }
+}
+
+let hole: MeshBasicMaterial | null = null;
+
+/**
+ * What a screen with a DOM surface draws as: a transparent hole that still hides what is
+ * behind it, so the page under the canvas shows through it and whatever is in front of the
+ * screen (another monitor, its own back, the desk) covers the page. Shared by every screen.
+ */
+export function screenHoleMaterial(): MeshBasicMaterial {
+  hole ??= new MeshBasicMaterial({
+    color: 0x000000,
+    opacity: 0,
+    transparent: true,
+    blending: NoBlending,
+  });
+  return hole;
+}
+
+/**
+ * Gives the display surfaces of `screens` another material (only their screen material slot
+ * when a mesh has several). Returns the function that puts the originals back.
+ */
+export function coverScreens(
+  screens: readonly { frame: ScreenFrame }[],
+  look: Material,
+  screenMaterial: string,
+): () => void {
+  // Named like the screen material, so the screens are still found while covered: the desk
+  // the visitor just left still wears the live screens' look when its posters look for them.
+  look.name = screenMaterial;
+  const originals: [Mesh, Material | Material[]][] = [];
+  for (const { frame } of screens) {
+    const { mesh } = frame;
+    const original = mesh.material;
+    originals.push([mesh, original]);
+    mesh.material = Array.isArray(original)
+      ? original.map((m) => (m.name === screenMaterial ? look : m))
+      : look;
+  }
+  return () => {
+    for (const [mesh, original] of originals) mesh.material = original;
+  };
 }

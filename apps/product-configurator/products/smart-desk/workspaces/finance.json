@@ -1,0 +1,29 @@
+{
+  "label": "Finance",
+  "icon": "💹",
+  "accent": "#2962ff",
+  "order": 10,
+  "description": "Markets at a glance: an S&P 500 chart, indices and forex, the sector heatmap and the economic calendar.",
+  "windows": [
+    {
+      "title": "S&P 500",
+      "url": "https://s.tradingview.com/widgetembed/?symbol=FOREXCOM%3ASPXUSD&interval=D&theme=dark&style=1&locale=en&timezone=Etc%2FUTC&hidesidetoolbar=0&symboledit=1&saveimage=0",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Markets",
+      "url": "https://www.tradingview-widget.com/embed-widget/market-overview/?locale=en#%7B%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Afalse%2C%22locale%22%3A%22en%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dateRange%22%3A%2212M%22%2C%22showChart%22%3Atrue%2C%22showSymbolLogo%22%3Atrue%2C%22tabs%22%3A%5B%7B%22title%22%3A%22Indices%22%2C%22symbols%22%3A%5B%7B%22s%22%3A%22FOREXCOM%3ASPXUSD%22%2C%22d%22%3A%22S%26P%20500%22%7D%2C%7B%22s%22%3A%22FOREXCOM%3ANSXUSD%22%2C%22d%22%3A%22Nasdaq%20100%22%7D%2C%7B%22s%22%3A%22FOREXCOM%3ADJI%22%2C%22d%22%3A%22Dow%2030%22%7D%2C%7B%22s%22%3A%22INDEX%3ANKY%22%2C%22d%22%3A%22Nikkei%20225%22%7D%5D%7D%2C%7B%22title%22%3A%22Forex%22%2C%22symbols%22%3A%5B%7B%22s%22%3A%22FX%3AEURUSD%22%2C%22d%22%3A%22EUR%2FUSD%22%7D%2C%7B%22s%22%3A%22FX%3AGBPUSD%22%2C%22d%22%3A%22GBP%2FUSD%22%7D%2C%7B%22s%22%3A%22FX%3AUSDJPY%22%2C%22d%22%3A%22USD%2FJPY%22%7D%5D%7D%2C%7B%22title%22%3A%22Commodities%22%2C%22symbols%22%3A%5B%7B%22s%22%3A%22OANDA%3AXAUUSD%22%2C%22d%22%3A%22Gold%22%7D%2C%7B%22s%22%3A%22TVC%3AUSOIL%22%2C%22d%22%3A%22Crude%20oil%22%7D%5D%7D%5D%7D",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Sector heatmap",
+      "url": "https://www.tradingview-widget.com/embed-widget/stock-heatmap/?locale=en#%7B%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Afalse%2C%22locale%22%3A%22en%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22dataSource%22%3A%22SPX500%22%2C%22grouping%22%3A%22sector%22%2C%22blockSize%22%3A%22market_cap_basic%22%2C%22blockColor%22%3A%22change%22%2C%22hasTopBar%22%3Afalse%2C%22isDataSetEnabled%22%3Afalse%2C%22isZoomEnabled%22%3Atrue%2C%22hasSymbolTooltip%22%3Atrue%7D",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Economic calendar",
+      "url": "https://www.tradingview-widget.com/embed-widget/events/?locale=en#%7B%22colorTheme%22%3A%22dark%22%2C%22isTransparent%22%3Afalse%2C%22locale%22%3A%22en%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22100%25%22%2C%22importanceFilter%22%3A%220%2C1%22%2C%22countryFilter%22%3A%22us%2Ceu%2Cgb%2Cjp%2Ccn%22%7D",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

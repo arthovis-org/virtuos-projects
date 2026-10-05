@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import type { Motion } from '@/catalog/schema';
-import { useMotionStore } from '@/state/motionStore';
+import { motionKey, useMotionStore } from '@/state/motionStore';
 import styles from './MotionControl.module.css';
 
 interface MotionControlProps {
@@ -19,8 +19,11 @@ function decimalsFor(step: number) {
  */
 export function MotionControl({ motion }: MotionControlProps) {
   // Until the viewer has measured the model, a motion without `initial` has no value yet.
-  const current = useMotionStore((state) => state.current[motion.id]);
-  const target = useMotionStore((state) => state.targets[motion.id] ?? current);
+  // The desk the visitor is at (each desk of unlimited desks mode has its own height).
+  const current = useMotionStore((state) => state.current[motionKey(state.deskKey, motion.id)]);
+  const target = useMotionStore(
+    (state) => state.targets[motionKey(state.deskKey, motion.id)] ?? current,
+  );
   const setTarget = useMotionStore((state) => state.setTarget);
   const stop = useMotionStore((state) => state.stop);
 

@@ -1,0 +1,36 @@
+/* Name tag over a desk in the room overview. */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 6px;
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--desk-accent);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: auto;
+  user-select: none;
+  transition:
+    transform var(--duration) var(--ease),
+    background-color var(--duration) var(--ease);
+}
+
+.label:hover {
+  transform: translateY(-2px);
+  background: var(--surface-hover);
+}
+
+.label[data-active] {
+  background: var(--desk-accent);
+  border-color: var(--desk-accent);
+  color: #ffffff;
+}
+
+.icon {
+  font-size: 1rem;
+  line-height: 1;
+}

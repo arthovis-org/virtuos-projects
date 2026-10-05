@@ -1,0 +1,29 @@
+{
+  "label": "Developer",
+  "icon": "💻",
+  "accent": "#8b5cf6",
+  "order": 50,
+  "description": "A live code editor, the docs, an architecture diagram and something to code to.",
+  "windows": [
+    {
+      "title": "Editor",
+      "url": "https://stackblitz.com/edit/typescript?embed=1&file=index.ts&theme=dark",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Docs",
+      "url": "https://devdocs.io/javascript/",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Lo-fi beats",
+      "url": "https://open.spotify.com/embed/playlist/37i9dQZF1DWWQRwui0ExPn?theme=0",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Architecture",
+      "url": "https://embed.diagrams.net/?ui=dark&spin=1&proto=json",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { type Box3, Matrix3, Vector3, type Object3D } from 'three';
 import type { Motion, ProductDefinition } from '@/catalog/schema';
-import { useMotionStore } from '@/state/motionStore';
+import { motionKey, SINGLE_DESK_KEY, useMotionStore } from '@/state/motionStore';
 import {
   authoredPosition,
   collectMeshes,
@@ -159,6 +159,8 @@ export function useMotions(
   index: NodeIndex,
   product: ProductDefinition,
   boundaries: PartBoundaries,
+  /** Desk whose values in the motion store these are (each desk has its own height). */
+  deskKey = SINGLE_DESK_KEY,
 ) {
   const invalidate = useThree((state) => state.invalidate);
   const motions = useMemo(
@@ -199,13 +201,14 @@ export function useMotions(
     current.current = new Map(
       motions.map(({ motion, modelledValue }) => {
         const clamp = (v: number) => Math.min(motion.max, Math.max(motion.min, v));
-        const value = store.current[motion.id] ?? clamp(motion.initial ?? modelledValue);
-        store.start(motion.id, value);
+        const key = motionKey(deskKey, motion.id);
+        const value = store.current[key] ?? clamp(motion.initial ?? modelledValue);
+        store.start(key, value);
         return [motion.id, value];
       }),
     );
     applyPose();
-  }, [motions, applyPose]);
+  }, [motions, applyPose, deskKey]);
 
   // Wake the demand-driven render loop whenever a target changes.
   useEffect(
@@ -226,14 +229,14 @@ export function useMotions(
     for (const { motion, speed } of motions) {
       // Not started yet: the first frame can run before the effect above has set it.
       const value = current.current.get(motion.id);
-      const target = targets[motion.id];
+      const target = targets[motionKey(deskKey, motion.id)];
       if (value === undefined || target === undefined || value === target) continue;
       const next =
         Math.abs(target - value) <= speed * step
           ? target
           : value + Math.sign(target - value) * speed * step;
       current.current.set(motion.id, next);
-      setCurrent(motion.id, next);
+      setCurrent(motionKey(deskKey, motion.id), next);
       changed = true;
     }
     // Posing invalidates, which keeps frames coming until every motion has arrived.

@@ -1,0 +1,60 @@
+/* A screen of a desk the visitor is not at: its workspace, sized like the live screen. */
+.poster {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqmin;
+  box-sizing: border-box;
+  padding: 6cqmin;
+  border: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 90% at 30% 20%,
+      color-mix(in srgb, var(--desk-accent) 55%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(160deg, #141826, #0b0d14);
+  color: #ffffff;
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  text-align: center;
+  container-type: size;
+  cursor: pointer;
+  pointer-events: auto;
+  /* Seen from behind the monitor, a screen shows nothing. */
+  backface-visibility: hidden;
+}
+
+.poster:hover {
+  filter: brightness(1.15);
+}
+
+.icon {
+  font-size: 22cqmin;
+  line-height: 1;
+}
+
+.windows {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3cqmin;
+}
+
+.window {
+  padding: 2cqmin 5cqmin;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 14%);
+  font-size: 8cqmin;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.desk {
+  font-size: 6cqmin;
+  opacity: 0.7;
+}

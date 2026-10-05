@@ -1,14 +1,10 @@
 import { useThree } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import {
-  MeshBasicMaterial,
   MeshPhysicalMaterial,
-  NoBlending,
   Plane,
   Quaternion,
   Raycaster,
-  type Material,
-  type Mesh,
   Vector2,
   Vector3,
   type Object3D,
@@ -17,9 +13,14 @@ import {
 import type { ProductDefinition } from '@/catalog/schema';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import { matrixRelativeTo } from '../nodeUtils';
-import { cssProjection, updateCssProjection } from './cssProjection';
+import {
+  coverScreens,
+  cssProjection,
+  screenHoleMaterial,
+  updateCssProjection,
+} from './cssProjection';
 import { dropTargetAt } from './dropTarget';
-import { screenFrame, screenMeshes, type ScreenFrame } from './screenFrame';
+import { isShown, resolveScreens, screenPixels, type ResolvedScreen } from './resolveScreens';
 import { WorkspaceCamera, type CameraTarget } from './WorkspaceCamera';
 
 interface WorkspaceLayerProps {
@@ -28,29 +29,6 @@ interface WorkspaceLayerProps {
   index: ReadonlyMap<string, Object3D>;
   /** Blender object names hidden by the current configuration (monitors switched off). */
   hiddenNodes: ReadonlySet<string>;
-}
-
-interface ResolvedScreen {
-  screen: ProductDefinition['screens'][number];
-  node: Object3D;
-  frame: ScreenFrame;
-  /** World metres per local unit of the screen mesh. */
-  worldScale: number;
-}
-
-const blenderName = (object: Object3D) =>
-  (object.userData.name as string | undefined) ?? object.name;
-
-/** True unless the node or one of its ancestors is hidden by the configuration. */
-function isShown(node: Object3D, scene: Object3D, hidden: ReadonlySet<string>) {
-  for (
-    let current: Object3D | null = node;
-    current && current !== scene;
-    current = current.parent
-  ) {
-    if (hidden.has(blenderName(current))) return false;
-  }
-  return true;
 }
 
 /**
@@ -69,28 +47,7 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
   const updateDrag = useWorkspaceStore((s) => s.updateDrag);
   const endDrag = useWorkspaceStore((s) => s.endDrag);
 
-  const screens = useMemo(() => {
-    const resolved: ResolvedScreen[] = [];
-    for (const screen of product.screens) {
-      const node = index.get(screen.node);
-      const mesh = node ? screenMeshes(node, product.screenMaterial)[0] : undefined;
-      if (!node || !mesh) {
-        console.warn(
-          `[configurator] screen "${screen.node}" has no "${product.screenMaterial}" mesh`,
-        );
-        continue;
-      }
-      const scale = new Vector3();
-      matrixRelativeTo(mesh, scene).decompose(new Vector3(), new Quaternion(), scale);
-      resolved.push({
-        screen,
-        node,
-        frame: screenFrame(mesh, scene),
-        worldScale: ((scale.x + scale.y + scale.z) / 3) * product.model.scale,
-      });
-    }
-    return resolved;
-  }, [product, index, scene]);
+  const screens = useMemo(() => resolveScreens(product, scene, index), [product, index, scene]);
 
   const visible = useMemo(
     () => screens.filter((s) => isShown(s.node, scene, hiddenNodes)),
@@ -118,18 +75,22 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
 
   // Tell the screen layer which screens are on and how many CSS pixels each one spans.
   useEffect(() => {
-    const ppm = product.pixelsPerMetre;
     setSurfaces(
-      visible.map((s) => ({
-        screen: s.screen,
-        widthPx: Math.round(s.frame.width * s.worldScale * ppm),
-        heightPx: Math.round(s.frame.height * s.worldScale * ppm),
-      })),
+      visible.map((s) => ({ screen: s.screen, ...screenPixels(product, s) })),
       primary?.screen.id,
     );
-  }, [visible, primary, product.pixelsPerMetre, setSurfaces]);
+  }, [visible, primary, product, setSurfaces]);
 
-  const frames = useMemo(() => new Map(visible.map((s) => [s.screen.id, s.frame])), [visible]);
+  // The live screens' frames, for the projection that lays the sites over them.
+  useEffect(() => {
+    if (!active) return;
+    for (const s of visible) cssProjection.frames.set(s.screen.id, s.frame);
+    cssProjection.invalidate?.();
+    return () => {
+      for (const s of visible) cssProjection.frames.delete(s.screen.id);
+    };
+  }, [active, visible]);
+
   useEffect(() => {
     cssProjection.invalidate = invalidate;
     return () => {
@@ -142,12 +103,7 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
   // desk) covers them.
   useEffect(() => {
     const look = active
-      ? new MeshBasicMaterial({
-          color: 0x000000,
-          opacity: 0,
-          transparent: true,
-          blending: NoBlending,
-        })
+      ? screenHoleMaterial()
       : new MeshPhysicalMaterial({
           color: 0x08090b,
           roughness: 0.08,
@@ -155,19 +111,11 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
           clearcoat: 1,
           clearcoatRoughness: 0.04,
         });
-    const originals: [Mesh, Material | Material[]][] = [];
-    for (const { frame } of screens) {
-      const { mesh } = frame;
-      const original = mesh.material;
-      originals.push([mesh, original]);
-      mesh.material = Array.isArray(original)
-        ? original.map((m) => (m.name === product.screenMaterial ? look : m))
-        : look;
-    }
+    const restore = coverScreens(screens, look, product.screenMaterial);
     invalidate();
     return () => {
-      for (const [mesh, original] of originals) mesh.material = original;
-      look.dispose();
+      restore();
+      if (!active) look.dispose();
       invalidate();
     };
   }, [active, screens, product.screenMaterial, invalidate]);
@@ -182,14 +130,14 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
     root.onAfterRender = (renderer, scene, drawn, ...rest) => {
       previous(renderer, scene, drawn, ...rest);
       if (drawn === camera) {
-        updateCssProjection(camera as PerspectiveCamera, size, frames, product.pixelsPerMetre);
+        updateCssProjection(camera as PerspectiveCamera, size, product.pixelsPerMetre);
       }
     };
     invalidate();
     return () => {
       root.onAfterRender = previous;
     };
-  }, [active, root, camera, size, frames, product.pixelsPerMetre, invalidate]);
+  }, [active, root, camera, size, product.pixelsPerMetre, invalidate]);
 
   // Screen positions under the pointer: the drop target of a dragged window, and the point on
   // a screen's plane a divider is dragged to (the plane, so it works past the screen's edge).

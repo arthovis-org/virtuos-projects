@@ -4,6 +4,7 @@
  *   products/<id>/model.glb        required (or model.gltf); used exactly as exported
  *   products/<id>/product.json     optional names, prices, defaults, height range
  *   products/<id>/materials/...    optional finish images
+ *   products/<id>/workspaces/*.json optional workspaces (live websites on the screens)
  *
  * The catalog is served as the virtual module `virtual:catalog`. Model and image URLs
  * are emitted as asset imports, so Vite fingerprints them and resolves the deployment
@@ -109,6 +110,14 @@ export async function loadCatalog(productsDir: string) {
         materialFiles,
         imageFiles: (await listFiles(join(dir, 'images'))).filter((file) =>
           IMAGE_EXTENSIONS.includes(extname(file).toLowerCase()),
+        ),
+        workspaceFiles: await Promise.all(
+          (await listFiles(join(dir, 'workspaces')))
+            .filter((file) => !file.includes('/') && extname(file).toLowerCase() === '.json')
+            .map(async (name) => ({
+              name,
+              text: await readFile(join(dir, 'workspaces', name), 'utf8'),
+            })),
         ),
       });
       derived.issues.push(...(await textureWeight(join(dir, 'materials'), materialFiles)));

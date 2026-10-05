@@ -96,6 +96,37 @@ const choiceConfig = z.strictObject({
   price: z.number().optional(),
 });
 
+/**
+ * A workspace: live websites on the screens. In product.json under `workspaces.<id>`, or one
+ * file per workspace in `workspaces/<id>.json`.
+ */
+const workspaceConfigSchema = z.strictObject({
+  label: z.string().optional(),
+  description: z.string().optional(),
+  /** A short symbol for the desk switcher, e.g. an emoji. */
+  icon: z.string().max(8).optional(),
+  /** Theme colour of the workspace's desk, `#rrggbb`. */
+  accent: z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i, 'expected a colour like "#2962ff"')
+    .optional(),
+  /** Position in workspace lists; lower comes first. product.json workspaces come first. */
+  order: z.number().optional(),
+  windows: z
+    .array(
+      z.strictObject({
+        title: z.string().min(1),
+        /** `{host}` is replaced by the page's host name (Twitch embeds need it). */
+        url: z.url({ protocol: /^https$/, error: 'expected an https:// URL' }),
+        /** Monitor object name from Blender, e.g. "MainMonitor" or "MonitorLeft". */
+        screen: z.string().min(1),
+      }),
+    )
+    .min(1, 'a workspace needs at least one window'),
+});
+
+type WorkspaceConfig = z.output<typeof workspaceConfigSchema>;
+
 const configSchema = z.strictObject({
   name: z.string().optional(),
   description: z.string().optional(),
@@ -232,25 +263,7 @@ const configSchema = z.strictObject({
     })
     .optional(),
   /** Live websites on the screens, keyed by workspace id: "office": { windows: [...] }. */
-  workspaces: z
-    .record(
-      z.string(),
-      z.strictObject({
-        label: z.string().optional(),
-        description: z.string().optional(),
-        windows: z
-          .array(
-            z.strictObject({
-              title: z.string().min(1),
-              url: z.url({ protocol: /^https$/, error: 'expected an https:// URL' }),
-              /** Monitor object name from Blender, e.g. "MainMonitor" or "MonitorLeft". */
-              screen: z.string().min(1),
-            }),
-          )
-          .min(1, 'a workspace needs at least one window'),
-      }),
-    )
-    .optional(),
+  workspaces: z.record(z.string(), workspaceConfigSchema).optional(),
 });
 
 type ProductConfig = z.output<typeof configSchema>;
@@ -356,6 +369,8 @@ export interface ProductFolder {
   materialFiles: string[];
   /** Image files under `images/`, relative to it: `logo.png`. */
   imageFiles: string[];
+  /** Files in `workspaces/`: one workspace each, its id the file name. */
+  workspaceFiles?: { name: string; text: string }[];
 }
 
 export interface DerivedProduct {
@@ -757,13 +772,47 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
     screens.find((screen) => normalize(screen.node) === normalize(name)) ??
     screens.find((screen) => normalize(untagged(screen.node)) === normalize(name));
 
+  // product.json workspaces in their order, then the workspace files by `order` and name.
+  const workspaceConfigs: [string, WorkspaceConfig][] = Object.entries(config.workspaces ?? {});
+  const fileWorkspaces: [string, WorkspaceConfig][] = [];
+  for (const file of folder.workspaceFiles ?? []) {
+    const key = file.name.replace(/\.json$/i, '');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(file.text);
+    } catch (error) {
+      issues.push(`workspaces/${file.name} is not valid JSON: ${(error as Error).message}`);
+      continue;
+    }
+    const result = workspaceConfigSchema.safeParse(parsed);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        issues.push(
+          `workspaces/${file.name}: ${issue.path.join('.') || '(root)'}: ${issue.message}`,
+        );
+      }
+      continue;
+    }
+    if (workspaceConfigs.some(([k]) => toId(k) === toId(key))) {
+      issues.push(`workspaces/${file.name}: product.json already has a workspace "${key}"`);
+      continue;
+    }
+    fileWorkspaces.push([key, result.data]);
+  }
+  fileWorkspaces.sort(
+    ([a, x], [b, y]) => (x.order ?? 100) - (y.order ?? 100) || a.localeCompare(b),
+  );
+  workspaceConfigs.push(...fileWorkspaces);
+
   const workspaces: {
     id: string;
     label: string;
     description?: string;
+    icon?: string;
+    accent?: string;
     windows: { id: string; title: string; url: string; screen: string }[];
   }[] = [];
-  for (const [key, workspace] of Object.entries(config.workspaces ?? {})) {
+  for (const [key, workspace] of workspaceConfigs) {
     if (screens.length === 0) {
       issues.push(
         `product.json: workspaces.${key} needs screens, but no mesh uses the material "${screenMaterial}"`,
@@ -788,6 +837,8 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
         id: toId(key),
         label: workspace.label ?? humanize(key),
         ...(workspace.description && { description: workspace.description }),
+        ...(workspace.icon && { icon: workspace.icon }),
+        ...(workspace.accent && { accent: workspace.accent }),
         windows,
       });
     }

@@ -82,8 +82,25 @@ export type ScreenPicker = (
   windowId: string,
 ) => DropTarget | null;
 
+/** One desk's windows, kept while the visitor is at another desk. */
+export interface DeskWindows {
+  workspaceId: string | null;
+  placement: Readonly<Record<string, string>>;
+  order: readonly string[];
+  closed: readonly string[];
+  opened: readonly WorkspaceWindow[];
+  sizes: Readonly<Record<string, ScreenSizes>>;
+}
+
+/** The desk of the single-desk configurator; unlimited desks mode adds others. */
+export const SINGLE_DESK = 'single';
+
 interface WorkspaceState {
   productId: string | null;
+  /** Desk whose windows are on show (the other desks' are in `saved`). */
+  deskId: string;
+  /** Windows of the desks the visitor is not at, by desk id. */
+  saved: Readonly<Record<string, DeskWindows>>;
   /** The workspace is on: the sites are live on the screens. */
   active: boolean;
   /** The camera sits in front of the screens with orbiting off; otherwise it moves freely. */
@@ -114,6 +131,8 @@ interface WorkspaceState {
   primaryScreen: string | undefined;
   /** Height at the top of the viewer covered by the workspace toolbar, in CSS pixels. */
   hudInset: number;
+  /** Height at the bottom of the viewer covered by the desk switcher, in CSS pixels. */
+  hudInsetBottom: number;
 
   resetFor: (product: ProductDefinition) => void;
   /** Turns the workspace on and takes the seat in front of the screens. */
@@ -137,6 +156,17 @@ interface WorkspaceState {
   setLocator: (locator: ScreenLocator | null) => void;
   setSurfaces: (surfaces: readonly ScreenSurfaceInfo[], primaryScreen: string | undefined) => void;
   setHudInset: (inset: number) => void;
+  setHudInsetBottom: (inset: number) => void;
+  /**
+   * Moves to a desk: keeps the current desk's windows, brings back the new desk's (or its
+   * workspace's own when it has none or changed workspace), and turns the sites on, seated
+   * or looking around.
+   */
+  showDesk: (deskId: string, workspaceId: string, seat: boolean) => void;
+  /** Forgets a desk's windows (the desk was removed or given another workspace). */
+  forgetDesk: (deskId: string) => void;
+  /** Back to the single desk, with the windows it had, and the sites off. */
+  leaveDesks: () => void;
   startDrag: (window: WorkspaceWindow, fromScreen: string, x: number, y: number) => void;
   updateDrag: (x: number, y: number) => void;
   /** Ends a drag, placing the window as its drop target says. */
@@ -174,6 +204,11 @@ export function openWindows(
   return [...(workspace?.windows ?? []).filter((w) => !closed.includes(w.id)), ...opened];
 }
 
+function snapshot(state: WorkspaceState): DeskWindows {
+  const { workspaceId, placement, order, closed, opened, sizes } = state;
+  return { workspaceId, placement, order, closed, opened, sizes };
+}
+
 let openedCount = 0;
 
 /** Placement and order after dropping `drag` on its target. */
@@ -199,6 +234,8 @@ function dropped(
 
 export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   productId: null,
+  deskId: SINGLE_DESK,
+  saved: {},
   active: false,
   seated: false,
   cameraFree: true,
@@ -215,12 +252,15 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   surfaces: [],
   primaryScreen: undefined,
   hudInset: 0,
+  hudInsetBottom: 0,
 
   resetFor: (product) => {
     if (get().productId === product.id) return;
     const workspace = product.workspaces[0];
     set({
       productId: product.id,
+      deskId: SINGLE_DESK,
+      saved: {},
       active: false,
       seated: false,
       cameraFree: true,
@@ -295,6 +335,46 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   setLocator: (locateOnScreen) => set({ locateOnScreen }),
   setSurfaces: (surfaces, primaryScreen) => set({ surfaces, primaryScreen }),
   setHudInset: (hudInset) => set({ hudInset }),
+  setHudInsetBottom: (hudInsetBottom) => set({ hudInsetBottom }),
+
+  showDesk: (deskId, workspaceId, seat) => {
+    const state = get();
+    const workspace = workspaceById(currentProduct(state), workspaceId);
+    if (!workspace) return;
+    const saved = { ...state.saved, [state.deskId]: snapshot(state) };
+    const kept = deskId === state.deskId ? snapshot(state) : saved[deskId];
+    const windows = kept?.workspaceId === workspace.id ? { ...kept } : initialWindows(workspace);
+    set({
+      saved,
+      deskId,
+      ...windows,
+      workspaceId: workspace.id,
+      active: true,
+      focus: null,
+      drag: null,
+      ...(seat ? { seated: true, cameraFree: false } : { seated: false }),
+    });
+  },
+
+  forgetDesk: (deskId) =>
+    set((state) => ({
+      saved: Object.fromEntries(Object.entries(state.saved).filter(([id]) => id !== deskId)),
+    })),
+
+  leaveDesks: () => {
+    const state = get();
+    const single = state.deskId === SINGLE_DESK ? snapshot(state) : state.saved[SINGLE_DESK];
+    const workspace = workspaceById(currentProduct(state), single?.workspaceId ?? null);
+    set({
+      deskId: SINGLE_DESK,
+      saved: {},
+      ...(single ?? { workspaceId: workspace?.id ?? null, ...initialWindows(workspace) }),
+      active: false,
+      seated: false,
+      focus: null,
+      drag: null,
+    });
+  },
 
   startDrag: (window, fromScreen, x, y) =>
     set({ drag: { windowId: window.id, title: window.title, fromScreen, x, y, over: null } }),

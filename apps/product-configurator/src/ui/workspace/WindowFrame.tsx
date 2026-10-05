@@ -1,6 +1,7 @@
 import { useState, type PointerEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { useWorkspaceStore } from '@/state/workspaceStore';
+import { siteUrl } from './siteUrl';
 import styles from './WindowFrame.module.css';
 
 interface WindowFrameProps {
@@ -29,7 +30,8 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const closeWindow = useWorkspaceStore((s) => s.closeWindow);
   const focused = useWorkspaceStore((s) => s.focus === screenId);
   const [iconFailed, setIconFailed] = useState(false);
-  const host = new URL(win.url).host;
+  const url = siteUrl(win.url);
+  const host = new URL(url).host;
 
   // Only starts the drag; the move and release are followed on the whole window (see
   // WorkspaceLayer), which keeps working even where pointer capture is unavailable.
@@ -83,7 +85,7 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
           </button>
           <a
             className={`${styles.button} ${styles.external}`}
-            href={win.url}
+            href={url}
             target="_blank"
             rel="noreferrer"
             aria-label={`Open ${win.title} in a new tab`}
@@ -104,7 +106,7 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
       </div>
       <iframe
         className={styles.frame}
-        src={win.url}
+        src={url}
         title={win.title}
         sandbox={SANDBOX}
         allow="fullscreen; clipboard-read; clipboard-write"

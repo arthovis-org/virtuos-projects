@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { useProduct } from '@/state/configuratorStore';
+import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
+import { DeskSwitcher } from './DeskSwitcher';
 import styles from './WorkspaceHud.module.css';
 
+/** More workspaces than this are picked from a menu instead of tabs. */
+const MAX_TABS = 4;
+
 /**
- * The workspace demo's own controls, over the viewer: a card to start it, then a toolbar
- * while it runs (switch workspace, seated view or looking around, reset, close) and the
- * label that follows the pointer while a window is dragged between screens.
+ * The workspace demo's own controls, over the viewer: a card to start it (one desk, or the
+ * room of unlimited desks), then a toolbar while it runs (switch workspace, seated view or
+ * looking around, reset, close) and the label that follows the pointer while a window is
+ * dragged between screens. In the room, the desk switcher runs along the bottom.
  */
 export function WorkspaceHud() {
   const product = useProduct();
@@ -24,6 +30,12 @@ export function WorkspaceHud() {
   const resetWindows = useWorkspaceStore((s) => s.resetWindows);
   const setFocus = useWorkspaceStore((s) => s.setFocus);
   const setHudInset = useWorkspaceStore((s) => s.setHudInset);
+  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const desks = useDesksStore((s) => s.desks);
+  const desk = useDesksStore(activeDesk);
+  const enterDesks = useDesksStore((s) => s.enterDesks);
+  const exitDesks = useDesksStore((s) => s.exitDesks);
+  const setDeskWorkspace = useDesksStore((s) => s.setDeskWorkspace);
   const top = useRef<HTMLDivElement>(null);
 
   // The camera keeps the screens below the toolbar, however tall it wraps.
@@ -39,10 +51,11 @@ export function WorkspaceHud() {
   if (product.workspaces.length === 0) return null;
 
   const workspace = workspaceById(product, workspaceId);
+  const [first, ...others] = product.workspaces;
 
   if (!active) {
     // Hidden while the camera flies back from a workspace.
-    if (!cameraFree) return null;
+    if (!cameraFree || !first) return null;
     return (
       <section className={styles.card} aria-labelledby="workspace-demo">
         <span className={styles.eyebrow}>Live demo</span>
@@ -50,24 +63,46 @@ export function WorkspaceHud() {
           Work on these screens
         </h2>
         <p className={styles.description}>
-          {product.workspaces.length === 1 && workspace?.description
-            ? workspace.description
+          {product.workspaces.length === 1 && first.description
+            ? first.description
             : 'Real websites on every monitor. Use them, and drag windows between screens.'}
         </p>
         <div className={styles.actions}>
-          {product.workspaces.map((w) => (
-            <button
-              key={w.id}
-              type="button"
-              className={`${styles.button} ${styles.primary}`}
-              onClick={() => enter(w.id)}
-            >
-              {product.workspaces.length === 1
-                ? `Try the ${w.label.toLowerCase()} workspace`
-                : w.label}
-            </button>
-          ))}
+          <button
+            type="button"
+            className={`${styles.button} ${styles.primary}`}
+            onClick={() => enter(first.id)}
+          >
+            Try the {first.label.toLowerCase()} workspace
+          </button>
         </div>
+        {others.length > 0 && (
+          <div className={styles.chips} aria-label="More workspaces">
+            {others.map((w) => (
+              <button
+                key={w.id}
+                type="button"
+                className={styles.chip}
+                onClick={() => enter(w.id)}
+                title={w.description}
+              >
+                {w.icon && <span aria-hidden="true">{w.icon}</span>} {w.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {others.length > 0 && (
+          <div className={styles.more}>
+            <h3 className={styles.moreTitle}>Unlimited desks</h3>
+            <p className={styles.description}>
+              A desk for every kind of work, each with its own setup and screens. Add as many as you
+              like.
+            </p>
+            <button type="button" className={styles.button} onClick={enterDesks}>
+              Try unlimited desks →
+            </button>
+          </div>
+        )}
       </section>
     );
   }
@@ -75,11 +110,38 @@ export function WorkspaceHud() {
   const target = drag?.over ? product.screens.find((s) => s.id === drag.over?.screen) : undefined;
   const action = drag?.over?.action;
 
+  const workspacePicker = (onPick: (id: string) => void, label: string) => (
+    <select
+      className={styles.select}
+      value={workspace?.id ?? ''}
+      aria-label={label}
+      onChange={(event) => onPick(event.target.value)}
+    >
+      {product.workspaces.map((w) => (
+        <option key={w.id} value={w.id}>
+          {w.icon ? `${w.icon} ${w.label}` : w.label}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
     <>
       <div ref={top} className={styles.top}>
         <div className={styles.bar} role="toolbar" aria-label="Workspace">
-          {product.workspaces.length > 1 ? (
+          {desksMode && desk ? (
+            <>
+              <span className={styles.name}>
+                Desk {desks.indexOf(desk) + 1} · {deskName(product, desks, desk)}
+              </span>
+              {workspacePicker((id) => setDeskWorkspace(desk.id, id), 'Workspace of this desk')}
+            </>
+          ) : product.workspaces.length > MAX_TABS ? (
+            <>
+              <span className={styles.name}>Workspace</span>
+              {workspacePicker(select, 'Workspace')}
+            </>
+          ) : product.workspaces.length > 1 ? (
             <div className={styles.tabs} role="radiogroup" aria-label="Workspace">
               {product.workspaces.map((w) => (
                 <button
@@ -114,17 +176,22 @@ export function WorkspaceHud() {
               className={styles.tab}
               onClick={standUp}
             >
-              Look around
+              {desksMode ? 'All desks' : 'Look around'}
             </button>
           </div>
           <button type="button" className={styles.button} onClick={resetWindows}>
             Reset windows
           </button>
-          <button type="button" className={`${styles.button} ${styles.primary}`} onClick={close}>
-            Close
+          <button
+            type="button"
+            className={`${styles.button} ${styles.primary}`}
+            onClick={desksMode ? exitDesks : close}
+          >
+            {desksMode ? 'Back to one desk' : 'Close'}
           </button>
         </div>
       </div>
+      {desksMode && <DeskSwitcher />}
       {drag && (
         <div className={styles.ghost} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
           {drag.title}

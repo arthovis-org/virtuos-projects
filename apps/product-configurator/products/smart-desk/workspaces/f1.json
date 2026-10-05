@@ -1,0 +1,29 @@
+{
+  "label": "Formula 1",
+  "icon": "🏎️",
+  "accent": "#e10600",
+  "order": 80,
+  "description": "F1 highlights, the championship, the Monza circuit and a strategy board.",
+  "windows": [
+    {
+      "title": "F1 highlights",
+      "url": "https://www.youtube-nocookie.com/embed/videoseries?list=UUB_qr75-ydFVKSF9Dmo6izg",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Championship",
+      "url": "https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Monza",
+      "url": "https://www.openstreetmap.org/export/embed.html?bbox=9.270,45.606,9.300,45.636&layer=mapnik",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Strategy",
+      "url": "https://excalidraw.com/",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

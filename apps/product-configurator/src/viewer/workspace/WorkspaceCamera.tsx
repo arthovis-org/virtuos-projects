@@ -95,13 +95,15 @@ function tilted(back: Vector3, tilt: number): Vector3 {
 
 /**
  * A pose looking along -`back` that fits all corners, like sitting in front of the desk, in
- * the part of the view below the top `inset` (a share of its height, kept for the toolbar).
+ * the part of the view between the top `inset` and the bottom `insetBottom` (shares of its
+ * height, kept for the toolbar and the desk switcher).
  */
 function fitPose(
   corners: Vector3[],
   back: Vector3,
   camera: PerspectiveCamera,
   inset: number,
+  insetBottom = 0,
 ): Pose {
   const centre = corners
     .reduce((sum, c) => sum.add(c), new Vector3())
@@ -116,8 +118,9 @@ function fitPose(
   });
   const tanV = Math.tan((camera.fov * Math.PI) / 360) / MARGIN;
   const tanH = tanV * camera.aspect;
-  // Top of the free part of the view, in normalised device coordinates.
+  // Top and bottom of the free part of the view, in normalised device coordinates.
   const top = 1 - 2 * inset;
+  const bottom = 1 - 2 * insetBottom;
 
   // With the camera `d` back from the centre, the sideways and upward shifts that keep every
   // corner in view form an interval each (nearer corners appear larger, so they constrain
@@ -133,7 +136,7 @@ function fitPose(
       xMin = Math.max(xMin, p.x - z * tanH);
       xMax = Math.min(xMax, p.x + z * tanH);
       yMin = Math.max(yMin, p.y - z * tanV * top);
-      yMax = Math.min(yMax, p.y + z * tanV);
+      yMax = Math.min(yMax, p.y + z * tanV * bottom);
     }
     return xMin <= xMax && yMin <= yMax ? { x: (xMin + xMax) / 2, y: (yMin + yMax) / 2 } : null;
   };
@@ -199,6 +202,7 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   const invalidate = useThree((s) => s.invalidate);
   const seated = useWorkspaceStore((s) => s.seated);
   const hudInset = useWorkspaceStore((s) => s.hudInset);
+  const hudInsetBottom = useWorkspaceStore((s) => s.hudInsetBottom);
   const focus = useWorkspaceStore((s) => s.focus);
   const setCameraFree = useWorkspaceStore((s) => s.setCameraFree);
 
@@ -206,6 +210,8 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   const move = useRef<Move | null>(null);
   /** Where the screen the camera faces was last frame, to follow it up and down. */
   const anchor = useRef<Vector3 | null>(null);
+  /** The screen `anchor` belongs to: moving to another desk is not the desk moving. */
+  const anchorScreen = useRef<object | null>(null);
   /** How much the camera still has to move to catch up with the desk. */
   const behind = useRef(new Vector3());
 
@@ -251,7 +257,8 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     }
     const corners = (focused ? [focused] : screens).flatMap(worldCorners);
     const inset = Math.min(0.3, hudInset / Math.max(1, size.height));
-    move.current = planMove(current(), fitPose(corners, back, camera, inset));
+    const insetBottom = Math.min(0.25, hudInsetBottom / Math.max(1, size.height));
+    move.current = planMove(current(), fitPose(corners, back, camera, inset, insetBottom));
     invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -263,6 +270,7 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     size.width,
     size.height,
     hudInset,
+    hudInsetBottom,
     camera,
     invalidate,
   ]);
@@ -290,8 +298,11 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     const followed = screens.find((s) => s.id === (focus ?? primaryId)) ?? screens[0];
     if (seated && followed) {
       const now = worldCentre(followed);
-      if (anchor.current) behind.current.add(now.clone().sub(anchor.current));
+      if (anchor.current && anchorScreen.current === followed.frame.mesh) {
+        behind.current.add(now.clone().sub(anchor.current));
+      }
       anchor.current = now;
+      anchorScreen.current = followed.frame.mesh;
       const lag = behind.current;
       if (m) {
         // Mid-move the pose is recomputed every frame, so shift both ends at once.

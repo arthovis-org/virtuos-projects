@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { useConfiguratorStore } from '@/state/configuratorStore';
+import { syncAddressBar } from '@/state/shareLink';
 import { ConfiguratorPanel } from '@/ui/ConfiguratorPanel';
 import { Header } from '@/ui/Header';
 import styles from './App.module.css';
@@ -8,17 +8,9 @@ import styles from './App.module.css';
 const Scene = lazy(() => import('@/viewer/Scene').then((module) => ({ default: module.Scene })));
 
 export function App() {
-  const serialize = useConfiguratorStore((state) => state.serialize);
-
-  // The store starts from `?product=…&c=…`; keep the address bar in sync so the
-  // current URL is always shareable.
-  useEffect(
-    () =>
-      useConfiguratorStore.subscribe(() => {
-        window.history.replaceState(null, '', `${window.location.pathname}${serialize()}`);
-      }),
-    [serialize],
-  );
+  // The stores start from `?product=…&c=…` (or `&desks=…`); keep the address bar in sync so
+  // the current URL is always shareable.
+  useEffect(() => syncAddressBar(), []);
 
   return (
     <div className={styles.app}>

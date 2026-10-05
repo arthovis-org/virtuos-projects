@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useProduct } from '@/state/configuratorStore';
+import { usePosterStore } from '@/state/posterStore';
 import {
   layoutWindows,
   openWindows,
@@ -7,13 +8,14 @@ import {
   workspaceById,
 } from '@/state/workspaceStore';
 import { cssProjection } from './cssProjection';
+import { PosterSurface } from './PosterSurface';
 import styles from './ScreenLayer.module.css';
 import { ScreenSurface } from './ScreenSurface';
 
 /**
  * The websites of workspace mode, in a DOM layer over the canvas. The viewer publishes which
  * screens are on and positions each surface every frame; nothing is mounted (or loaded) until
- * a visitor enters the mode.
+ * a visitor enters the mode. In unlimited desks mode the other desks' screens show posters.
  */
 export function ScreenLayer() {
   const product = useProduct();
@@ -25,6 +27,7 @@ export function ScreenLayer() {
   const opened = useWorkspaceStore((s) => s.opened);
   const surfaces = useWorkspaceStore((s) => s.surfaces);
   const primaryScreen = useWorkspaceStore((s) => s.primaryScreen);
+  const posters = usePosterStore((s) => s.posters);
   const camera = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -61,6 +64,11 @@ export function ScreenLayer() {
             closed={closedWindows}
           />
         ))}
+        {Object.values(posters)
+          .flat()
+          .map((poster) => (
+            <PosterSurface key={poster.id} poster={poster} />
+          ))}
       </div>
     </div>
   );

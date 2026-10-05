@@ -1,0 +1,29 @@
+{
+  "label": "NBA",
+  "icon": "🏀",
+  "accent": "#c9082a",
+  "order": 30,
+  "description": "The latest NBA highlights, the season, team rosters and a playbook to draw on.",
+  "windows": [
+    {
+      "title": "NBA highlights",
+      "url": "https://www.youtube-nocookie.com/embed/videoseries?list=UUWJ2lWNubArHWmf3FIHbfcQ",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Season",
+      "url": "https://en.wikipedia.org/wiki/2026%E2%80%9327_NBA_season",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Rosters",
+      "url": "https://en.wikipedia.org/wiki/List_of_current_NBA_team_rosters",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Playbook",
+      "url": "https://www.tldraw.com/",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

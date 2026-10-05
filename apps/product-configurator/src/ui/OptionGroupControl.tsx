@@ -8,11 +8,19 @@ interface OptionGroupControlProps {
   group: OptionGroup;
   selectedOptionId: string;
   onSelect: (optionId: string) => void;
+  /** Leaves prices out (the virtual desks of unlimited desks mode). */
+  hidePrices?: boolean;
 }
 
 /** Picks the right input for an option group's type. */
-export function OptionGroupControl({ group, selectedOptionId, onSelect }: OptionGroupControlProps) {
+export function OptionGroupControl({
+  group,
+  selectedOptionId,
+  onSelect,
+  hidePrices = false,
+}: OptionGroupControlProps) {
   const format = usePriceFormat();
+  const hint = (delta: number) => (hidePrices ? '' : format.delta(delta));
 
   switch (group.type) {
     case 'material':
@@ -29,7 +37,7 @@ export function OptionGroupControl({ group, selectedOptionId, onSelect }: Option
           items={group.options.map((option) => ({
             id: option.id,
             label: option.label,
-            hint: format.delta(option.priceDelta),
+            hint: hint(option.priceDelta),
           }))}
           selectedId={selectedOptionId}
           onSelect={onSelect}
@@ -44,7 +52,7 @@ export function OptionGroupControl({ group, selectedOptionId, onSelect }: Option
         <Switch
           label={group.label}
           checked={selectedOptionId === on.id}
-          hint={format.delta(on.priceDelta - off.priceDelta)}
+          hint={hint(on.priceDelta - off.priceDelta)}
           onChange={(checked) => onSelect(checked ? on.id : off.id)}
         />
       );

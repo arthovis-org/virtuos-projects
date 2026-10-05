@@ -124,3 +124,42 @@
 .currency:hover {
   background: var(--surface-hover);
 }
+
+/* One desk or the room of desks. */
+.modes {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+}
+
+.mode {
+  padding: 0.4375rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-muted);
+  transition:
+    background-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
+}
+
+.mode[aria-checked='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+@media (max-width: 640px) {
+  .header {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+  }
+}

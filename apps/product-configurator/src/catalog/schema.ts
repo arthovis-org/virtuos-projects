@@ -209,6 +209,10 @@ export const workspaceSchema = z.object({
   id: identifier,
   label: z.string().min(1),
   description: z.string().optional(),
+  /** A short symbol for the desk switcher, e.g. an emoji. */
+  icon: z.string().optional(),
+  /** Theme colour of the workspace's desk, `#rrggbb`. */
+  accent: z.string().optional(),
   windows: z.array(workspaceWindowSchema).min(1),
 });
 

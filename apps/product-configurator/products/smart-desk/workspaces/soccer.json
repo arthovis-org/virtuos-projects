@@ -1,0 +1,29 @@
+{
+  "label": "Soccer",
+  "icon": "⚽",
+  "accent": "#00a651",
+  "order": 40,
+  "description": "Premier League highlights, the league and the Champions League, and a tactics board.",
+  "windows": [
+    {
+      "title": "Premier League highlights",
+      "url": "https://www.youtube-nocookie.com/embed/videoseries?list=UUG5qGWdu8nIRZqJ_GgDwQ-w",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Premier League",
+      "url": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Champions League",
+      "url": "https://en.wikipedia.org/wiki/2026%E2%80%9327_UEFA_Champions_League",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Tactics board",
+      "url": "https://excalidraw.com/",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

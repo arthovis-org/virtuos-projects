@@ -175,17 +175,62 @@ toggle; windows on a switched-off screen move to the main screen until it's back
   the desk, so it can be read; `0` looks straight at the main screen. The seated camera follows
   the desk as its height changes, a little behind it so the movement can be seen.
 
+**Workspace files.** Workspaces can also live in `workspaces/<id>.json`, one per file, which keeps
+`product.json` short when there are many. They come after the `product.json` workspaces, by
+`order` and then by name. The first workspace overall is the one the demo card offers first.
+
+```json
+{
+  "label": "Crypto",
+  "icon": "💰",
+  "accent": "#f7931a",
+  "order": 20,
+  "description": "Bitcoin live, the crypto screener, market news and the coin heatmap.",
+  "windows": [
+    {
+      "title": "BTC / USDT",
+      "url": "https://s.tradingview.com/widgetembed/?symbol=BINANCE%3ABTCUSDT",
+      "screen": "MainMonitor"
+    }
+  ]
+}
+```
+
+- `icon` (an emoji or a short symbol) and `accent` (`#rrggbb`) mark the workspace in the desk
+  switcher, on desk name tags and on the posters of unlimited desks mode. Both also work in
+  `product.json`. Prefer emoji that older systems have: 🪙, for one, is missing on Windows 10.
+- `{host}` in a `url` becomes the page's host name. Twitch embeds need it:
+  `https://player.twitch.tv/?channel=monstercat&parent={host}`.
+
+### Unlimited desks
+
+With more than one workspace, the demo card and the header offer **Unlimited desks**: a room of
+desks, each a copy of the model with its own workspace and its own configuration, to show what
+having a desk for every kind of work is like. The room starts with the visitor's desk and the
+`finance`, `crypto`, `nba` and `soccer` workspaces, where they exist (`STARTER_DESKS` in
+`src/state/desksStore.ts`). Visitors add desks with any workspace, remove them, switch with the
+switcher, the name tags or Ctrl + ← / →, and change a desk's workspace from the toolbar.
+
+Only the desk the visitor is at runs live sites; the screens of the others show a poster of
+their workspace, so the room stays light however many desks it has (up to `MAX_DESKS`, 36).
+Desks are never priced. Each desk has its own height; the height control moves the desk the
+visitor is at. The room is part of the link:
+`?product=smart-desk&desks=finance,crypto~toggle-side-monitors:without&desk=2` lists each
+desk's workspace and the options that differ from the defaults; `desk` is the one the visitor is
+at, counted from 1.
+
 ### Which sites can be shown
 
 Sites decide themselves whether other pages may show them. These work (checked when this was
 written):
 
-| Works                                                                                                                                                                                                                                                                                                                     | Doesn't (refuses to be embedded)                                                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Google Calendar **embed** links (Settings → Integrate calendar), Wikipedia, StackEdit, Excalidraw, tldraw, draw.io (`embed.diagrams.net`), YouTube **embed** links (`youtube-nocookie.com/embed/…`), Jitsi Meet, OpenStreetMap embed, Desmos, Photopea, Spotify embed, Google Docs/Sheets/Slides **published to the web** | Gmail, Outlook, Notion, Office 365, BBC, Hacker News, CodePen, most banking and social sites |
+| Works                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Doesn't (refuses to be embedded)                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Google Calendar **embed** links (Settings → Integrate calendar), Wikipedia, Wikivoyage, StackEdit, Excalidraw, tldraw, draw.io (`embed.diagrams.net`), YouTube **embed** links (`youtube-nocookie.com/embed/…`, also `videoseries?list=UU…` for a channel's latest uploads), Jitsi Meet, OpenStreetMap embed, Desmos, Photopea, Coolors, Spotify embed, Google Docs/Sheets/Slides **published to the web**, TradingView widgets (`s.tradingview.com/widgetembed/…`, `tradingview-widget.com/embed-widget/<widget>/#<settings>`), Twitch player and chat (with `parent={host}`), StackBlitz embeds of classic templates (`stackblitz.com/edit/typescript?embed=1`), DevDocs, Windy (`embed.windy.com`), ADS-B Exchange, NASA Eyes, Stellarium Web, wheretheiss.at | Gmail, Outlook, Notion, Office 365, BBC, Hacker News, CodePen, regex101, CoinGecko, mempool.space, Flightradar24, Liquipedia, most banking and social sites |
 
 For a real spreadsheet, use Google Sheets → File → Share → **Publish to web** → _Embed_ and paste
-the link. A site that stays blank has refused; every window has an **Open in new tab** button
+the link. Some sites load but don't work inside another page: the Lo-fi Girl YouTube live stream
+says "Video unavailable", and StackBlitz's Vite templates need more than an embed allows. A site that stays blank has refused; every window has an **Open in new tab** button
 (↗) for that case. Only `https://` links are accepted.
 
 ## product.json

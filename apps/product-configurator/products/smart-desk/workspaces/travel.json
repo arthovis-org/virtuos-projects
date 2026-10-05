@@ -1,0 +1,29 @@
+{
+  "label": "Travel",
+  "icon": "✈️",
+  "accent": "#0ea5e9",
+  "order": 90,
+  "description": "Live flights, the weather, a map and travel guides for planning a trip.",
+  "windows": [
+    {
+      "title": "Live flights",
+      "url": "https://globe.adsbexchange.com/?lat=48&lon=8&zoom=5",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Weather",
+      "url": "https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=4&overlay=wind&product=ecmwf&level=surface&lat=48&lon=8",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Travel guides",
+      "url": "https://en.wikivoyage.org/wiki/Main_Page",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Map",
+      "url": "https://www.openstreetmap.org/export/embed.html?bbox=-10,35,30,60&layer=mapnik",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "label": "Space",
+  "icon": "🚀",
+  "accent": "#6366f1",
+  "order": 100,
+  "description": "NASA's solar system, tonight's sky, where the ISS is and the Artemis missions.",
+  "windows": [
+    {
+      "title": "Solar system",
+      "url": "https://eyes.nasa.gov/apps/solar-system/",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Artemis",
+      "url": "https://en.wikipedia.org/wiki/Artemis_program",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "ISS tracker",
+      "url": "https://wheretheiss.at/",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Night sky",
+      "url": "https://stellarium-web.org/",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

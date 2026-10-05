@@ -1,23 +1,143 @@
 import { useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo } from 'react';
 import { Vector3, type Object3D } from 'three';
-import { useProduct, useResolvedConfiguration } from '@/state/configuratorStore';
+import type { ProductDefinition } from '@/catalog/schema';
+import { useProduct, useSelections } from '@/state/configuratorStore';
+import { resolveConfiguration, type Selections } from '@/state/derive';
+import { activeDesk, deskName, useDesksStore, type Desk } from '@/state/desksStore';
 import { useModelIssuesStore } from '@/state/modelIssuesStore';
+import { SINGLE_DESK_KEY } from '@/state/motionStore';
+import { useWorkspaceStore } from '@/state/workspaceStore';
 import { Decals } from './Decals';
+import { DeskLabel } from './DeskLabel';
+import { deskGrid } from './deskLayout';
 import { MaterialAppearance } from './MaterialAppearance';
-import { useModel } from './models';
+import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskModel } from './models';
 import { motionEnvelope, useMotions } from './motion';
-import { indexNodes, modelBounds, ownMeshes } from './nodeUtils';
+import { modelBounds, ownMeshes } from './nodeUtils';
+import { DeskPosters } from './workspace/DeskPosters';
 import { WorkspaceLayer } from './workspace/WorkspaceLayer';
 
-/** Loads the product glTF and applies the resolved configuration to it. */
+const ORIGIN: [number, number, number] = [0, 0, 0];
+/** Space between the top of a desk and its name tag, in metres. */
+const LABEL_LIFT = 0.22;
+
+/**
+ * Loads the product glTF and shows it as configured: one desk, or in unlimited desks mode a
+ * room of desks, each a copy of the model with its own configuration. The workspace (live
+ * sites, seated camera) belongs to the desk the visitor is at.
+ */
 export function ProductModel() {
   const product = useProduct();
   const { scene } = useModel(product.model.src);
-  const config = useResolvedConfiguration();
+  // Before anything below changes the scene: desks are copied from the model as exported.
+  rememberPristine(scene);
+  const selections = useSelections();
+  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const desks = useDesksStore((s) => s.desks);
+  const activeDeskId = useDesksStore((s) => s.activeDeskId);
+  const setRoom = useDesksStore((s) => s.setRoom);
+  const deskSelections = useDesksStore((s) =>
+    s.mode === 'desks' ? activeDesk(s)?.selections : undefined,
+  );
+  const activeSelections = deskSelections ?? selections;
+  const seated = useWorkspaceStore((s) => s.seated);
+
+  const footprint = useMemo(
+    () => modelBounds(scene, product.model).getSize(new Vector3()),
+    [scene, product.model],
+  );
+  const layout = useMemo(
+    () => (desksMode ? deskGrid(desks.length, footprint.x, footprint.z) : null),
+    [desksMode, desks.length, footprint],
+  );
+  useEffect(() => setRoom(layout?.room ?? { width: 0, depth: 0 }), [layout, setRoom]);
+  useEffect(
+    () =>
+      releaseDeskModels(
+        scene,
+        desks.map((d) => d.id),
+      ),
+    [scene, desks],
+  );
+
+  const items = desksMode
+    ? desks.map((desk, i) => ({
+        id: desk.id,
+        desk,
+        model: deskModel(scene, desk.id),
+        selections: desk.selections,
+        position: layout?.positions[i] ?? ORIGIN,
+      }))
+    : [{ id: '', desk: undefined, model: deskModel(scene, null), selections, position: ORIGIN }];
+  const active = items.find((item) => item.desk?.id === activeDeskId) ?? items[0];
+  const activeConfig = useMemo(
+    () => resolveConfiguration(product, activeSelections),
+    [product, activeSelections],
+  );
+
+  return (
+    <>
+      {active && (
+        <WorkspaceLayer
+          product={product}
+          scene={active.model.scene}
+          index={active.model.index}
+          hiddenNodes={activeConfig.hiddenNodes}
+        />
+      )}
+      {items.map((item, i) => (
+        <DeskInstance
+          key={item.id}
+          product={product}
+          model={item.model}
+          selections={item.selections}
+          position={item.position}
+          reportsMotion={i === 0}
+          motionKey={item.desk?.id ?? SINGLE_DESK_KEY}
+          desk={
+            item.desk && {
+              desk: item.desk,
+              number: i + 1,
+              name: deskName(product, desks, item.desk),
+              active: item === active,
+              showLabel: !seated,
+            }
+          }
+        />
+      ))}
+    </>
+  );
+}
+
+interface DeskInstanceProps {
+  product: ProductDefinition;
+  model: DeskModel;
+  selections: Selections;
+  position: [number, number, number];
+  /** Reports names the loaded model lacks (one desk is enough). */
+  reportsMotion: boolean;
+  /** Where this desk's height lives in the motion store. */
+  motionKey: string;
+  /** In unlimited desks mode: which desk this is. */
+  desk:
+    { desk: Desk; number: number; name: string; active: boolean; showLabel: boolean } | undefined;
+}
+
+/** One desk: a copy of the model with a configuration applied. */
+function DeskInstance({
+  product,
+  model,
+  selections,
+  position,
+  reportsMotion,
+  motionKey,
+  desk,
+}: DeskInstanceProps) {
+  const { scene, index } = model;
+  const config = useMemo(() => resolveConfiguration(product, selections), [product, selections]);
   const invalidate = useThree((state) => state.invalidate);
 
-  const index = useMemo(() => indexNodes(scene), [scene]);
   const partNodes = useMemo(() => {
     const nodes = new Map<string, Object3D>();
     for (const name of product.parts.flatMap((part) => part.nodes)) {
@@ -28,16 +148,17 @@ export function ProductModel() {
   }, [index, product]);
   // A part stops where another part begins (monitors parented under the desk top).
   const boundaries = useMemo(() => new Set(partNodes.values()), [partNodes]);
-  const motions = useMotions(scene, index, product, boundaries);
+  const motions = useMotions(scene, index, product, boundaries, motionKey);
 
   // Report names the catalog expects but the loaded model lacks (after render, not in it).
   useEffect(() => {
+    if (!reportsMotion) return;
     const missing = product.parts
       .flatMap((part) => part.nodes)
       .filter((name) => !partNodes.has(name))
       .map((name) => `object "${name}" was not found in the loaded model`);
     useModelIssuesStore.getState().report(product.id, missing);
-  }, [product, partNodes]);
+  }, [product, partNodes, reportsMotion]);
 
   useEffect(() => {
     for (const [name, node] of partNodes) node.visible = !config.hiddenNodes.has(name);
@@ -77,49 +198,70 @@ export function ProductModel() {
 
   // An invisible box covering everything the motions can reach. `Bounds` frames it, so a
   // desk raised to full height stays in view; the camera never has to refit mid-motion.
+  const envelope = useMemo(
+    () =>
+      motions.length === 0 || bounds.isEmpty()
+        ? bounds
+        : motionEnvelope(bounds, motions, product.model.scale),
+    [bounds, motions, product.model.scale],
+  );
   const framing = useMemo(() => {
-    if (motions.length === 0 || bounds.isEmpty()) return null;
-    const envelope = motionEnvelope(bounds, motions, product.model.scale);
+    if (motions.length === 0 || envelope.isEmpty()) return null;
     return {
       position: envelope.getCenter(new Vector3()).toArray(),
       size: envelope.getSize(new Vector3()).toArray(),
     };
-  }, [bounds, motions, product.model.scale]);
+  }, [envelope, motions.length]);
 
   return (
-    <group position={offset}>
-      <WorkspaceLayer
-        product={product}
-        scene={scene}
-        index={index}
-        hiddenNodes={config.hiddenNodes}
-      />
-      <Suspense fallback={null}>
-        <Decals
+    <group position={position}>
+      <group position={offset}>
+        <Suspense fallback={null}>
+          <Decals
+            product={product}
+            scene={scene}
+            index={index}
+            hiddenOwnNodes={config.hiddenOwnNodes}
+          />
+        </Suspense>
+        {framing && (
+          <mesh position={framing.position} visible={false}>
+            <boxGeometry args={framing.size} />
+          </mesh>
+        )}
+        <group
+          scale={product.model.scale}
+          position={product.model.position}
+          rotation={product.model.rotation}
+        >
+          <primitive object={scene} />
+          {[...config.materialAssignments].map(([materialName, preset]) => (
+            // Textured choices suspend while their images load; keep that local.
+            <Suspense key={materialName} fallback={null}>
+              <MaterialAppearance scene={scene} materialName={materialName} preset={preset} />
+            </Suspense>
+          ))}
+        </group>
+      </group>
+      {desk && !desk.active && (
+        <DeskPosters
           product={product}
+          deskId={desk.desk.id}
           scene={scene}
           index={index}
-          hiddenOwnNodes={config.hiddenOwnNodes}
+          hiddenNodes={config.hiddenNodes}
         />
-      </Suspense>
-      {framing && (
-        <mesh position={framing.position} visible={false}>
-          <boxGeometry args={framing.size} />
-        </mesh>
       )}
-      <group
-        scale={product.model.scale}
-        position={product.model.position}
-        rotation={product.model.rotation}
-      >
-        <primitive object={scene} />
-        {[...config.materialAssignments].map(([materialName, preset]) => (
-          // Textured choices suspend while their images load; keep that local.
-          <Suspense key={materialName} fallback={null}>
-            <MaterialAppearance scene={scene} materialName={materialName} preset={preset} />
-          </Suspense>
-        ))}
-      </group>
+      {desk?.showLabel && !envelope.isEmpty() && (
+        <DeskLabel
+          deskId={desk.desk.id}
+          name={desk.name}
+          number={desk.number}
+          workspace={product.workspaces.find((w) => w.id === desk.desk.workspaceId)}
+          height={envelope.max.y + offset[1] + LABEL_LIFT}
+          active={desk.active}
+        />
+      )}
     </group>
   );
 }

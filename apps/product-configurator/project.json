@@ -1,6 +1,6 @@
 {
   "name": "Smart Desk configurator",
-  "summary": "Configure the VIRTUOS Smart Desk in 3D: finishes, monitors and height, with live prices and a workspace demo with real websites on the monitors.",
+  "summary": "Configure the VIRTUOS Smart Desk in 3D: finishes, monitors and height, with live prices, real websites on the monitors, and a room of unlimited desks for finance, crypto, sports and more.",
   "order": 1,
   "site": {
     "build": "npm run build -- --base={base}",

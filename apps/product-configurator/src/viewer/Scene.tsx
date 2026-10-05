@@ -1,6 +1,8 @@
 import { Bounds, ContactShadows, OrbitControls, useBounds } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { MathUtils, Vector3 } from 'three';
+import { useDesksStore } from '@/state/desksStore';
 import { LoadingIndicator } from './LoadingIndicator';
 import { StudioEnvironment } from './StudioEnvironment';
 import { ViewerErrorBoundary } from './ViewerErrorBoundary';
@@ -14,22 +16,72 @@ import styles from './Scene.module.css';
 // This module is loaded lazily, and this is the earliest point where three is available.
 preloadCurrentProduct();
 
+/** Lowest angle the room overview looks down at the desks from, so back rows show too. */
+const ROOM_ELEVATION = MathUtils.degToRad(32);
+/** Farthest the orbit camera may go: one desk, or a room of them. */
+const MAX_DISTANCE = { desk: 6, room: 60 };
+
 /**
- * Reframes the product when the canvas is resized, unless workspace mode has the camera.
- * `Bounds observe` can't be switched off for that: turning it off makes drei refit once.
+ * Reframes the product when the canvas is resized or the room of desks changes, unless
+ * workspace mode has the camera (then once it hands the camera back). `Bounds observe`
+ * can't be switched off for that: turning it off makes drei refit once.
  */
-function RefitOnResize() {
+function Refit() {
   const bounds = useBounds();
+  const camera = useThree((s) => s.camera);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
-  const first = useRef(true);
+  const cameraFree = useWorkspaceStore((s) => s.cameraFree);
+  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const deskCount = useDesksStore((s) => s.desks.length);
+  const fitted = useRef<string | null>(null);
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
+    const key = `${width}x${height}:${desksMode ? deskCount : 'single'}`;
+    // `Bounds fit` frames a single desk itself when it mounts; a room needs the view above.
+    if (fitted.current === null && !desksMode) {
+      fitted.current = key;
       return;
     }
-    if (useWorkspaceStore.getState().cameraFree) bounds.refresh().clip().fit();
-  }, [bounds, width, height]);
+    if (!cameraFree || fitted.current === key) return;
+    fitted.current = key;
+    bounds.refresh().clip();
+    if (!desksMode) {
+      bounds.fit();
+      return;
+    }
+    // From the same side as now, but high enough to see over the front row.
+    const { center, distance } = bounds.getSize();
+    const direction = camera.position.clone().sub(center);
+    const level = Math.hypot(direction.x, direction.z) || 1;
+    const elevation = Math.max(ROOM_ELEVATION, Math.atan2(direction.y, level));
+    const aim = new Vector3(
+      (direction.x / level) * Math.cos(elevation),
+      Math.sin(elevation),
+      (direction.z / level) * Math.cos(elevation),
+    );
+    bounds.moveTo(center.clone().addScaledVector(aim, distance)).lookAt({ target: center });
+  }, [bounds, camera, width, height, cameraFree, desksMode, deskCount]);
+  return null;
+}
+
+/** The parts of drei's OrbitControls the room adjusts. */
+interface Limits {
+  maxDistance: number;
+}
+
+/**
+ * Lets the orbit camera back far enough to see the whole room. Applied while the camera is
+ * free only: while seated, workspace mode has lifted the limits and puts them back itself.
+ */
+function RoomLimits() {
+  const controls = useThree((s) => s.controls) as unknown as Limits | null;
+  const cameraFree = useWorkspaceStore((s) => s.cameraFree);
+  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  useEffect(() => {
+    if (controls && cameraFree) {
+      controls.maxDistance = desksMode ? MAX_DISTANCE.room : MAX_DISTANCE.desk;
+    }
+  }, [controls, cameraFree, desksMode]);
   return null;
 }
 
@@ -42,6 +94,8 @@ function RefitOnResize() {
  */
 export function Scene() {
   const [orbitSurface, setOrbitSurface] = useState<HTMLDivElement | null>(null);
+  const room = useDesksStore((s) => s.room);
+  const desksMode = useDesksStore((s) => s.mode === 'desks');
   return (
     <div className={styles.viewer}>
       <div ref={setOrbitSurface} className={styles.orbitSurface} />
@@ -52,13 +106,13 @@ export function Scene() {
         // Render only when something changes (camera, selection); the scene is static otherwise.
         frameloop="demand"
         dpr={[1, 2]}
-        camera={{ position: [2.2, 1.4, 2.6], fov: 35, near: 0.05, far: 50 }}
+        camera={{ position: [2.2, 1.4, 2.6], fov: 35, near: 0.05, far: 200 }}
         gl={{ antialias: true, alpha: true }}
       >
         <ViewerErrorBoundary>
           <Suspense fallback={<LoadingIndicator />}>
             <Bounds fit clip margin={1.25}>
-              <RefitOnResize />
+              <Refit />
               <ProductModel />
             </Bounds>
           </Suspense>
@@ -68,11 +122,12 @@ export function Scene() {
         <ContactShadows
           position={[0, -0.001, 0]}
           opacity={0.55}
-          scale={5}
+          // Under the desk, or the whole room of desks.
+          scale={desksMode ? [Math.max(5, room.width + 2), Math.max(5, room.depth + 2)] : 5}
           blur={1.6}
           // Tall enough to catch a desk top at standing height.
           far={2}
-          resolution={1024}
+          resolution={desksMode ? 2048 : 1024}
         />
         <OrbitControls
           makeDefault
@@ -81,12 +136,13 @@ export function Scene() {
           enableDamping
           dampingFactor={0.08}
           minDistance={1}
-          maxDistance={6}
+          maxDistance={MAX_DISTANCE.desk}
           minPolarAngle={Math.PI / 8}
           maxPolarAngle={Math.PI / 2 - 0.02}
           // No fixed target: `Bounds` points the controls at the centre of what it frames,
           // which includes the full height range of a motorised desk.
         />
+        <RoomLimits />
       </Canvas>
       <WorkspaceHud />
     </div>

@@ -1,0 +1,29 @@
+{
+  "label": "Designer",
+  "icon": "🎨",
+  "accent": "#ec4899",
+  "order": 60,
+  "description": "An image editor, colour palettes, a canvas for sketches and colour theory.",
+  "windows": [
+    {
+      "title": "Photopea",
+      "url": "https://www.photopea.com/",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Palettes",
+      "url": "https://coolors.co/generate",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Colour theory",
+      "url": "https://en.wikipedia.org/wiki/Color_theory",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Sketches",
+      "url": "https://www.tldraw.com/",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

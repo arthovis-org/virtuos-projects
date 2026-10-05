@@ -2,33 +2,50 @@
  * State for motions (live controls such as desk height). Kept apart from the configurator
  * store on purpose: motions are not part of the configuration, never go into the URL, and
  * `current` changes every animation frame.
+ *
+ * Values are kept per desk (see `motionKey`): in unlimited desks mode every desk has its own
+ * height, and the controls move the desk the visitor is at.
  */
 import { create } from 'zustand';
 import { getProduct } from '@/catalog';
 import type { Motion, ProductDefinition } from '@/catalog/schema';
 import { useConfiguratorStore } from './configuratorStore';
 
+/** The single desk; unlimited desks mode uses each desk's id. */
+export const SINGLE_DESK_KEY = '';
+
+/** Where a desk's value for a motion is kept. */
+export const motionKey = (deskKey: string, motionId: string) =>
+  deskKey === SINGLE_DESK_KEY ? motionId : `${deskKey}/${motionId}`;
+
 interface MotionState {
   /** Product the values belong to; values reset when it changes. */
   productId: string | null;
-  /** Where each motion is heading. */
+  /** Desk the controls move. */
+  deskKey: string;
+  /** Where each motion is heading, by `motionKey`. */
   targets: Readonly<Record<string, number>>;
-  /** Where each motion is now, written by the viewer while it animates. */
+  /** Where each motion is now, by `motionKey`, written by the viewer while it animates. */
   current: Readonly<Record<string, number>>;
 
   resetFor: (product: ProductDefinition) => void;
+  setDesk: (deskKey: string) => void;
+  /** Gives desk `to` the values of desk `from` (the single desk becoming the first of a room). */
+  copyDesk: (from: string, to: string) => void;
+  /** Moves the active desk. */
   setTarget: (motion: Motion, value: number) => void;
-  /** Stops a motion where it is, e.g. when a hold-to-move button is released. */
+  /** Stops the active desk's motion where it is, e.g. when a hold-to-move button is released. */
   stop: (motionId: string) => void;
-  setCurrent: (motionId: string, value: number) => void;
+  setCurrent: (key: string, value: number) => void;
   /** Sets where a motion starts once the viewer knows it; ignored if already set. */
-  start: (motionId: string, value: number) => void;
+  start: (key: string, value: number) => void;
 }
 
 const clamp = (motion: Motion, value: number) => Math.min(motion.max, Math.max(motion.min, value));
 
 export const useMotionStore = create<MotionState>()((set, get) => ({
   productId: null,
+  deskKey: SINGLE_DESK_KEY,
   targets: {},
   current: {},
 
@@ -39,29 +56,47 @@ export const useMotionStore = create<MotionState>()((set, get) => ({
     const initial = Object.fromEntries(
       product.motions.flatMap((m) => (m.initial === undefined ? [] : [[m.id, m.initial]])),
     );
-    set({ productId: product.id, targets: initial, current: initial });
+    set({ productId: product.id, deskKey: SINGLE_DESK_KEY, targets: initial, current: initial });
+  },
+
+  setDesk: (deskKey) => set({ deskKey }),
+
+  copyDesk: (from, to) => {
+    const { productId, current, targets } = get();
+    // A desk that is still moving arrives where it was heading: both take the target.
+    const nextCurrent = { ...current };
+    const nextTargets = { ...targets };
+    for (const motion of getProduct(productId).motions) {
+      const value = targets[motionKey(from, motion.id)];
+      if (value === undefined) continue;
+      nextCurrent[motionKey(to, motion.id)] = value;
+      nextTargets[motionKey(to, motion.id)] = value;
+    }
+    set({ current: nextCurrent, targets: nextTargets });
   },
 
   setTarget: (motion, value) => {
-    set((state) => ({ targets: { ...state.targets, [motion.id]: clamp(motion, value) } }));
+    const key = motionKey(get().deskKey, motion.id);
+    set((state) => ({ targets: { ...state.targets, [key]: clamp(motion, value) } }));
   },
 
   stop: (motionId) => {
-    const current = get().current[motionId];
+    const key = motionKey(get().deskKey, motionId);
+    const current = get().current[key];
     if (current === undefined) return;
-    set((state) => ({ targets: { ...state.targets, [motionId]: current } }));
+    set((state) => ({ targets: { ...state.targets, [key]: current } }));
   },
 
-  setCurrent: (motionId, value) => {
-    set((state) => ({ current: { ...state.current, [motionId]: value } }));
+  setCurrent: (key, value) => {
+    set((state) => ({ current: { ...state.current, [key]: value } }));
   },
 
-  start: (motionId, value) => {
+  start: (key, value) => {
     const { current, targets } = get();
-    if (current[motionId] !== undefined && targets[motionId] !== undefined) return;
+    if (current[key] !== undefined && targets[key] !== undefined) return;
     set({
-      current: { ...current, [motionId]: current[motionId] ?? value },
-      targets: { ...targets, [motionId]: targets[motionId] ?? value },
+      current: { ...current, [key]: current[key] ?? value },
+      targets: { ...targets, [key]: targets[key] ?? value },
     });
   },
 }));

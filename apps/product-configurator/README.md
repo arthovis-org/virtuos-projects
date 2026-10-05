@@ -33,6 +33,11 @@ npm run dev          # http://localhost:5173
 Open a product with `?product=<id>`; the current configuration is kept in the URL
 (`&c=group:option,...`) so the address bar is always a shareable link.
 
+Products with screens get a **workspace demo** (live websites on the monitors). With several
+workspaces, **Unlimited desks** opens a room of desks, one per workspace (finance, crypto, NBA,
+soccer, developer and more), each with its own configuration; the room is in the URL too
+(`&desks=finance,crypto,...`). See [`products/README.md`](products/README.md#unlimited-desks).
+
 ## Adding a product
 
 1. Export the model from Blender as **glTF Binary** to `products/<id>/model.glb`
@@ -49,7 +54,8 @@ meshopt-compressed exports load too.
 ## Project layout
 
 ```
-products/<id>/             one folder per product (model.glb, product.json, materials/)
+products/<id>/             one folder per product (model.glb, product.json, materials/,
+                           workspaces/*.json)
 scripts/
   catalog/convention.ts    object names + product.json -> product definition
   catalog/gltf.ts          reads node and material names from a .glb/.gltf
