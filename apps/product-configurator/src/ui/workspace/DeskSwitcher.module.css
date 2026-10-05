@@ -274,3 +274,88 @@
     transform: translateY(8px);
   }
 }
+
+/* "Create a desk with AI", above the themes in the picker. */
+.ai {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.aiLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.aiRow {
+  display: flex;
+  gap: 6px;
+}
+
+.aiInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.aiInput:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.aiButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 0.875rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.aiButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aiError {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #d93036;
+}
+
+.aiOr {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

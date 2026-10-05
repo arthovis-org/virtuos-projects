@@ -1,11 +1,12 @@
-import { Trash2 } from 'lucide-react';
+import { Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useProduct } from '@/state/setupStore';
-import { addDesk, removeDesk, selectDesk, stepDesk } from '@/state/actions';
+import { addDesk, addPlannedDesk, removeDesk, selectDesk, stepDesk } from '@/state/actions';
 import { deskName, MAX_DESKS } from '@/state/setup';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
 import { deskTrashAttribute } from './deskDrag';
+import { canPlanWithAI, planOneDesk } from '@/sheet/sheetSources';
 import styles from './DeskSwitcher.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
@@ -30,6 +31,29 @@ export function DeskSwitcher() {
   const deskDrag = useViewStore((s) => s.deskDrag);
   const setHudInsetBottom = useViewStore((s) => s.setHudInsetBottom);
   const [picking, setPicking] = useState(false);
+  // "Create with AI" in the picker: what the desk is for, and the request under way.
+  const [idea, setIdea] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const createWithAI = async () => {
+    if (!idea.trim() || creating) return;
+    setCreating(true);
+    setAiError(null);
+    try {
+      const desk = await planOneDesk(product, idea);
+      if (addPlannedDesk(desk)) {
+        setIdea('');
+        setPicking(false);
+      } else {
+        setAiError('The room is full.');
+      }
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Something went wrong; try again');
+    } finally {
+      setCreating(false);
+    }
+  };
   const bar = useRef<HTMLElement>(null);
 
   // The seated camera keeps the screens above the switcher.
@@ -86,6 +110,48 @@ export function DeskSwitcher() {
               ×
             </button>
           </div>
+          {canPlanWithAI && (
+            <form
+              className={styles.ai}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void createWithAI();
+              }}
+            >
+              <label className={styles.aiLabel} htmlFor="desk-idea">
+                <Sparkles size={14} aria-hidden="true" /> Create a desk with AI
+              </label>
+              <div className={styles.aiRow}>
+                <input
+                  id="desk-idea"
+                  className={styles.aiInput}
+                  value={idea}
+                  maxLength={300}
+                  onChange={(event) => setIdea(event.target.value)}
+                  placeholder="What is it for? e.g. Following Formula 1 race weekends"
+                  disabled={creating}
+                />
+                <button
+                  type="submit"
+                  className={styles.aiButton}
+                  disabled={creating || !idea.trim()}
+                >
+                  {creating ? (
+                    <Loader2 size={14} className={styles.spin} aria-hidden="true" />
+                  ) : (
+                    <Sparkles size={14} aria-hidden="true" />
+                  )}
+                  {creating ? 'Creating…' : 'Create'}
+                </button>
+              </div>
+              {aiError && (
+                <p className={styles.aiError} role="status">
+                  {aiError}
+                </p>
+              )}
+              <p className={styles.aiOr}>or pick a theme</p>
+            </form>
+          )}
           <div className={styles.themes}>
             {product.workspaces.map((w) => (
               <button

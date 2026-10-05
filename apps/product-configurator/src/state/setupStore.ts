@@ -24,6 +24,7 @@ import {
   MAX_DESKS,
   moveWindow,
   newDesk,
+  newDeskId,
   openWindow,
   starterRoom,
   updateDesk,
@@ -75,6 +76,11 @@ interface SetupState extends Setup {
   exitRoom: () => void;
   /** Adds a desk with a workspace; returns its id (null when the room is full). */
   addDesk: (workspaceId: string) => string | null;
+  /**
+   * Adds a desk made elsewhere (the AI's), under a name no other desk has; returns its id
+   * (null when the room is full).
+   */
+  insertDesk: (desk: DeskSetup) => string | null;
   /** Removes a desk (never the last); returns the desk to move to if it was the active one. */
   removeDesk: (deskId: string) => string | null;
   setActiveDesk: (deskId: string | null) => void;
@@ -175,6 +181,16 @@ export const useSetupStore = create<SetupState>()((set, get) => {
       const desk = newDesk(product, workspaceId);
       set({ room: [...setup.room, desk] });
       return desk.id;
+    },
+    insertDesk: (desk) => {
+      const { mode, room } = get();
+      if (mode !== 'desks' || room.length >= MAX_DESKS) return null;
+      const taken = new Set(room.flatMap((d) => (d.name ? [d.name.toLowerCase()] : [])));
+      let name = desk.name;
+      for (let n = 2; name && taken.has(name.toLowerCase()); n++) name = `${desk.name} ${n}`;
+      const added: DeskSetup = { ...desk, id: newDeskId(), ...(name && { name }) };
+      set({ room: [...room, added] });
+      return added.id;
     },
     removeDesk: (deskId) => {
       const { room, activeDeskId } = get();

@@ -3,7 +3,7 @@
  * desk sits down at it, opening the room starts at the overview, and so on. Plain functions
  * for event handlers.
  */
-import { currentDesk, type Setup } from './setup';
+import { currentDesk, type DeskSetup, type Setup } from './setup';
 import { useSetupStore } from './setupStore';
 import { useViewStore } from './viewStore';
 
@@ -34,6 +34,13 @@ export function stepDesk(step: number) {
 export function addDesk(workspaceId: string) {
   const id = setup().addDesk(workspaceId);
   if (id) selectDesk(id, true);
+}
+
+/** Adds a ready-made desk (planned by the AI) and sits down at it. */
+export function addPlannedDesk(desk: DeskSetup) {
+  const id = setup().insertDesk(desk);
+  if (id) selectDesk(id, true);
+  return id;
 }
 
 /** Removes a desk; when it was the one the visitor was at, they move to a neighbour. */

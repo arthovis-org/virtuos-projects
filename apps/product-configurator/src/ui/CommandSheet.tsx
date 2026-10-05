@@ -432,6 +432,25 @@ function SheetDialog() {
           <button type="button" className={styles.secondary} onClick={onAddDesk}>
             <Plus size={14} aria-hidden="true" /> Add desk
           </button>
+          {canPlanWithAI && (
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => {
+                setScope({ kind: 'add' });
+                setPanel('ai');
+                setMessage(null);
+                // The panel opens above the desks: start typing there.
+                window.setTimeout(() => {
+                  const field = document.getElementById('sheet-workflow');
+                  field?.scrollIntoView({ block: 'nearest' });
+                  field?.focus();
+                });
+              }}
+            >
+              <Sparkles size={14} aria-hidden="true" /> Add desk with AI
+            </button>
+          )}
           {desks.length > 1 && (
             <button
               type="button"

@@ -5,7 +5,8 @@
  */
 import type { ProductDefinition } from '@/catalog/schema';
 import { LAYOUTS_URL } from '@/layouts/layoutsApi';
-import { mainScreen } from './sheetPlan';
+import type { DeskSetup } from '@/state/setup';
+import { deskGroups, mainScreen, planFromRows } from './sheetPlan';
 import { TOOLS } from '@/ui/workspace/siteUrl';
 import { parseDelimited, rowsFromSheet, type SheetRow } from './sheetTable';
 
@@ -237,4 +238,24 @@ export async function planWithAI(
   const rows = rowsFromAnswer(product, body.csv);
   if (rows.length === 0) throw new Error('The AI’s answer had no desks in it; try again');
   return rows;
+}
+
+/**
+ * One desk planned by the free AI from a description of it, ready for the room: the first desk
+ * of the answer, with its sites, theme and screens.
+ */
+export async function planOneDesk(
+  product: ProductDefinition,
+  description: string,
+): Promise<DeskSetup> {
+  const rows = await planWithAI(product, `Plan exactly one desk for: ${description.trim()}`);
+  const first = deskGroups(rows)[0];
+  const desk =
+    first &&
+    planFromRows(
+      product,
+      first.rows.flatMap((i) => rows[i] ?? []),
+    ).desks[0];
+  if (!desk) throw new Error('The AI’s answer had no desk in it; try again');
+  return desk;
 }
