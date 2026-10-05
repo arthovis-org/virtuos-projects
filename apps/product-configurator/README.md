@@ -101,19 +101,28 @@ update, rename or delete them; anyone with the link can open one. The format is 
 
 ## Command center sheet
 
-The header's **Sheet** button shows every desk as a table, one row per site: **Desk, Theme,
-Screen, Site, URL, Height**. Edit it there, paste cells from Google Sheets or Excel (a pasted
-header row replaces the sheet; plain cells fill in from the cell pasted into), open or download a
-CSV, or load a Google Sheet shared as "Anyone with the link". **Plan with AI** copies a prompt
-that explains the sheet, the themes and the screens to ChatGPT, Claude or Gemini; its answer is
-pasted back. **Build the desks** turns the rows into the room: rows group into desks by name (a
-blank Desk continues the desk above), screens with a site are switched on and the others off,
-and a desk with no sites gets its theme's own. `?sheet=<Google Sheets link>` builds the room from
-the sheet for whoever opens the link, so the sheet works as a small database of command centers.
+The header's **Sheet** button lists every desk as a card (name, theme, height, sites and the
+screens they are on); a card opens to edit the desk and its sites, one per screen slot. Under the
+cards it is a plain table, one row per site: **Desk, Theme, Screen, Site, URL, Height**, which is
+what CSV files, Google Sheets and links hold.
 
-The code is in `src/sheet/`: `sheetTable.ts` (CSV and pasted text), `sheetPlan.ts` (rows to a
-layout and back, through the saved-layout format), `sheetSources.ts` (Google Sheets, the AI
-prompt). Google Sheets are read through the layouts Worker's `/sheet` route.
+- **Plan with AI**: describe what you do and a free AI (Llama 3.3 on Cloudflare Workers AI,
+  through the layouts Worker's `/plan` route) plans a desk per kind of work. It picks from the
+  sites the workspaces already use (known to show inside the page) by id, which the page turns
+  into addresses, and can change the current desks instead of starting over. The free plan has a
+  daily allowance (a few dozen plans); past it the AI says so until the next day, never charges.
+  **Copy a prompt** gives the same instructions to ChatGPT, Claude or Gemini instead.
+- Paste a table anywhere in the sheet (from a spreadsheet or an AI's answer; with a header row it
+  replaces the sheet), open or download a CSV, or load a Google Sheet shared as "Anyone with the
+  link". Whole-sheet changes can be undone.
+- **Build the desks** turns it into the room: rows group into desks by name (a blank Desk
+  continues the desk above), screens with a site are switched on and the others off, and a desk
+  with no sites gets its theme's own. `?sheet=<Google Sheets link>` builds the room from the sheet
+  for whoever opens the link.
+
+The code is in `src/sheet/`: `sheetTable.ts` (CSV and pasted text), `sheetPlan.ts` (rows to desks
+and back), `sheetEdit.ts` (desk-by-desk edits), `sheetSources.ts` (Google Sheets, the AI) and
+`sheetStore.ts`.
 
 ## Feedback
 

@@ -3,24 +3,8 @@ import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { workspaceById } from '@/state/setup';
 import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
 import styles from './EmptyScreen.module.css';
-import { parseAddress } from './siteUrl';
+import { parseAddress, TOOLS } from './siteUrl';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
-
-/**
- * General tools known to allow being shown inside another page (checked when this was
- * written), after the sites of the product's workspaces.
- */
-const TOOLS = [
-  { title: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Main_Page' },
-  { title: 'Excalidraw', url: 'https://excalidraw.com/' },
-  { title: 'tldraw', url: 'https://www.tldraw.com/' },
-  { title: 'StackEdit', url: 'https://stackedit.io/app' },
-  { title: 'Desmos', url: 'https://www.desmos.com/calculator' },
-  {
-    title: 'Map',
-    url: 'https://www.openstreetmap.org/export/embed.html?bbox=-0.16,51.49,-0.07,51.53&layer=mapnik',
-  },
-] as const;
 
 interface EmptyScreenProps {
   screen: Screen;

@@ -18,7 +18,12 @@
  *   GET    /sheet?id=<sheet id>&gid=<tab id>[&published=1]  -> 200 text/csv
  *
  * Only sheets shared as "Anyone with the link" (or published to the web) can be read.
+ *
+ * And it plans command centers with Workers AI (see plan.js):
+ *
+ *   POST   /plan             { workflow, product, current? }       -> 200 { csv }
  */
+import { plan } from "./plan.js";
 
 const MAX_NAME = 80;
 /** A room of 36 desks with all their windows is well under this. */
@@ -52,6 +57,20 @@ export default {
           });
 
     const url = new URL(request.url);
+    if (url.pathname === "/plan" || url.pathname === "/plan/") {
+      if (request.method === "OPTIONS")
+        return new Response(null, { status: 204, headers: cors });
+      if (!allowed.includes(origin))
+        return reply(403, { error: "Origin not allowed" });
+      if (request.method !== "POST")
+        return reply(405, { error: "Method not allowed" });
+      try {
+        return await plan(request, env, reply);
+      } catch (error) {
+        console.error(error);
+        return reply(500, { error: "Something went wrong; try again" });
+      }
+    }
     if (url.pathname === "/sheet" || url.pathname === "/sheet/") {
       if (request.method === "OPTIONS")
         return new Response(null, { status: 204, headers: cors });

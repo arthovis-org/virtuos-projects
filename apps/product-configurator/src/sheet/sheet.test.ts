@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { getProduct } from '@/catalog';
 import { deskWindows, initialSetup } from '@/state/setup';
-import { planFromRows, rowsFromSetup, setupWithPlan } from './sheetPlan';
-import { parseGoogleSheet } from './sheetSources';
+import { addDesk, addSite, removeDesk, removeSite, renameDesk, setDeskField } from './sheetEdit';
+import {
+  deskGroups,
+  planFromRows,
+  rowsFromSetup,
+  setupWithPlan,
+  type DeskGroup,
+} from './sheetPlan';
+import { parseGoogleSheet, rowsFromAnswer } from './sheetSources';
 import { hasHeader, parseDelimited, rowsFromSheet, rowsFromText, rowsToText } from './sheetTable';
 
 const product = getProduct('smart-desk');
@@ -122,5 +129,82 @@ Design,Designer,Desk,Board,ftp://x,`);
         selections: d.selections,
       }));
     expect(summary(again.desks)).toEqual(summary(plan.desks));
+  });
+});
+
+describe('the AI’s answers', () => {
+  it('become rows, a site per row, known ids turned into addresses and titles', () => {
+    const rows = rowsFromAnswer(
+      product,
+      [
+        'Here is your plan:',
+        '```csv',
+        'Desk,Theme,Screen,Sites,Height',
+        'Trading,Crypto,Main,@crypto/btc-usdt @crypto/screener,74',
+        'Trading,Crypto,Left,https://en.wikipedia.org/wiki/Bitcoin,',
+        '```',
+      ].join('\n'),
+    );
+    expect(rows.map((r) => [r.desk, r.theme, r.screen, r.site, r.height])).toEqual([
+      ['Trading', 'Crypto', 'Main', 'BTC / USDT', '74'],
+      ['Trading', 'Crypto', 'Main', 'Screener', '74'],
+      ['Trading', 'Crypto', 'Left', 'en.wikipedia.org', ''],
+    ]);
+    expect(rows[0]!.url).toMatch(/^https:\/\/s\.tradingview\.com\//);
+  });
+
+  it('are read loosely when the columns drift', () => {
+    // A real answer from before the format was simplified: ids in the Site column.
+    const rows = rowsFromAnswer(
+      product,
+      'Desk,Theme,Screen,Site,URL,Height\nMorning trading,Crypto,Main,@crypto/btc-usdt,@crypto/screener,110\nNBA evening,NBA,Left,@nba/rosters,',
+    );
+    expect(rows.map((r) => [r.desk, r.screen, r.site, r.height])).toEqual([
+      ['Morning trading', 'Main', 'BTC / USDT', '110'],
+      ['Morning trading', 'Main', 'Screener', '110'],
+      ['NBA evening', 'Left', 'Rosters', ''],
+    ]);
+  });
+});
+
+describe('editing desk by desk', () => {
+  const rows = rowsFromText(`Desk,Theme,Screen,Site,URL,Height
+Ops,NBA,Main,A,https://a.com/,100
+Ops,,Left,B,https://b.com/,
+Lab,Space,Main,C,https://c.com/,`);
+  const [ops, lab] = deskGroups(rows) as [DeskGroup, DeskGroup];
+
+  it('renames every row of a desk', () => {
+    const renamed = renameDesk(rows, ops, 'War room');
+    expect(deskGroups(renamed).map((d) => d.name)).toEqual(['War room', 'Lab']);
+  });
+
+  it('keeps a desk’s theme and height on its first row', () => {
+    const next = setDeskField(rows, ops, 'height', '110');
+    expect(next.map((r) => r.height)).toEqual(['110', '', '']);
+  });
+
+  it('adds a site at the end of a desk, on a screen', () => {
+    const { rows: next, index } = addSite(rows, ops, 'Right');
+    expect(index).toBe(2);
+    expect(next[2]).toMatchObject({ desk: 'Ops', screen: 'Right', url: '' });
+    expect(deskGroups(next)[0]!.rows).toEqual([0, 1, 2]);
+  });
+
+  it('removing a desk’s first site hands its theme and height to the next', () => {
+    const next = removeSite(rows, ops, 0);
+    expect(next[0]).toMatchObject({ desk: 'Ops', theme: 'NBA', height: '100', site: 'B' });
+  });
+
+  it('removing a desk’s last site keeps the desk', () => {
+    const next = removeSite(rows, lab, 2);
+    expect(deskGroups(next).map((d) => d.name)).toEqual(['Ops', 'Lab']);
+    expect(planFromRows(product, next).desks[1]!.windows.opened).toEqual([]);
+  });
+
+  it('adds and removes whole desks', () => {
+    const added = addDesk(rows, ['Ops', 'Lab']);
+    expect(added.name).toBe('Desk 3');
+    expect(deskGroups(removeDesk(added.rows, lab)).map((d) => d.name)).toEqual(['Ops', 'Desk 3']);
   });
 });

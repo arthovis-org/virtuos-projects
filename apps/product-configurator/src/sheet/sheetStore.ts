@@ -6,8 +6,8 @@ import { create } from 'zustand';
 import { getProduct } from '@/catalog';
 import { loadSetup } from '@/state/actions';
 import { currentSetup } from '@/state/setupStore';
-import { planFromRows, rowsFromSetup, setupWithPlan } from './sheetPlan';
-import { fetchGoogleSheet, parseGoogleSheet } from './sheetSources';
+import { deskGroups, planFromRows, rowsFromSetup, setupWithPlan } from './sheetPlan';
+import { fetchGoogleSheet, parseGoogleSheet, planWithAI } from './sheetSources';
 import { emptyRow, type SheetRow } from './sheetTable';
 
 const LINK_KEY = 'virtuos.sheetLink';
@@ -39,6 +39,13 @@ interface SheetState {
   show: () => void;
   hide: () => void;
   setRows: (rows: readonly SheetRow[]) => void;
+  /** The rows before the last time the whole sheet was replaced, for undoing it. */
+  previous: readonly SheetRow[] | null;
+  /** Replaces the whole sheet (a file, a paste, the AI), keeping the old rows for undo. */
+  replaceRows: (rows: readonly SheetRow[]) => void;
+  undo: () => void;
+  /** Plans the desks with the free AI, from scratch or by changing the current sheet. */
+  planWithAI: (workflow: string, changeCurrent: boolean) => Promise<number>;
   /** Rows from the set-up as it is now, replacing the sheet's. */
   fromSetup: () => void;
   /** Loads a Google Sheet's rows into the sheet. */
@@ -54,17 +61,30 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
   rows: [],
   googleLink: readLink(),
 
-  show: () => set({ visible: true, rows: rowsFromSetup(product(), currentSetup()) }),
+  show: () =>
+    set({ visible: true, previous: null, rows: rowsFromSetup(product(), currentSetup()) }),
   hide: () => set({ visible: false }),
   setRows: (rows) => set({ rows: rows.length > 0 ? rows : [emptyRow()] }),
-  fromSetup: () => set({ rows: rowsFromSetup(product(), currentSetup()) }),
+  previous: null,
+  replaceRows: (rows) => set({ previous: get().rows, rows: rows.length > 0 ? rows : [emptyRow()] }),
+  undo: () => {
+    const { previous } = get();
+    if (previous) set({ rows: previous, previous: null });
+  },
+  planWithAI: async (workflow, changeCurrent) => {
+    const rows = await planWithAI(product(), workflow, changeCurrent ? get().rows : undefined);
+    get().replaceRows(rows);
+    return deskGroups(rows).length;
+  },
+  fromSetup: () => get().replaceRows(rowsFromSetup(product(), currentSetup())),
 
   loadGoogle: async (link) => {
     const ref = parseGoogleSheet(link);
     if (!ref) throw new Error('That is not a Google Sheets link');
     const rows = await fetchGoogleSheet(ref);
     writeLink(link.trim());
-    set({ rows, googleLink: link.trim() });
+    get().replaceRows(rows);
+    set({ googleLink: link.trim() });
   },
 
   build: () => {

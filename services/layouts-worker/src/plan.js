@@ -1,0 +1,146 @@
+/**
+ * Plans command centers with Cloudflare Workers AI (free daily allowance on the Workers free
+ * plan; past it, requests fail until the next day rather than cost anything).
+ *
+ *   POST /plan  { workflow, product, current? }  -> 200 { csv }
+ *
+ * The instructions are written here, from the product's screens and themes the page sends:
+ * the page only says what the visitor does, so this can't be used as a general chatbot.
+ */
+
+/** The model; any Workers AI text model taking chat messages works. */
+const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+/** Plans a visitor may ask for per window; counts live in this Worker instance only. */
+const RATE = { max: 12, windowMs: 10 * 60 * 1000 };
+const asked = new Map();
+const MAX_WORKFLOW = 1500;
+const MAX_CURRENT = 12 * 1024;
+
+const text = (value, max) =>
+  typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "";
+
+/** The page's description of the product, checked and trimmed. */
+function readProduct(input) {
+  const product = input && typeof input === "object" ? input : {};
+  const screens = (Array.isArray(product.screens) ? product.screens : [])
+    .slice(0, 8)
+    .map((s) => ({ label: text(s?.label, 30), main: s?.main === true }))
+    .filter((s) => s.label);
+  const themes = (Array.isArray(product.themes) ? product.themes : [])
+    .slice(0, 40)
+    .map((t) => ({ label: text(t?.label, 30), description: text(t?.description, 200) }))
+    .filter((t) => t.label);
+  const h = product.height;
+  const height =
+    h && typeof h === "object" && Number.isFinite(h.min) && Number.isFinite(h.max)
+      ? { unit: text(h.unit, 8) || "cm", min: h.min, max: h.max }
+      : null;
+  const sites = (Array.isArray(product.sites) ? product.sites : [])
+    .slice(0, 150)
+    .map((s) => ({ id: text(s?.id, 60), title: text(s?.title, 50), theme: text(s?.theme, 30) }))
+    .filter((s) => /^[a-z0-9-]+\/[a-z0-9-]+$/.test(s.id) && s.title);
+  return { name: text(product.name, 60) || "desk", screens, themes, height, sites };
+}
+
+function instructions(product) {
+  const screens = product.screens
+    .map((s) => `- ${s.label}${s.main ? " (the big one in the middle)" : ""}`)
+    .join("\n");
+  const themes = product.themes
+    .map((t) => `- ${t.label}${t.description ? `: ${t.description}` : ""}`)
+    .join("\n");
+  const sites = product.sites
+    .map((s) => `- @${s.id}: ${s.title}${s.theme ? ` (${s.theme})` : ""}`)
+    .join("\n");
+  const height = product.height
+    ? `desk height in ${product.height.unit}, ${product.height.min} to ${product.height.max} (sitting about 72, standing about 110); only on the desk's first row, else blank`
+    : "leave blank";
+  return `You plan virtual command centers. Each command center is a ${product.name} with several screens; each screen shows one or more live websites side by side.
+
+Answer with a CSV table only: no explanations, no code fences. The first row is exactly:
+Desk,Theme,Screen,Sites,Height
+
+One row per screen that shows something:
+- Desk: the command center's name (e.g. "Morning research"); repeat it on every row of that desk.
+- Theme: the theme below closest to the desk's work (Crypto for crypto trading, Designer for design work); it gives the desk its colour and icon.
+- Screen: one of the screens below.
+- Sites: 1 to 3 websites side by side on that screen, separated by spaces: known sites as their @id (see the list below), other pages as their full https address.
+- Height: ${height}.
+
+Example:
+Desk,Theme,Screen,Sites,Height
+Morning research,Finance,Main,@finance/s-p-500 @finance/markets,74
+Morning research,Finance,Left,https://en.wikipedia.org/wiki/Stock_market,
+
+Screens on each desk:
+${screens}
+
+Themes:
+${themes}
+
+Known sites that work on the screens (prefer these; use their @id):
+${sites}
+
+Rules:
+- Plan one desk per distinct workflow, using the main screen on every desk.
+- Choose sites that fit the workflow; a site may appear on several desks.
+- Other pages only when you are sure they are real and allow being shown inside another page (an iframe): Wikipedia articles (https://en.wikipedia.org/wiki/...) always work. Many big sites refuse: Google search, Gmail, X/Twitter, Facebook, Instagram, LinkedIn, banks and most news sites. Never invent addresses.
+- Never put a comma inside a cell.`;
+}
+
+export async function plan(request, env, reply) {
+  if (!env.AI) return reply(503, { error: "The AI is not set up on this site" });
+  const visitor = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  const now = Date.now();
+  const recent = (asked.get(visitor) ?? []).filter((t) => now - t < RATE.windowMs);
+  if (recent.length >= RATE.max) {
+    return reply(429, { error: "That's a lot of plans in a short time; try again in a few minutes" });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return reply(400, { error: "Expected JSON" });
+  }
+  const workflow =
+    typeof body.workflow === "string" ? body.workflow.trim().slice(0, MAX_WORKFLOW) : "";
+  if (!workflow) return reply(400, { error: "Say what you do first" });
+  const product = readProduct(body.product);
+  if (product.screens.length === 0 || product.themes.length === 0) {
+    return reply(400, { error: "Unknown product" });
+  }
+  const current =
+    typeof body.current === "string" ? body.current.trim().slice(0, MAX_CURRENT) : "";
+  recent.push(now);
+  asked.set(visitor, recent);
+
+  const ask = current
+    ? `My current sheet:\n${current}\n\nChange it as I ask, keeping the rest, and answer with the whole updated sheet:\n${workflow}`
+    : `My workflows:\n${workflow}`;
+  let result;
+  try {
+    result = await env.AI.run(env.AI_MODEL || DEFAULT_MODEL, {
+      messages: [
+        { role: "system", content: instructions(product) },
+        { role: "user", content: ask },
+      ],
+      max_tokens: 2048,
+      temperature: 0.4,
+    });
+  } catch (error) {
+    console.error(error);
+    const message = String(error?.message ?? error);
+    // The free allowance is daily: past it, Workers AI refuses until the next day.
+    if (/limit|quota|neuron|4006|capacity/i.test(message)) {
+      return reply(429, {
+        error:
+          "The free AI has used up today's allowance. Try again tomorrow, or copy the prompt into another AI.",
+      });
+    }
+    return reply(502, { error: "The AI could not answer; try again" });
+  }
+  const answer = typeof result?.response === "string" ? result.response : "";
+  if (!answer.trim()) return reply(502, { error: "The AI gave no answer; try again" });
+  return reply(200, { csv: answer });
+}

@@ -19,3 +19,19 @@ export function parseAddress(value: string): { url: string; title: string } | { 
   if (url.protocol !== 'https:') return { error: 'Only https:// addresses can be shown' };
   return { url: url.href, title: url.hostname.replace(/^www\./, '') };
 }
+
+/**
+ * General tools known to allow being shown inside another page (checked when this was
+ * written), after the sites of the product's workspaces.
+ */
+export const TOOLS = [
+  { title: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Main_Page' },
+  { title: 'Excalidraw', url: 'https://excalidraw.com/' },
+  { title: 'tldraw', url: 'https://www.tldraw.com/' },
+  { title: 'StackEdit', url: 'https://stackedit.io/app' },
+  { title: 'Desmos', url: 'https://www.desmos.com/calculator' },
+  {
+    title: 'Map',
+    url: 'https://www.openstreetmap.org/export/embed.html?bbox=-0.16,51.49,-0.07,51.53&layer=mapnik',
+  },
+] as const;

@@ -6,7 +6,8 @@
 import type { ProductDefinition } from '@/catalog/schema';
 import { LAYOUTS_URL } from '@/layouts/layoutsApi';
 import { mainScreen } from './sheetPlan';
-import { rowsFromSheet, type SheetRow } from './sheetTable';
+import { TOOLS } from '@/ui/workspace/siteUrl';
+import { parseDelimited, rowsFromSheet, type SheetRow } from './sheetTable';
 
 export interface GoogleSheetRef {
   id: string;
@@ -85,4 +86,149 @@ Rules:
 
 Reply with only the CSV, with this header row:
 Desk,Theme,Screen,Site,URL,Height`;
+}
+
+/** The free AI planner (Workers AI behind the layouts Worker) is set up. */
+export const canPlanWithAI = !!LAYOUTS_URL;
+
+/** Sites known to work on the screens, by an id the AI answers with (`@crypto/btc-usdt`). */
+export function knownSites(product: ProductDefinition) {
+  const slug = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  return [
+    ...product.workspaces.flatMap((w) =>
+      w.windows.map((site) => ({
+        id: `${w.id}/${site.id}`,
+        title: site.title,
+        theme: w.label,
+        url: site.url,
+      })),
+    ),
+    ...TOOLS.map((tool) => ({
+      id: `tools/${slug(tool.title)}`,
+      title: tool.title,
+      theme: '',
+      url: tool.url,
+    })),
+  ];
+}
+
+/**
+ * Rows from the AI's answer (`Desk,Theme,Screen,Sites,Height`, a screen per row with its sites
+ * separated by spaces). Read loosely, since models drift: in each row the theme, the screen and
+ * the height are whichever cells look like one, and every @id or https address is a site.
+ * Known sites' ids become their addresses and titles.
+ */
+export function rowsFromAnswer(product: ProductDefinition, answer: string): SheetRow[] {
+  const fenced = /```[\w-]*\n([\s\S]*?)```/.exec(answer)?.[1] ?? answer;
+  const sites = new Map(knownSites(product).map((site) => [site.id, site]));
+  const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const rows: SheetRow[] = [];
+  for (const cells of parseDelimited(fenced.trim(), ',')) {
+    const [desk = '', ...rest] = cells.map((c) => c.trim());
+    if (!desk || /^desk$/i.test(desk)) continue;
+    const theme = rest.find((c) => product.workspaces.some((w) => same(w.label, c))) ?? '';
+    const screen = rest.find((c) => product.screens.some((sc) => same(sc.label, c))) ?? '';
+    const height = rest.find((c) => /^\d{2,3}(\.\d+)?$/.test(c)) ?? '';
+    const tokens = rest.flatMap((c) => c.split(/\s+/));
+    const links = tokens.filter(
+      (t) => /^@[a-z0-9-]+\/[a-z0-9-]+$/.test(t) || /^https?:\/\//.test(t),
+    );
+    // A cell that is none of these is a title, used when the row has a single site.
+    const title = rest.find(
+      (c) =>
+        c &&
+        c !== theme &&
+        c !== screen &&
+        c !== height &&
+        !c.split(/\s+/).some((t) => links.includes(t)),
+    );
+    links.forEach((link) => {
+      const known = sites.get(link.slice(1));
+      const url = known?.url ?? link;
+      let host = '';
+      try {
+        host = new URL(url).hostname.replace(/^www\./, '');
+      } catch {
+        // Not an address: the sheet points it out.
+      }
+      rows.push({
+        desk,
+        theme,
+        screen,
+        site: (links.length === 1 ? title : undefined) ?? known?.title ?? host,
+        url,
+        height,
+      });
+    });
+  }
+  return rows;
+}
+
+/** Rows in the AI's format (a screen per row, known sites as their ids), to change them. */
+function answerFormat(product: ProductDefinition, rows: readonly SheetRow[]): string {
+  const ids = new Map(knownSites(product).map((site) => [site.url, `@${site.id}`]));
+  const lines = new Map<
+    string,
+    { desk: string; theme: string; screen: string; sites: string[]; height: string }
+  >();
+  let lastDesk = '';
+  for (const row of rows) {
+    const desk = row.desk.trim() || lastDesk;
+    lastDesk = desk;
+    if (!row.url.trim()) continue;
+    const key = `${desk.toLowerCase()}|${row.screen.toLowerCase()}`;
+    const line = lines.get(key) ?? { desk, theme: '', screen: row.screen, sites: [], height: '' };
+    line.theme ||= row.theme;
+    line.height ||= row.height;
+    line.sites.push(ids.get(row.url.trim()) ?? row.url.trim());
+    lines.set(key, line);
+  }
+  return [
+    'Desk,Theme,Screen,Sites,Height',
+    ...[...lines.values()].map((l) =>
+      [l.desk, l.theme, l.screen, l.sites.join(' '), l.height]
+        .map((c) => c.replace(/,/g, ' '))
+        .join(','),
+    ),
+  ].join('\n');
+}
+
+/** Plans command centers with the free AI from a description of the visitor's work. */
+export async function planWithAI(
+  product: ProductDefinition,
+  workflow: string,
+  current?: readonly SheetRow[],
+): Promise<SheetRow[]> {
+  if (!LAYOUTS_URL) throw new Error('The AI is not set up on this site');
+  const main = mainScreen(product);
+  const motion = product.motions[0];
+  // The current sheet goes in the AI's own format, which keeps it short.
+  const currentText = current?.some((row) => row.url.trim())
+    ? answerFormat(product, current)
+    : undefined;
+  const response = await fetch(`${LAYOUTS_URL}/plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workflow,
+      ...(currentText && { current: currentText }),
+      product: {
+        name: product.name,
+        screens: product.screens.map((s) => ({ label: s.label, main: s.id === main?.id })),
+        themes: product.workspaces.map((w) => ({ label: w.label, description: w.description })),
+        height: motion && { unit: motion.unit, min: motion.min, max: motion.max },
+        sites: knownSites(product).map(({ id, title, theme }) => ({ id, title, theme })),
+      },
+    }),
+  });
+  const body = (await response.json().catch(() => ({}))) as { csv?: string; error?: string };
+  if (!response.ok || !body.csv)
+    throw new Error(body.error ?? 'The AI could not answer; try again');
+  const rows = rowsFromAnswer(product, body.csv);
+  if (rows.length === 0) throw new Error('The AI’s answer had no desks in it; try again');
+  return rows;
 }

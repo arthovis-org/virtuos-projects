@@ -1,7 +1,7 @@
 /**
  * The app in a real browser, end to end: it loads and draws the desk, the panel configures
  * it, the room keeps every desk's own setup, and the command center sheet builds desks.
- * Live sites point at real websites, so nothing here waits for their content.
+ * Live sites point at real websites, which are blocked: nothing here waits for them.
  */
 import { expect, test, type Page } from '@playwright/test';
 
@@ -17,6 +17,12 @@ function watchErrors(page: Page) {
   });
   return errors;
 }
+
+// Live sites are real websites: blocked here, so the test needs no network and stays light (in
+// CI the browser draws the 3D in software, and four live widgets on top stalled it).
+test.beforeEach(async ({ context }) => {
+  await context.route(/^https?:\/\/(?!localhost[:/])/, (route) => route.abort());
+});
 
 const deskBar = (page: Page) => page.getByRole('navigation', { name: 'Desks' });
 const panelTitle = (page: Page) =>
@@ -67,13 +73,16 @@ test('the command center sheet builds named desks', async ({ page }) => {
     'Morning trading,,Left,News,https://example.org/,',
     'Match night,Soccer,Main,Scores,https://example.net/,110',
   ].join('\n');
-  // Paste the table into the first cell, as from a spreadsheet or an AI's answer.
-  await page.getByRole('textbox', { name: 'Site, row 1' }).evaluate((cell, text) => {
+  // Paste the table into the sheet, as from a spreadsheet or an AI's answer.
+  await page.getByRole('dialog').evaluate((sheet, text) => {
     const data = new DataTransfer();
     data.setData('text/plain', text);
-    cell.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }));
+    sheet.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }));
   }, csv);
   await expect(page.getByText('2 desks · 3 sites')).toBeVisible();
+  // Desk by desk: opening one shows its sites.
+  await page.getByRole('button', { name: /Morning trading/ }).click();
+  await expect(page.getByRole('textbox', { name: 'URL' })).toHaveCount(2);
   await page.getByRole('button', { name: /Build the desks/ }).click();
 
   await expect(deskBar(page).getByRole('button', { name: 'Morning trading' })).toBeVisible();

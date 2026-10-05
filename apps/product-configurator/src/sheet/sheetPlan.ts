@@ -118,6 +118,47 @@ export function rowsFromSetup(product: ProductDefinition, setup: Setup): SheetRo
   return rows;
 }
 
+export interface DeskGroup {
+  /** The desk's name as written first. */
+  name: string;
+  /** Indexes of its rows, in order. */
+  rows: number[];
+}
+
+/**
+ * The desks the rows describe, in order of first appearance. Names match whatever their case;
+ * a blank Desk cell continues the desk above, and blank rows belong to none.
+ */
+export function deskGroups(rows: readonly SheetRow[]): DeskGroup[] {
+  const desks: DeskGroup[] = [];
+  let previous = '';
+  rows.forEach((row, index) => {
+    if (isBlank(row)) return;
+    const name = row.desk.trim() || previous || 'Desk 1';
+    previous = name;
+    const desk = desks.find((d) => same(d.name, name));
+    if (desk) desk.rows.push(index);
+    else desks.push({ name, rows: [index] });
+  });
+  return desks;
+}
+
+/** The workspace a desk of the sheet gets: its Theme, else one its name mentions, else the first. */
+export function themeOf(
+  product: ProductDefinition,
+  rows: readonly SheetRow[],
+  desk: DeskGroup,
+): Workspace | undefined {
+  for (const index of desk.rows) {
+    const found = findWorkspace(product, rows[index]?.theme ?? '');
+    if (found) return found;
+  }
+  return (
+    product.workspaces.find((w) => desk.name.toLowerCase().includes(w.label.toLowerCase())) ??
+    product.workspaces[0]
+  );
+}
+
 /**
  * Rows built into a room of desks, with what was wrong in them.
  * Rows of a desk need not be next to each other; a blank Desk cell continues the desk above.
@@ -129,20 +170,7 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
   const warn = (row: number, column: SheetColumn, message: string) =>
     problems.push({ row, column, message, level: 'warning' });
 
-  interface PlannedDesk {
-    name: string;
-    rows: number[];
-  }
-  const desks: PlannedDesk[] = [];
-  let previous = '';
-  rows.forEach((row, index) => {
-    if (isBlank(row)) return;
-    const name = row.desk.trim() || previous || 'Desk 1';
-    previous = name;
-    const desk = desks.find((d) => same(d.name, name));
-    if (desk) desk.rows.push(index);
-    else desks.push({ name, rows: [index] });
-  });
+  const desks = deskGroups(rows);
   if (desks.length > MAX_DESKS) {
     for (const extra of desks.slice(MAX_DESKS)) {
       problem(extra.rows[0] ?? 0, 'desk', `A room holds up to ${MAX_DESKS} desks; left out`);
@@ -151,7 +179,6 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
   }
 
   const motion = product.motions[0];
-  const fallbackWorkspace = product.workspaces[0];
   let siteCount = 0;
   let windowCount = 0;
 
@@ -161,24 +188,18 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
       return at === undefined ? undefined : { row: at, value: (rows[at]?.[key] ?? '').trim() };
     };
 
-    // The theme: as written, else one the desk's name mentions (a "Crypto desk"), else the first.
-    let workspace: Workspace | undefined;
+    // Themes the product lacks are pointed out; the desk gets one anyway (see `themeOf`).
     for (const index of desk.rows) {
       const value = rows[index]?.theme.trim() ?? '';
-      if (!value) continue;
-      const found = findWorkspace(product, value);
-      if (!found) {
+      if (value && !findWorkspace(product, value)) {
         warn(
           index,
           'theme',
           `No theme “${value}”. Themes: ${product.workspaces.map((w) => w.label).join(', ')}`,
         );
       }
-      workspace ??= found;
     }
-    workspace ??=
-      product.workspaces.find((w) => desk.name.toLowerCase().includes(w.label.toLowerCase())) ??
-      fallbackWorkspace;
+    const workspace = themeOf(product, rows, desk);
     if (!workspace) return [];
 
     let height: number | undefined;

@@ -11,3 +11,7 @@ ALLOWED_ORIGINS = "https://arthovis-org.github.io,http://localhost:5173,http://1
 binding = "DB"
 database_name = "virtuos-layouts"
 database_id = "d1fd4e5c-40f1-43a5-bb1e-b04500f21319"
+
+# Workers AI, for planning command centers (/plan). Free daily allowance on the free plan.
+[ai]
+binding = "AI"
