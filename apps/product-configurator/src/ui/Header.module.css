@@ -160,11 +160,11 @@
 @media (max-width: 640px) {
   .header {
     gap: 0.5rem;
-    padding: 0.625rem 1rem;
+    padding: 0.4375rem 0.75rem;
   }
 
   .name {
-    font-size: 1rem;
+    font-size: 0.9375rem;
   }
 
   .actions {
@@ -182,6 +182,7 @@
 
   .button,
   .currency {
-    padding: 0.4375rem 0.625rem;
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
   }
 }
