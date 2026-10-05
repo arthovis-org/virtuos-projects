@@ -3,6 +3,7 @@ import { useProduct } from '@/state/configuratorStore';
 import { deskName, useDesksStore } from '@/state/desksStore';
 import type { PosterSurfaceInfo } from '@/state/posterStore';
 import { openWindows, useWorkspaceStore } from '@/state/workspaceStore';
+import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import { cssProjection } from './cssProjection';
 import styles from './PosterSurface.module.css';
 
@@ -18,6 +19,7 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
   const desks = useDesksStore((s) => s.desks);
   const selectDesk = useDesksStore((s) => s.selectDesk);
   const saved = useWorkspaceStore((s) => s.saved[deskId]);
+  const dropTarget = useDesksStore((s) => s.deskDrag?.over === deskId);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -44,6 +46,8 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
       type="button"
       className={styles.poster}
       data-portrait={heightPx > widthPx || undefined}
+      data-drop={dropTarget || undefined}
+      {...deskDropAttribute(deskId)}
       style={
         {
           width: widthPx,
@@ -51,7 +55,11 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
           '--desk-accent': workspace.accent ?? '#4c8dff',
         } as CSSProperties
       }
-      onClick={() => selectDesk(deskId)}
+      onPointerDown={(event) => pressDesk(event, deskId, () => selectDesk(deskId))}
+      // Pointer clicks are handled by the press; this is the keyboard's.
+      onClick={(event) => {
+        if (event.detail === 0) selectDesk(deskId);
+      }}
       aria-label={`${screen.label} screen of the ${name} desk: sit down here`}
     >
       <span className={styles.icon} aria-hidden="true">

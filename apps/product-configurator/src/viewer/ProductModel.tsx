@@ -1,5 +1,5 @@
-import { useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Vector3, type Group, type Object3D } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
 import { useProduct, useSelections } from '@/state/configuratorStore';
@@ -20,6 +20,8 @@ import { DeskPosters } from './workspace/DeskPosters';
 import { WorkspaceLayer } from './workspace/WorkspaceLayer';
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
+/** How quickly swapped desks glide to their new places (per second, exponential). */
+const GLIDE_RATE = 6;
 /** Space between the top of a desk and its name tag, in metres. */
 const LABEL_LIFT = 0.22;
 
@@ -105,6 +107,7 @@ export function ProductModel() {
           selections={item.selections}
           position={item.position}
           rotation={item.rotation}
+          layoutKey={items.length}
           reportsMotion={i === 0}
           motionKey={item.desk?.id ?? SINGLE_DESK_KEY}
           desk={
@@ -129,6 +132,11 @@ interface DeskInstanceProps {
   position: [number, number, number];
   /** Turn about the vertical axis, in radians (desks in the room face a common point). */
   rotation: number;
+  /**
+   * Changes when the room grows or shrinks: desks then jump to their places (the camera
+   * frames the new room at once); otherwise (two desks swapped) they glide there.
+   */
+  layoutKey: number;
   /** Reports names the loaded model lacks (one desk is enough). */
   reportsMotion: boolean;
   /** Where this desk's height lives in the motion store. */
@@ -145,6 +153,7 @@ function DeskInstance({
   selections,
   position,
   rotation,
+  layoutKey,
   reportsMotion,
   motionKey,
   desk,
@@ -153,6 +162,36 @@ function DeskInstance({
   const config = useMemo(() => resolveConfiguration(product, selections), [product, selections]);
   const invalidate = useThree((state) => state.invalidate);
   const group = useRef<Group>(null);
+
+  const [px, py, pz] = position;
+  const goal = useMemo(() => new Vector3(px, py, pz), [px, py, pz]);
+  const placedFor = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const desk = group.current;
+    if (!desk) return;
+    if (placedFor.current !== layoutKey) {
+      desk.position.copy(goal);
+      desk.rotation.y = rotation;
+      placedFor.current = layoutKey;
+    }
+    invalidate();
+  }, [goal, rotation, layoutKey, invalidate]);
+  useFrame((_, delta) => {
+    const desk = group.current;
+    if (!desk) return;
+    const far = desk.position.distanceToSquared(goal);
+    const turn = rotation - desk.rotation.y;
+    if (far < 1e-8 && Math.abs(turn) < 1e-6) return;
+    if (far < 1e-6 && Math.abs(turn) < 1e-4) {
+      desk.position.copy(goal);
+      desk.rotation.y = rotation;
+    } else {
+      const k = 1 - Math.exp(-Math.min(delta, 0.1) * GLIDE_RATE);
+      desk.position.lerp(goal, k);
+      desk.rotation.y += turn * k;
+    }
+    invalidate();
+  });
   // The side view of the height control shows the desk the visitor is at.
   const showsInset = useMotionStore((s) => s.insetOpen) && (!desk || desk.active);
 
@@ -236,7 +275,7 @@ function DeskInstance({
   }, [envelope, motions.length]);
 
   return (
-    <group ref={group} position={position} rotation={[0, rotation, 0]}>
+    <group ref={group}>
       <group position={offset}>
         <Suspense fallback={null}>
           <Decals

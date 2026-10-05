@@ -2,10 +2,12 @@ import { Fragment, useLayoutEffect, useRef } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import {
   screenWeights,
+  SINGLE_DESK,
   useWorkspaceStore,
   type ScreenSurfaceInfo,
   type WindowDrag,
 } from '@/state/workspaceStore';
+import { deskDropAttribute } from '@/ui/workspace/deskDrag';
 import { Divider } from '@/ui/workspace/Divider';
 import { EmptyScreen } from '@/ui/workspace/EmptyScreen';
 import { WindowFrame } from '@/ui/workspace/WindowFrame';
@@ -33,6 +35,8 @@ export function ScreenSurface({ surface, windows, targets, closed }: ScreenSurfa
   const portrait = heightPx > widthPx;
   const sizes = useWorkspaceStore((s) => s.sizes);
   const ids = windows.map((w) => w.id);
+  // In the room, the live screens belong to a desk that others can be dragged onto.
+  const deskId = useWorkspaceStore((s) => s.deskId);
   const weights = screenWeights(sizes, screen.id, ids);
   const drop = useWorkspaceStore((s) => (s.drag?.over?.screen === screen.id ? s.drag.over : null));
   const dropLabel = useWorkspaceStore((s) => (s.drag ? dropDescription(s.drag, windows) : ''));
@@ -52,6 +56,7 @@ export function ScreenSurface({ surface, windows, targets, closed }: ScreenSurfa
       ref={ref}
       className={styles.screen}
       data-portrait={portrait || undefined}
+      {...(deskId !== SINGLE_DESK && deskDropAttribute(deskId))}
       style={{ width: widthPx, height: heightPx }}
       aria-label={`${screen.label} screen`}
     >

@@ -2,6 +2,7 @@ import { Html } from '@react-three/drei';
 import type { CSSProperties } from 'react';
 import type { Workspace } from '@/catalog/schema';
 import { useDesksStore } from '@/state/desksStore';
+import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import styles from './DeskLabel.module.css';
 
 interface DeskLabelProps {
@@ -15,11 +16,13 @@ interface DeskLabelProps {
 }
 
 /**
- * The name tag floating over a desk in the room overview; clicking it sits the visitor down
- * at that desk.
+ * The name tag floating over a desk in the room overview: clicking it sits the visitor down
+ * at that desk, dragging it onto another desk swaps the two.
  */
 export function DeskLabel({ deskId, name, number, workspace, height, active }: DeskLabelProps) {
   const selectDesk = useDesksStore((s) => s.selectDesk);
+  const dropTarget = useDesksStore((s) => s.deskDrag?.over === deskId);
+  const dragged = useDesksStore((s) => s.deskDrag?.deskId === deskId);
   return (
     // Nearer tags cover farther ones: drei orders them by distance over the camera's whole
     // depth range, so the range must be wide; a narrow one (it was 50 steps) gave desks a few
@@ -30,9 +33,17 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
         type="button"
         className={styles.label}
         data-active={active || undefined}
+        data-drop={dropTarget || undefined}
+        data-dragged={dragged || undefined}
+        data-desk-tag=""
+        {...deskDropAttribute(deskId)}
         style={{ '--desk-accent': workspace?.accent ?? '#888888' } as CSSProperties}
-        onClick={() => selectDesk(deskId)}
-        title={`Sit at desk ${number}: ${workspace?.description ?? name}`}
+        onPointerDown={(event) => pressDesk(event, deskId, () => selectDesk(deskId))}
+        // Pointer clicks are handled by the press; this is the keyboard's.
+        onClick={(event) => {
+          if (event.detail === 0) selectDesk(deskId);
+        }}
+        title={`Sit at desk ${number} (drag onto another desk to swap): ${workspace?.description ?? name}`}
       >
         <span className={styles.icon} aria-hidden="true">
           {workspace?.icon ?? '🖥️'}

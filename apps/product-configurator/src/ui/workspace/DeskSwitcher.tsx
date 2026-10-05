@@ -26,6 +26,7 @@ export function DeskSwitcher() {
   const addDesk = useDesksStore((s) => s.addDesk);
   const stepDesk = useDesksStore((s) => s.stepDesk);
   const seated = useWorkspaceStore((s) => s.seated);
+  const deskDrag = useDesksStore((s) => s.deskDrag);
   const setHudInsetBottom = useWorkspaceStore((s) => s.setHudInsetBottom);
   const [picking, setPicking] = useState(false);
   const bar = useRef<HTMLElement>(null);
@@ -64,6 +65,10 @@ export function DeskSwitcher() {
   }, [stepDesk]);
 
   const full = desks.length >= MAX_DESKS;
+  const nameOf = (id: string | null | undefined) => {
+    const desk = desks.find((d) => d.id === id);
+    return desk ? deskName(product, desks, desk) : '';
+  };
 
   return (
     <div className={styles.switcher}>
@@ -159,7 +164,20 @@ export function DeskSwitcher() {
       </nav>
       <p className={styles.hint}>
         {desks.length} {desks.length === 1 ? 'desk' : 'desks'} · Ctrl + ← → to switch
+        {!seated && desks.length > 1 && ' · drag a desk onto another to swap'}
       </p>
+      {deskDrag && (
+        <div
+          className={styles.ghost}
+          style={{ left: deskDrag.x, top: deskDrag.y }}
+          aria-hidden="true"
+        >
+          {nameOf(deskDrag.deskId)}
+          <span className={styles.ghostTarget}>
+            {deskDrag.over ? `⇄ Swap with ${nameOf(deskDrag.over)}` : 'Drop on another desk'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

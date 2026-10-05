@@ -211,7 +211,8 @@ desks, side by side on arcs around one point so they all face it, each a copy of
 having a desk for every kind of work is like. The room starts with the visitor's desk and the
 `finance`, `crypto`, `nba` and `soccer` workspaces, where they exist (`STARTER_DESKS` in
 `src/state/desksStore.ts`). Visitors add desks with any workspace, remove them, switch with the
-switcher, the name tags or Ctrl + ← / →, and change a desk's workspace from the toolbar.
+switcher, the name tags or Ctrl + ← / →, swap two desks by dragging one (its name tag or a
+screen) onto the other in the overview, and change a desk's workspace from the toolbar.
 
 Only the desk the visitor is at runs live sites; the screens of the others show a poster of
 their workspace, so the room stays light however many desks it has (up to `MAX_DESKS`, 36).

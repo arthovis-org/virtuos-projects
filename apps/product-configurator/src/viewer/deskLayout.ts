@@ -2,8 +2,11 @@ import type { Room } from '@/state/desksStore';
 
 /** Space between neighbouring desks along an arc, in metres. */
 const GAP = 0.7;
-/** Radius of the first arc, in metres: the distance from the focal point to the desks. */
-const FIRST_RADIUS = 3.6;
+/**
+ * Radius of the first arc, in metres: the distance from the focal point to the desks. Wide
+ * enough for eight desks side by side.
+ */
+const FIRST_RADIUS = 6.5;
 /** Aisle between one arc and the next, room for a chair, in metres. */
 const AISLE = 1.8;
 /** Widest an arc may open, in radians: wider and the end desks are seen edge-on. */

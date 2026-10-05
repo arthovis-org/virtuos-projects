@@ -14,6 +14,8 @@
   white-space: nowrap;
   pointer-events: auto;
   user-select: none;
+  touch-action: none;
+  cursor: grab;
   transition:
     transform var(--duration) var(--ease),
     background-color var(--duration) var(--ease);
@@ -33,4 +35,15 @@
 .icon {
   font-size: 1rem;
   line-height: 1;
+}
+
+/* Dragged onto another desk to swap places. */
+.label[data-dragged] {
+  opacity: 0.5;
+}
+
+.label[data-drop] {
+  outline: 3px solid var(--desk-accent);
+  outline-offset: 3px;
+  transform: scale(1.08);
 }

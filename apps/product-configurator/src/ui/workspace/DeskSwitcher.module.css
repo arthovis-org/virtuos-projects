@@ -197,6 +197,29 @@
   color: var(--text-muted);
 }
 
+/* Follows the pointer while a desk is dragged onto another. */
+.ghost {
+  position: fixed;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  pointer-events: none;
+  transform: translate(14px, 14px);
+  box-shadow: var(--shadow-soft);
+}
+
+.ghostTarget {
+  font-weight: 400;
+  opacity: 0.8;
+}
+
 @media (max-width: 640px) {
   .deskName,
   .hint {

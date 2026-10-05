@@ -22,6 +22,16 @@ export interface Desk {
   selections: Selections;
 }
 
+/** A desk being dragged onto another in the room overview, to swap places with it. */
+export interface DeskDrag {
+  deskId: string;
+  /** Pointer position in viewport pixels. */
+  x: number;
+  y: number;
+  /** The desk it would swap with. */
+  over: string | null;
+}
+
 /** Floor area the desks take, in metres; the viewer sizes the floor shadow and camera to it. */
 export interface Room {
   width: number;
@@ -50,6 +60,7 @@ interface DesksState {
   /** The room as the visitor left it for the single desk, brought back when they return. */
   parked: { desks: readonly Desk[]; activeDeskId: string | null } | null;
   room: Room;
+  deskDrag: DeskDrag | null;
 
   /**
    * Opens the room: as the visitor left it, or the first time with the current desk as the
@@ -67,6 +78,9 @@ interface DesksState {
   stepDesk: (step: number) => void;
   setDeskWorkspace: (deskId: string, workspaceId: string) => void;
   setRoom: (room: Room) => void;
+  setDeskDrag: (drag: DeskDrag | null) => void;
+  /** Two desks trade places in the room (and in the switcher). */
+  swapDesks: (a: string, b: string) => void;
 }
 
 let deskCount = 0;
@@ -251,6 +265,17 @@ export const useDesksStore = create<DesksState>()((set, get) => {
       } else {
         workspace.forgetDesk(deskId);
       }
+    },
+
+    deskDrag: null,
+    setDeskDrag: (deskDrag) => set({ deskDrag }),
+
+    swapDesks: (a, b) => {
+      const { desks } = get();
+      const first = desks.find((d) => d.id === a);
+      const second = desks.find((d) => d.id === b);
+      if (!first || !second || first === second) return;
+      set({ desks: desks.map((d) => (d === first ? second : d === second ? first : d)) });
     },
 
     setRoom: (room) => {
