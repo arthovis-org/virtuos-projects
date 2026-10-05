@@ -6,6 +6,12 @@
     'header header'
     'viewer panel';
   height: 100dvh;
+  /* The page runs edge to edge (viewport-fit=cover): keep the controls clear of a phone's
+     notch, rounded corners and home indicator, which held sideways cut off the header's and
+     the sheet's right-hand buttons. */
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
   background: var(--bg);
 }
 
@@ -54,7 +60,7 @@
 
 /* A phone held sideways: short and wide, so the desktop layout fits better than a sheet. The
    viewer keeps the full height; the options are a narrow column beside it. */
-@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .app {
     grid-template-columns: minmax(0, 1fr) 280px;
     grid-template-rows: auto minmax(0, 1fr);

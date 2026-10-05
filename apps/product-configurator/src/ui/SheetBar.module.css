@@ -65,7 +65,7 @@
 }
 
 /* A phone held sideways has the panel as a column beside the viewer: no sheet, no bar. */
-@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 500px) {
   .bar {
     display: none;
   }
