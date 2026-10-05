@@ -1,6 +1,6 @@
 {
   "label": "Crypto",
-  "icon": "💰",
+  "icon": "bitcoin",
   "accent": "#f7931a",
   "order": 20,
   "description": "Bitcoin live, the crypto screener, market news and the coin heatmap.",

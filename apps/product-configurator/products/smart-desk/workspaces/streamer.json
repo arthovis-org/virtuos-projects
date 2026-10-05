@@ -1,6 +1,6 @@
 {
   "label": "Streamer",
-  "icon": "🎮",
+  "icon": "gamepad-2",
   "accent": "#9146ff",
   "order": 70,
   "description": "A live Twitch stream with its chat, background music and run-of-show notes.",

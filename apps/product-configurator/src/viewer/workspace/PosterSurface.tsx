@@ -6,6 +6,7 @@ import { openWindows, useWorkspaceStore } from '@/state/workspaceStore';
 import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import { cssProjection } from './cssProjection';
 import styles from './PosterSurface.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 /**
  * What a screen of a desk the visitor is not at shows: the desk's workspace and the windows
@@ -63,7 +64,7 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
       aria-label={`${screen.label} screen of the ${name} desk: sit down here`}
     >
       <span className={styles.icon} aria-hidden="true">
-        {workspace.icon ?? '🖥️'}
+        <WorkspaceIcon name={workspace.icon} />
       </span>
       {windows.length > 0 ? (
         <span className={styles.windows}>

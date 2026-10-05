@@ -6,6 +6,7 @@ import { DeskArrows } from './DeskArrows';
 import { DeskSwitcher } from './DeskSwitcher';
 import { WindowMenu } from './WindowMenu';
 import styles from './WorkspaceHud.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 /** More workspaces than this are picked from a menu instead of tabs. */
 const MAX_TABS = 4;
@@ -116,7 +117,7 @@ export function WorkspaceHud() {
                   title={w.description}
                 >
                   <span className={styles.tileIcon} aria-hidden="true">
-                    {w.icon ?? '🖥️'}
+                    <WorkspaceIcon name={w.icon} size={15} />
                   </span>
                   {w.label}
                 </button>
@@ -154,7 +155,7 @@ export function WorkspaceHud() {
     >
       {product.workspaces.map((w) => (
         <option key={w.id} value={w.id}>
-          {w.icon ? `${w.icon} ${w.label}` : w.label}
+          {w.label}
         </option>
       ))}
     </select>

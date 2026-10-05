@@ -1,6 +1,6 @@
 {
   "label": "Developer",
-  "icon": "💻",
+  "icon": "code-xml",
   "accent": "#8b5cf6",
   "order": 50,
   "description": "A live code editor, the docs, an architecture diagram and something to code to.",

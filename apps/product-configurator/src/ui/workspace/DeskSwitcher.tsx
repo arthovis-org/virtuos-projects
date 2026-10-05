@@ -3,6 +3,7 @@ import { useProduct } from '@/state/configuratorStore';
 import { deskName, MAX_DESKS, useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import styles from './DeskSwitcher.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 /** True when typing would go to this element (so arrow keys are not ours to take). */
 function isEditable(target: EventTarget | null) {
@@ -98,7 +99,7 @@ export function DeskSwitcher() {
                 }}
               >
                 <span className={styles.themeIcon} aria-hidden="true">
-                  {w.icon ?? '🖥️'}
+                  <WorkspaceIcon name={w.icon} size={22} />
                 </span>
                 <span className={styles.themeText}>
                   <span className={styles.themeLabel}>{w.label}</span>
@@ -133,7 +134,7 @@ export function DeskSwitcher() {
                   title={`Desk ${i + 1}: ${workspace?.description ?? name}`}
                   onClick={() => selectDesk(desk.id, current ? !seated : true)}
                 >
-                  <span aria-hidden="true">{workspace?.icon ?? '🖥️'}</span>
+                  <WorkspaceIcon name={workspace?.icon} size={15} />
                   <span className={styles.deskName}>{name}</span>
                 </button>
                 {desks.length > 1 && (

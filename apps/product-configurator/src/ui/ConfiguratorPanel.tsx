@@ -8,6 +8,7 @@ import { ModelCheck } from './ModelCheck';
 import { OptionGroupControl } from './OptionGroupControl';
 import { PriceSummary } from './PriceSummary';
 import { usePriceFormat } from './formatPrice';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 /**
  * Lists the product's motions (live demo controls), then every option group, followed by the
@@ -49,7 +50,7 @@ export function ConfiguratorPanel() {
           aria-label="Desk"
         >
           <span className={styles.deskIcon} aria-hidden="true">
-            {workspace?.icon ?? '🖥️'}
+            <WorkspaceIcon name={workspace?.icon} size={24} />
           </span>
           <div>
             <h2 className={styles.deskName}>

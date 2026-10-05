@@ -2,6 +2,7 @@ import { useProduct, useResolvedConfiguration } from '@/state/configuratorStore'
 import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
 import { usePriceFormat } from './formatPrice';
 import styles from './SheetBar.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 interface SheetBarProps {
   open: boolean;
@@ -25,7 +26,7 @@ export function SheetBar({ open, onToggle }: SheetBarProps) {
   const title = !desksMode
     ? product.name
     : desk
-      ? `${workspace?.icon ?? ''} Desk ${desks.indexOf(desk) + 1} · ${deskName(product, desks, desk)}`
+      ? `Desk ${desks.indexOf(desk) + 1} · ${deskName(product, desks, desk)}`
       : 'Pick a desk';
   // Desks in the room are virtual: no price.
   const detail = desksMode ? '' : format.price(totalPrice);
@@ -35,6 +36,7 @@ export function SheetBar({ open, onToggle }: SheetBarProps) {
       <span className={styles.handle} aria-hidden="true" />
       <span className={styles.row}>
         <span className={styles.title}>
+          {desk && <WorkspaceIcon name={workspace?.icon} className={styles.icon} />}
           {title}
           {detail && <span className={styles.detail}> · {detail}</span>}
         </span>

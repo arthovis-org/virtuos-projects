@@ -1,6 +1,6 @@
 {
   "label": "Finance",
-  "icon": "💹",
+  "icon": "chart-candlestick",
   "accent": "#2962ff",
   "order": 10,
   "description": "Markets at a glance: an S&P 500 chart, indices and forex, the sector heatmap and the economic calendar.",

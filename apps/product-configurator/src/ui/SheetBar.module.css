@@ -58,3 +58,8 @@
   font-size: 0.8125rem;
   font-weight: 600;
 }
+
+.icon {
+  margin-right: 6px;
+  vertical-align: -3px;
+}

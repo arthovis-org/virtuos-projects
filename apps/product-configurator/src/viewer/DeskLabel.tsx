@@ -4,6 +4,7 @@ import type { Workspace } from '@/catalog/schema';
 import { useDesksStore } from '@/state/desksStore';
 import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import styles from './DeskLabel.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 interface DeskLabelProps {
   deskId: string;
@@ -46,7 +47,7 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
         title={`Sit at desk ${number} (drag onto another desk to swap): ${workspace?.description ?? name}`}
       >
         <span className={styles.icon} aria-hidden="true">
-          {workspace?.icon ?? '🖥️'}
+          <WorkspaceIcon name={workspace?.icon} size={15} />
         </span>
         <span className={styles.name}>{name}</span>
       </button>

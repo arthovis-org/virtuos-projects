@@ -188,11 +188,6 @@
   background: var(--surface-hover);
 }
 
-.tileIcon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
 /* The way into unlimited desks mode. */
 .more {
   display: flex;
@@ -321,4 +316,9 @@
 
 .hide:hover {
   background: var(--surface-hover);
+}
+
+.tileIcon {
+  display: inline-flex;
+  color: var(--desk-accent);
 }

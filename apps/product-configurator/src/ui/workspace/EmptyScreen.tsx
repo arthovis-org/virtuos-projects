@@ -3,6 +3,7 @@ import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { useProduct } from '@/state/configuratorStore';
 import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
 import styles from './EmptyScreen.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 /**
  * General tools known to allow being shown inside another page (checked when this was
@@ -139,7 +140,9 @@ export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
         {groups.map((group) => (
           <div key={group.label} className={styles.group}>
             <span className={styles.groupLabel}>
-              {group.icon && <span aria-hidden="true">{group.icon} </span>}
+              {group.icon && (
+                <WorkspaceIcon name={group.icon} size={16} className={styles.groupIcon} />
+              )}
               {group.label}
             </span>
             <div className={styles.chips}>

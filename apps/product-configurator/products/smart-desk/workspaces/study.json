@@ -1,0 +1,29 @@
+{
+  "label": "Study",
+  "icon": "graduation-cap",
+  "accent": "#0d9488",
+  "order": 110,
+  "description": "University lectures, open textbooks, a focus timer and a graphing calculator.",
+  "windows": [
+    {
+      "title": "MIT lectures",
+      "url": "https://www.youtube-nocookie.com/embed/videoseries?list=UUEBb1b_L6zDS3xTUrIALZOw",
+      "screen": "MainMonitor"
+    },
+    {
+      "title": "Textbooks",
+      "url": "https://en.wikibooks.org/wiki/Main_Page",
+      "screen": "MonitorLeft"
+    },
+    {
+      "title": "Focus timer",
+      "url": "https://pomofocus.io/",
+      "screen": "MonitorRight"
+    },
+    {
+      "title": "Calculator",
+      "url": "https://www.desmos.com/calculator",
+      "screen": "MonitorBottom"
+    }
+  ]
+}

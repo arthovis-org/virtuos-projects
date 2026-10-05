@@ -1,6 +1,6 @@
 {
   "label": "Designer",
-  "icon": "🎨",
+  "icon": "palette",
   "accent": "#ec4899",
   "order": 60,
   "description": "An image editor, colour palettes, a canvas for sketches and colour theory.",

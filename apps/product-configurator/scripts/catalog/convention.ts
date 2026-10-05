@@ -103,8 +103,11 @@ const choiceConfig = z.strictObject({
 const workspaceConfigSchema = z.strictObject({
   label: z.string().optional(),
   description: z.string().optional(),
-  /** A short symbol for the desk switcher, e.g. an emoji. */
-  icon: z.string().max(8).optional(),
+  /** A Lucide icon name (https://lucide.dev/icons), e.g. "chart-candlestick". */
+  icon: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, 'expected a Lucide icon name like "chart-candlestick"')
+    .optional(),
   /** Theme colour of the workspace's desk, `#rrggbb`. */
   accent: z
     .string()

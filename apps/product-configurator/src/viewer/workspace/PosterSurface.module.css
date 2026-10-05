@@ -36,8 +36,12 @@
 }
 
 .icon {
-  font-size: 22cqmin;
-  line-height: 1;
+  display: inline-flex;
+}
+
+.icon svg {
+  width: 22cqmin;
+  height: 22cqmin;
 }
 
 .windows {

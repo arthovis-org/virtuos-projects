@@ -2,6 +2,7 @@ import { useProduct } from '@/state/configuratorStore';
 import { deskName, useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import styles from './DeskArrows.module.css';
+import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 type Side = 'left' | 'right';
 
@@ -31,6 +32,7 @@ export function DeskArrows() {
     if (!desk) return null;
     const name = deskName(product, desks, desk);
     const icon = product.workspaces.find((w) => w.id === desk.workspaceId)?.icon;
+
     return (
       <div className={styles.edge} data-side={side} style={{ top, bottom }}>
         <button
@@ -43,7 +45,7 @@ export function DeskArrows() {
             {side === 'left' ? '‹' : '›'}
           </span>
           <span className={styles.name}>
-            {icon && <span aria-hidden="true">{icon} </span>}
+            <WorkspaceIcon name={icon} size={12} className={styles.nameIcon} />
             {name}
           </span>
         </button>

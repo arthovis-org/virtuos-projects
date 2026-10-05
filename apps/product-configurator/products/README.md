@@ -184,7 +184,7 @@ toggle; windows on a switched-off screen move to the main screen until it's back
 ```json
 {
   "label": "Crypto",
-  "icon": "💰",
+  "icon": "bitcoin",
   "accent": "#f7931a",
   "order": 20,
   "description": "Bitcoin live, the crypto screener, market news and the coin heatmap.",
@@ -198,9 +198,11 @@ toggle; windows on a switched-off screen move to the main screen until it's back
 }
 ```
 
-- `icon` (an emoji or a short symbol) and `accent` (`#rrggbb`) mark the workspace in the desk
-  switcher, on desk name tags and on the posters of unlimited desks mode. Both also work in
-  `product.json`. Prefer emoji that older systems have: 🪙, for one, is missing on Windows 10.
+- `icon` (a [Lucide](https://lucide.dev/icons) icon name) and `accent` (`#rrggbb`) mark the
+  workspace on the demo card, in the desk switcher, on desk name tags and on the posters of
+  unlimited desks mode. Both also work in `product.json`. Only the icons listed in
+  `src/ui/WorkspaceIcon.tsx` are bundled; add a name there to use another one (an unknown name
+  shows a monitor).
 - `{host}` in a `url` becomes the page's host name. Twitch embeds need it:
   `https://player.twitch.tv/?channel=monstercat&parent={host}`.
 

@@ -109,3 +109,8 @@
     display: none;
   }
 }
+
+.nameIcon {
+  margin-right: 3px;
+  vertical-align: -2px;
+}

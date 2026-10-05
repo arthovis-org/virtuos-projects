@@ -1,6 +1,6 @@
 {
   "label": "Soccer",
-  "icon": "⚽",
+  "icon": "goal",
   "accent": "#00a651",
   "order": 40,
   "description": "Live scores from every league, highlights, transfers and market values on Transfermarkt, the Premier League and a tactics board.",

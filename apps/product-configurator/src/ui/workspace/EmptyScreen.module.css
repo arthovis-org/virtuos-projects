@@ -122,3 +122,8 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
+.groupIcon {
+  margin-right: 6px;
+  vertical-align: -2px;
+}

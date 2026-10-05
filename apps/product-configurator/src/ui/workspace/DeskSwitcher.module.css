@@ -174,11 +174,6 @@
   background: var(--surface-hover);
 }
 
-.themeIcon {
-  font-size: 1.375rem;
-  line-height: 1.2;
-}
-
 .themeText {
   display: flex;
   flex-direction: column;
@@ -225,4 +220,9 @@
   .hint {
     display: none;
   }
+}
+
+.themeIcon {
+  display: inline-flex;
+  color: var(--desk-accent);
 }

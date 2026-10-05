@@ -51,17 +51,23 @@ export function rememberPristine(scene: Object3D) {
   if (!pristine.has(scene)) pristine.set(scene, scene.clone(true));
 }
 
+/** The single desk's key among the desk models. */
+const SINGLE = '';
+
 /**
- * The model of one desk: the loaded scene itself for the single desk, else a copy of it per
- * desk (sharing geometry and materials), kept for as long as the desk exists.
+ * The model of one desk (`null`: the single desk): a copy of the loaded scene per desk,
+ * sharing geometry and materials, kept for as long as the desk exists. The single desk is a
+ * copy too, so every desk takes the same path: rendering the loaded scene itself, the single
+ * desk's finishes didn't show in Safari on an iPhone (white desk top) while the copies in the
+ * room did.
  */
 export function deskModel(scene: Object3D, deskId: string | null): DeskModel {
   let models = deskModels.get(scene);
   if (!models) deskModels.set(scene, (models = new Map<string, DeskModel>()));
-  const key = deskId ?? '';
+  const key = deskId ?? SINGLE;
   let model = models.get(key);
   if (!model) {
-    const copy = deskId === null ? scene : (pristine.get(scene) ?? scene).clone(true);
+    const copy = (pristine.get(scene) ?? scene).clone(true);
     model = { scene: copy, index: indexNodes(copy) };
     models.set(key, model);
   }
@@ -72,5 +78,5 @@ export function deskModel(scene: Object3D, deskId: string | null): DeskModel {
 export function releaseDeskModels(scene: Object3D, keep: readonly string[]) {
   const models = deskModels.get(scene);
   if (!models) return;
-  for (const key of models.keys()) if (key !== '' && !keep.includes(key)) models.delete(key);
+  for (const key of models.keys()) if (key !== SINGLE && !keep.includes(key)) models.delete(key);
 }

@@ -209,7 +209,7 @@ export const workspaceSchema = z.object({
   id: identifier,
   label: z.string().min(1),
   description: z.string().optional(),
-  /** A short symbol for the desk switcher, e.g. an emoji. */
+  /** A Lucide icon name (https://lucide.dev/icons); see `WorkspaceIcon`. */
   icon: z.string().optional(),
   /** Theme colour of the workspace's desk, `#rrggbb`. */
   accent: z.string().optional(),
