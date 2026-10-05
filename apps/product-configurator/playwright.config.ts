@@ -7,7 +7,8 @@ const port = 5199;
 
 export default defineConfig({
   testDir: 'e2e',
-  timeout: 60_000,
+  // CI's browser draws the 3D in software: much slower than a desktop.
+  timeout: process.env.CI ? 180_000 : 60_000,
   expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',

@@ -24,6 +24,14 @@ test.beforeEach(async ({ context }) => {
   await context.route(/^https?:\/\/(?!localhost[:/])/, (route) => route.abort());
 });
 
+/**
+ * Clicks a desk in the desk bar. Sitting down flies the camera, and in CI's software-rendered
+ * browser the bar never counts as "stable" while frames crawl; the test checks what the click
+ * does, not the flight, so it doesn't wait for stillness.
+ */
+const clickDesk = (page: Page, name: string) =>
+  deskBar(page).getByRole('button', { name, exact: true }).click({ force: true });
+
 const deskBar = (page: Page) => page.getByRole('navigation', { name: 'Desks' });
 const panelTitle = (page: Page) =>
   page.getByRole('region', { name: 'Desk', exact: true }).getByRole('heading');
@@ -47,16 +55,16 @@ test('the room keeps each desk’s own setup', async ({ page }) => {
   await expect(deskBar(page).locator('button[title^="Desk "]')).toHaveCount(4);
 
   // The single desk came along as desk 1; the others are new.
-  await deskBar(page).getByRole('button', { name: 'Crypto', exact: true }).click();
+  await clickDesk(page, 'Crypto');
   await expect(panelTitle(page)).toHaveText('Desk 2 · Crypto');
   await page.getByRole('radio', { name: 'Walnut' }).click();
   await expect(page.getByRole('radio', { name: 'Walnut' })).toBeChecked();
 
-  await deskBar(page).getByRole('button', { name: 'NBA', exact: true }).click();
+  await clickDesk(page, 'NBA');
   await expect(panelTitle(page)).toHaveText('Desk 3 · NBA');
   await expect(page.getByRole('radio', { name: 'American oak' })).toBeChecked();
 
-  await deskBar(page).getByRole('button', { name: 'Crypto', exact: true }).click();
+  await clickDesk(page, 'Crypto');
   await expect(page.getByRole('radio', { name: 'Walnut' })).toBeChecked();
   // The crypto desk's live sites are on its screens.
   await expect(page.locator('iframe').first()).toBeAttached();
@@ -87,7 +95,7 @@ test('the command center sheet builds named desks', async ({ page }) => {
 
   await expect(deskBar(page).getByRole('button', { name: 'Morning trading' })).toBeVisible();
   await expect(deskBar(page).getByRole('button', { name: 'Match night' })).toBeVisible();
-  await deskBar(page).getByRole('button', { name: 'Morning trading' }).click();
+  await clickDesk(page, 'Morning trading');
   await expect(panelTitle(page)).toHaveText('Desk 1 · Morning trading');
   // Only the screens with a site are switched on: no desk monitor.
   await expect(page.getByRole('switch', { name: /desk monitor/i })).not.toBeChecked();
