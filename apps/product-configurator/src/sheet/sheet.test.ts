@@ -148,7 +148,7 @@ describe('the AI’s answers', () => {
     expect(rows.map((r) => [r.desk, r.theme, r.screen, r.site, r.height])).toEqual([
       ['Trading', 'Crypto', 'Main', 'BTC / USDT', '74'],
       ['Trading', 'Crypto', 'Main', 'Screener', '74'],
-      ['Trading', 'Crypto', 'Left', 'en.wikipedia.org', ''],
+      ['Trading', 'Crypto', 'Left', 'Bitcoin', ''],
     ]);
     expect(rows[0]!.url).toMatch(/^https:\/\/s\.tradingview\.com\//);
   });

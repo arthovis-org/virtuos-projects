@@ -39,7 +39,7 @@ import {
   type SheetProblem,
 } from '@/sheet/sheetPlan';
 import { aiPrompt, canPlanWithAI, canReadGoogleSheets } from '@/sheet/sheetSources';
-import { useSheetStore } from '@/sheet/sheetStore';
+import { useSheetStore, type AiScope } from '@/sheet/sheetStore';
 import {
   COLUMNS,
   hasHeader,
@@ -132,6 +132,8 @@ function SheetDialog() {
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   // Kept while the AI panel is closed, to change the plan with it later.
   const [workflow, setWorkflow] = useState('');
+  // What the AI may change; adding desks unless the visitor picks otherwise.
+  const [scope, setScope] = useState<AiScope>({ kind: 'add' });
   const fileInput = useRef<HTMLInputElement>(null);
 
   const plan = useMemo(() => planFromRows(product, rows), [product, rows]);
@@ -320,19 +322,20 @@ function SheetDialog() {
         {panel === 'ai' && (
           <AiPanel
             product={product}
-            rows={rows}
+            desks={desks}
             workflow={workflow}
             onWorkflow={setWorkflow}
+            scope={desks.length > 0 ? scope : { kind: 'replace' }}
+            onScope={setScope}
             busy={busy === 'ai'}
-            onPlan={(workflow, changeCurrent) =>
+            onPlan={() =>
               void run('ai', async () => {
-                const count = await planAI(workflow, changeCurrent);
-                setOpen(new Set());
+                const asked: AiScope = desks.length > 0 ? scope : { kind: 'replace' };
+                const text = await planAI(workflow, asked);
+                // A changed desk stays open to see the change; otherwise the list.
+                setOpen(asked.kind === 'desk' ? new Set([key(asked.desk)]) : new Set());
                 setPanel(null);
-                return {
-                  text: `Planned ${count} ${count === 1 ? 'desk' : 'desks'}. Open them to check, then build the desks.`,
-                  undo: true,
-                };
+                return { text: `${text} Check, then build the desks.`, undo: true };
               })
             }
             onCopied={(ok) => {
@@ -407,6 +410,11 @@ function SheetDialog() {
               open={isOpen(desk)}
               problems={plan.problems.filter((p) => desk.rows.includes(p.row))}
               onToggle={() => toggle(desk)}
+              onAskAI={() => {
+                setScope({ kind: 'desk', desk: desk.name });
+                setPanel('ai');
+                setMessage(null);
+              }}
               onChange={setRows}
               onRenamed={(from, to) =>
                 setOpen((current) => {
@@ -455,37 +463,133 @@ function SheetDialog() {
 
 interface AiPanelProps {
   product: ProductDefinition;
-  rows: readonly SheetRow[];
+  desks: readonly DeskGroup[];
   workflow: string;
   onWorkflow: (workflow: string) => void;
+  scope: AiScope;
+  onScope: (scope: AiScope) => void;
   busy: boolean;
-  onPlan: (workflow: string, changeCurrent: boolean) => void;
+  onPlan: () => void;
   onCopied: (ok: boolean) => void;
 }
 
-function AiPanel({ product, rows, workflow, onWorkflow, busy, onPlan, onCopied }: AiPanelProps) {
-  const [changeCurrent, setChangeCurrent] = useState(false);
-  const hasDesks = rows.some((r) => r.url.trim());
-  const changing = changeCurrent && hasDesks;
+const SCOPES: readonly { kind: AiScope['kind']; label: string }[] = [
+  { kind: 'add', label: 'Add desks' },
+  { kind: 'desk', label: 'Change one desk' },
+  { kind: 'all', label: 'Change all desks' },
+  { kind: 'replace', label: 'Start over' },
+];
+
+/**
+ * The built-in AI. What it may change is chosen first and said in words, so a prompt never
+ * touches more than the visitor meant: by default it only adds desks.
+ */
+function AiPanel({
+  product,
+  desks,
+  workflow,
+  onWorkflow,
+  scope,
+  onScope,
+  busy,
+  onPlan,
+  onCopied,
+}: AiPanelProps) {
+  const count = (n: number) => `${n} ${n === 1 ? 'desk' : 'desks'}`;
+  const hasDesks = desks.length > 0;
+  // The desk being changed, if it is still in the sheet.
+  const target =
+    scope.kind === 'desk'
+      ? desks.find((d) => d.name.toLowerCase() === scope.desk.toLowerCase())
+      : undefined;
+  const what = !hasDesks
+    ? {
+        explain: 'Describe your work and the AI plans a desk for each part of it.',
+        placeholder:
+          'e.g. I day-trade crypto in the morning, run a design studio in the afternoon and follow the NBA at night.',
+        button: 'Plan my desks',
+      }
+    : scope.kind === 'add'
+      ? {
+          explain: `Plans new desks from what you describe and adds them after your ${count(desks.length)}. Nothing you already have changes.`,
+          placeholder: 'e.g. A desk for following Formula 1 race weekends.',
+          button: 'Add desks',
+        }
+      : scope.kind === 'desk'
+        ? {
+            explain: target
+              ? `Only “${target.name}” changes; your other desks stay as they are.`
+              : 'Pick the desk to change.',
+            placeholder: 'e.g. Put the news on the left screen and add a calendar.',
+            button: target ? `Change ${target.name}` : 'Change the desk',
+          }
+        : scope.kind === 'all'
+          ? {
+              explain: `Changes your ${count(desks.length)} as you ask: add, remove or rearrange. Whatever you don't mention stays.`,
+              placeholder: 'e.g. Put a news site on the left screen of every desk.',
+              button: 'Change all desks',
+            }
+          : {
+              explain: `Replaces all your ${count(desks.length)} with a new plan. You can undo it.`,
+              placeholder:
+                'e.g. I day-trade crypto in the morning, run a design studio in the afternoon and follow the NBA at night.',
+              button: 'Replace my desks',
+            };
+  const ready = workflow.trim() !== '' && (scope.kind !== 'desk' || !!target || !hasDesks);
 
   return (
     <form
       className={styles.panel}
       onSubmit={(event) => {
         event.preventDefault();
-        if (workflow.trim()) onPlan(workflow, changing);
+        if (ready) onPlan();
       }}
     >
-      <label className={styles.step} htmlFor="sheet-workflow">
-        {changing
-          ? 'What should change? (e.g. “add a desk for Formula 1”, “put the news on the left”)'
-          : 'What do you do? The AI plans a desk for each kind of work, with sites on its screens.'}
-      </label>
+      {hasDesks && (
+        <div className={styles.scopes} role="radiogroup" aria-label="What the AI may change">
+          {SCOPES.map(({ kind, label }) => (
+            <button
+              key={kind}
+              type="button"
+              role="radio"
+              aria-checked={scope.kind === kind}
+              className={styles.scope}
+              data-danger={kind === 'replace' || undefined}
+              onClick={() =>
+                onScope(
+                  kind === 'desk' ? { kind, desk: target?.name ?? desks[0]?.name ?? '' } : { kind },
+                )
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {hasDesks && scope.kind === 'desk' && (
+        <select
+          className={styles.input}
+          aria-label="Desk to change"
+          value={target?.name ?? ''}
+          onChange={(event) => onScope({ kind: 'desk', desk: event.target.value })}
+        >
+          {!target && <option value="">Pick a desk</option>}
+          {desks.map((d, i) => (
+            <option key={`${i}-${d.name}`} value={d.name}>
+              {i + 1}. {d.name}
+            </option>
+          ))}
+        </select>
+      )}
+      <p className={styles.step} data-danger={(hasDesks && scope.kind === 'replace') || undefined}>
+        {what.explain}
+      </p>
       <textarea
         id="sheet-workflow"
         className={styles.textarea}
         rows={3}
         maxLength={1500}
+        aria-label="What to ask the AI"
         value={workflow}
         onChange={(event) => onWorkflow(event.target.value)}
         onKeyDown={(event) => {
@@ -493,27 +597,17 @@ function AiPanel({ product, rows, workflow, onWorkflow, busy, onPlan, onCopied }
             event.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="e.g. I day-trade crypto in the morning, run a design studio in the afternoon and follow the NBA at night."
+        placeholder={what.placeholder}
       />
       <div className={styles.row}>
-        <button type="submit" className={styles.primary} disabled={busy || !workflow.trim()}>
+        <button type="submit" className={styles.primary} disabled={busy || !ready}>
           {busy ? (
             <Loader2 size={15} className={styles.spin} aria-hidden="true" />
           ) : (
             <Sparkles size={15} aria-hidden="true" />
           )}
-          {busy ? 'Planning…' : changing ? 'Change my desks' : 'Plan my desks'}
+          {busy ? 'Working…' : what.button}
         </button>
-        {hasDesks && (
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={changeCurrent}
-              onChange={(event) => setChangeCurrent(event.target.checked)}
-            />
-            Change the current desks instead of starting over
-          </label>
-        )}
       </div>
       <p className={styles.note}>
         {canPlanWithAI && 'A free AI (Llama 3.3 on Cloudflare), with a daily limit. '}
@@ -539,6 +633,8 @@ interface DeskCardProps {
   open: boolean;
   problems: readonly SheetProblem[];
   onToggle: () => void;
+  /** Opens the AI to change this desk only. */
+  onAskAI: () => void;
   onChange: (rows: SheetRow[]) => void;
   onRenamed: (from: string, to: string) => void;
 }
@@ -552,6 +648,7 @@ function DeskCard({
   open,
   problems,
   onToggle,
+  onAskAI,
   onChange,
   onRenamed,
 }: DeskCardProps) {
@@ -671,6 +768,11 @@ function DeskCard({
                   }
                 />
               </label>
+            )}
+            {canPlanWithAI && (
+              <button type="button" className={styles.askAI} onClick={onAskAI}>
+                <Sparkles size={14} aria-hidden="true" /> Ask AI
+              </button>
             )}
             <button
               type="button"

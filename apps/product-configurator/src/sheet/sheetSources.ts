@@ -151,7 +151,13 @@ export function rowsFromAnswer(product: ProductDefinition, answer: string): Shee
       const url = known?.url ?? link;
       let host = '';
       try {
-        host = new URL(url).hostname.replace(/^www\./, '');
+        const address = new URL(url);
+        host = address.hostname.replace(/^www\./, '');
+        // A Wikipedia article is called by its title.
+        const article = /^\/wiki\/([^/]+)$/.exec(address.pathname)?.[1];
+        if (host.endsWith('wikipedia.org') && article) {
+          host = decodeURIComponent(article).replace(/_/g, ' ');
+        }
       } catch {
         // Not an address: the sheet points it out.
       }

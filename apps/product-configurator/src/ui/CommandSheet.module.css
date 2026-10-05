@@ -132,6 +132,8 @@
 }
 
 .textarea {
+  /* In the panel's column, flex would grow it to its 200px basis in height. */
+  flex: none;
   resize: vertical;
 }
 
@@ -182,6 +184,55 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* What the AI may change. */
+.scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.scope {
+  min-height: 32px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.scope[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.scope[data-danger][aria-checked='true'] {
+  border-color: #d93036;
+  background: #d93036;
+  color: #ffffff;
+}
+
+.step[data-danger] {
+  color: #d93036;
+}
+
+.askAI {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.askAI:hover {
+  background: var(--surface-hover);
 }
 
 /* The desks: one card each, opened to show its settings and sites. */

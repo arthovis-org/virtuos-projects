@@ -106,11 +106,14 @@ screens they are on); a card opens to edit the desk and its sites, one per scree
 cards it is a plain table, one row per site: **Desk, Theme, Screen, Site, URL, Height**, which is
 what CSV files, Google Sheets and links hold.
 
-- **Plan with AI**: describe what you do and a free AI (Llama 3.3 on Cloudflare Workers AI,
-  through the layouts Worker's `/plan` route) plans a desk per kind of work. It picks from the
-  sites the workspaces already use (known to show inside the page) by id, which the page turns
-  into addresses, and can change the current desks instead of starting over. The free plan has a
-  daily allowance (a few dozen plans); past it the AI says so until the next day, never charges.
+- **Plan with AI**: describe what you want and a free AI (Llama 3.3 on Cloudflare Workers AI,
+  through the layouts Worker's `/plan` route) plans it. What it may change is chosen first and
+  said in words: **Add desks** (the default: new desks after yours, nothing else changes),
+  **Change one desk** (only that desk; a desk card's **Ask AI** opens this), **Change all desks**,
+  or **Start over** (replaces them all). Every change can be undone. It picks from the sites the
+  workspaces already use (known to show inside the page) by id, which the page turns into
+  addresses. The free plan has a daily allowance (a few dozen plans); past it the AI says so
+  until the next day, never charges.
   **Copy a prompt** gives the same instructions to ChatGPT, Claude or Gemini instead.
 - Paste a table anywhere in the sheet (from a spreadsheet or an AI's answer; with a header row it
   replaces the sheet), open or download a CSV, or load a Google Sheet shared as "Anyone with the

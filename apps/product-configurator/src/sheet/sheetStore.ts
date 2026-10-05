@@ -8,7 +8,15 @@ import { loadSetup } from '@/state/actions';
 import { currentSetup } from '@/state/setupStore';
 import { deskGroups, planFromRows, rowsFromSetup, setupWithPlan } from './sheetPlan';
 import { fetchGoogleSheet, parseGoogleSheet, planWithAI } from './sheetSources';
+import { appendDesks, keepDeskFields, replaceDesk } from './sheetEdit';
 import { emptyRow, type SheetRow } from './sheetTable';
+
+/**
+ * What the AI may change: add new desks (the others untouched), change one desk, change
+ * every desk, or replace them all.
+ */
+export type AiScope =
+  { kind: 'add' } | { kind: 'desk'; desk: string } | { kind: 'all' } | { kind: 'replace' };
 
 const LINK_KEY = 'virtuos.sheetLink';
 
@@ -44,8 +52,8 @@ interface SheetState {
   /** Replaces the whole sheet (a file, a paste, the AI), keeping the old rows for undo. */
   replaceRows: (rows: readonly SheetRow[]) => void;
   undo: () => void;
-  /** Plans the desks with the free AI, from scratch or by changing the current sheet. */
-  planWithAI: (workflow: string, changeCurrent: boolean) => Promise<number>;
+  /** Asks the free AI; the scope says what it may change. Returns what was done, in words. */
+  planWithAI: (workflow: string, scope: AiScope) => Promise<string>;
   /** Rows from the set-up as it is now, replacing the sheet's. */
   fromSetup: () => void;
   /** Loads a Google Sheet's rows into the sheet. */
@@ -71,10 +79,38 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
     const { previous } = get();
     if (previous) set({ rows: previous, previous: null });
   },
-  planWithAI: async (workflow, changeCurrent) => {
-    const rows = await planWithAI(product(), workflow, changeCurrent ? get().rows : undefined);
-    get().replaceRows(rows);
-    return deskGroups(rows).length;
+  planWithAI: async (workflow, scope) => {
+    const rows = get().rows;
+    const desks = deskGroups(rows);
+    const count = (n: number) => `${n} ${n === 1 ? 'desk' : 'desks'}`;
+    switch (scope.kind) {
+      case 'add': {
+        const added = await planWithAI(product(), workflow);
+        get().replaceRows(appendDesks(rows, added));
+        const kept = desks.length > 0 ? `; your ${count(desks.length)} stay as they were` : '';
+        return `Added ${count(deskGroups(added).length)}${kept}.`;
+      }
+      case 'desk': {
+        const desk = desks.find((d) => d.name.toLowerCase() === scope.desk.toLowerCase());
+        if (!desk) throw new Error('That desk is no longer in the sheet');
+        const current = desk.rows.flatMap((i) => rows[i] ?? []);
+        const changed = await planWithAI(product(), workflow, current);
+        get().replaceRows(replaceDesk(rows, desk, changed));
+        return `Changed ${desk.name}; the other desks stay as they were.`;
+      }
+      case 'all': {
+        const changed = await planWithAI(product(), workflow, rows);
+        get().replaceRows(keepDeskFields(rows, changed));
+        return `Changed your desks: now ${count(deskGroups(changed).length)}.`;
+      }
+      case 'replace': {
+        const planned = await planWithAI(product(), workflow);
+        get().replaceRows(planned);
+        return desks.length > 0
+          ? `Replaced your ${count(desks.length)} with ${count(deskGroups(planned).length)}.`
+          : `Planned ${count(deskGroups(planned).length)}.`;
+      }
+    }
   },
   fromSetup: () => get().replaceRows(rowsFromSetup(product(), currentSetup())),
 

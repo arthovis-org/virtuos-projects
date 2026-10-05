@@ -3,7 +3,7 @@
  * per site, so the sheet still reads and writes as a plain table. A desk's name is on all its
  * rows; its theme and height on its first row only.
  */
-import type { DeskGroup } from './sheetPlan';
+import { deskGroups, type DeskGroup } from './sheetPlan';
 import { emptyRow, isBlank, type SheetRow } from './sheetTable';
 
 type Rows = readonly SheetRow[];
@@ -79,4 +79,71 @@ export function addDesk(rows: Rows, names: readonly string[]): { rows: SheetRow[
     rows: [...rows.filter((r) => !isBlank(r)), { ...emptyRow(), desk: name }],
     name,
   };
+}
+
+/**
+ * Adds desks (the AI's new ones) after the current desks. A new desk whose name is taken gets a
+ * number ("Trading 2"), so it never merges into a desk that is already there.
+ */
+export function appendDesks(rows: Rows, added: Rows): SheetRow[] {
+  const taken = new Set(deskGroups(rows).map((d) => d.name.toLowerCase()));
+  const renames = new Map<string, string>();
+  for (const desk of deskGroups(added)) {
+    let name = desk.name;
+    for (let n = 2; taken.has(name.toLowerCase()); n++) name = `${desk.name} ${n}`;
+    taken.add(name.toLowerCase());
+    renames.set(desk.name.toLowerCase(), name);
+  }
+  let previous = '';
+  const renamed = added
+    .filter((r) => !isBlank(r))
+    .map((row) => {
+      const own = row.desk.trim() || previous;
+      previous = own;
+      return { ...row, desk: renames.get(own.toLowerCase()) ?? own };
+    });
+  return [...rows.filter((r) => !isBlank(r)), ...renamed];
+}
+
+/**
+ * Puts new rows in place of one desk (where it was, under its name): the AI's change to that
+ * desk. Only the first desk in `replacement` is used; the other desks are left as they are.
+ */
+export function replaceDesk(rows: Rows, desk: DeskGroup, replacement: Rows): SheetRow[] {
+  const first = deskGroups(replacement)[0];
+  if (!first) return [...rows];
+  const incoming = first.rows.flatMap((i) => {
+    const row = replacement[i];
+    return row ? [{ ...row, desk: desk.name }] : [];
+  });
+  // What the answer leaves out stays as it was: the desk's theme and height.
+  const before = rows[desk.rows[0] ?? -1];
+  const head = incoming[0];
+  if (head && before) {
+    head.theme ||= before.theme;
+    head.height ||= before.height;
+  }
+  const at = desk.rows[0] ?? rows.length;
+  const kept = rows.filter((_, i) => !desk.rows.includes(i));
+  const position = rows.slice(0, at).filter((_, i) => !desk.rows.includes(i)).length;
+  return [...kept.slice(0, position), ...incoming, ...kept.slice(position)];
+}
+
+/**
+ * Desks after the AI changed them all: a desk it kept (same name) keeps its theme and height
+ * where the answer left them out.
+ */
+export function keepDeskFields(rows: Rows, changed: Rows): SheetRow[] {
+  const before = new Map(
+    deskGroups(rows).map((d) => [d.name.toLowerCase(), rows[d.rows[0] ?? -1]]),
+  );
+  const next = changed.map((row) => ({ ...row }));
+  for (const desk of deskGroups(next)) {
+    const head = next[desk.rows[0] ?? -1];
+    const old = before.get(desk.name.toLowerCase());
+    if (!head || !old) continue;
+    head.theme ||= old.theme;
+    head.height ||= old.height;
+  }
+  return next;
 }
