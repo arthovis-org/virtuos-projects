@@ -51,3 +51,29 @@
     display: none;
   }
 }
+
+/* A phone held sideways: short and wide, so the desktop layout fits better than a sheet. The
+   viewer keeps the full height; the options are a narrow column beside it. */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'header header'
+      'viewer panel';
+  }
+
+  .panel,
+  .panel:not([data-open]) {
+    max-height: none;
+    overflow-y: auto;
+    border-top: none;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .panel:not([data-open]) .sheet {
+    display: block;
+  }
+}

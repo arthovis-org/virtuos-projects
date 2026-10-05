@@ -41,7 +41,11 @@ export function WorkspaceHud() {
   const setDeskWorkspace = useDesksStore((s) => s.setDeskWorkspace);
   const top = useRef<HTMLDivElement>(null);
   // On a phone the card would cover the desk: it starts folded into a pill.
-  const [cardOpen, setCardOpen] = useState(() => !window.matchMedia('(max-width: 640px)').matches);
+  const [cardOpen, setCardOpen] = useState(
+    () =>
+      !window.matchMedia('(max-width: 640px), (orientation: landscape) and (max-height: 500px)')
+        .matches,
+  );
 
   // The camera keeps the screens below the toolbar, however tall it wraps.
   useEffect(() => {

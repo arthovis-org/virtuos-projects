@@ -226,3 +226,11 @@
   display: inline-flex;
   color: var(--desk-accent);
 }
+
+/* A phone held sideways: little height to spare, and a narrower viewer beside the panel. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .deskName,
+  .hint {
+    display: none;
+  }
+}

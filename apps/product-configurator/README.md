@@ -78,6 +78,10 @@ use short labels. On touch screens a window's title bar is taller, and its row o
 buttons gives way to one ⋯ button (or a tap on the title bar) that opens a finger-sized menu. On a tall screen the room of desks uses tighter arcs with rows behind, so it
 fills the height (`TALL_ARCS` in `src/viewer/deskLayout.ts`).
 
+Held sideways (a landscape screen under 500 px tall), a phone gets the desktop layout instead:
+the viewer at full height with the options in a narrow column beside it, a slim header, and the
+same compact toolbars.
+
 ## Performance
 
 - The viewer (Three.js is most of the bundle) loads lazily, so the panel renders first; the

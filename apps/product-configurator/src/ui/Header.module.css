@@ -186,3 +186,25 @@
     font-size: 0.75rem;
   }
 }
+
+/* A phone held sideways: a slim header, so the desk keeps the little height there is. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .header {
+    padding: 0.375rem 0.75rem;
+  }
+
+  .eyebrow {
+    display: none;
+  }
+
+  .name {
+    font-size: 0.9375rem;
+  }
+
+  .button,
+  .currency,
+  .mode {
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+  }
+}
