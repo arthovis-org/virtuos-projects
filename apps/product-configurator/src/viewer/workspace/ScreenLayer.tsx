@@ -28,18 +28,21 @@ export function ScreenLayer() {
   const surfaces = useWorkspaceStore((s) => s.surfaces);
   const primaryScreen = useWorkspaceStore((s) => s.primaryScreen);
   const posters = usePosterStore((s) => s.posters);
+  const hasPosters = usePosterStore((s) => Object.keys(s.posters).length > 0);
+  // Live sites, or the posters of the room's desks (also with no desk chosen yet).
+  const shown = active || hasPosters;
   const camera = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    if (!active) return;
+    if (!shown) return;
     cssProjection.camera = camera.current;
     cssProjection.invalidate?.();
     return () => {
       cssProjection.camera = null;
     };
-  }, [active]);
+  }, [shown]);
 
-  if (!active) return null;
+  if (!shown) return null;
 
   const workspace = workspaceById(product, workspaceId);
   const closedWindows = (workspace?.windows ?? []).filter((w) => closed.includes(w.id));

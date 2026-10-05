@@ -53,7 +53,10 @@ interface DesksState {
   productId: string;
   mode: DeskMode;
   desks: readonly Desk[];
-  /** The desk the visitor is at; the panel and the live sites belong to it. */
+  /**
+   * The desk the visitor is at; the panel and the live sites belong to it. None until they
+   * pick one: the room opens on the overview with every desk showing its poster.
+   */
   activeDeskId: string | null;
   /** The single desk's configuration while the room is open, restored when it closes. */
   singleSelections: Selections | null;
@@ -112,7 +115,7 @@ export function encodeDesks(state: Pick<DesksState, 'mode' | 'desks' | 'activeDe
     return config ? `${desk.workspaceId}~${config}` : desk.workspaceId;
   });
   const at = state.desks.findIndex((d) => d.id === state.activeDeskId) + 1;
-  return `&${DESKS_PARAM}=${desks.join(',')}${at > 1 ? `&${AT_PARAM}=${at}` : ''}`;
+  return `&${DESKS_PARAM}=${desks.join(',')}${at >= 1 ? `&${AT_PARAM}=${at}` : ''}`;
 }
 
 function decodeDesks(product: ProductDefinition, search: string) {
@@ -136,8 +139,9 @@ function decodeDesks(product: ProductDefinition, search: string) {
     });
   }
   if (desks.length === 0) return null;
-  const at = Number(params.get(AT_PARAM) ?? 1);
-  const active = desks[Number.isInteger(at) && at >= 1 && at <= desks.length ? at - 1 : 0];
+  // Without `desk`, no desk is chosen: the overview.
+  const at = Number(params.get(AT_PARAM) ?? 0);
+  const active = Number.isInteger(at) && at >= 1 ? desks[at - 1] : undefined;
   return { desks, activeDeskId: active?.id ?? null };
 }
 
@@ -167,10 +171,11 @@ export const useDesksStore = create<DesksState>()((set, get) => {
       const product = currentProduct();
       const selections = useConfiguratorStore.getState().selections;
       const { parked } = get();
-      const back = parked?.desks.find((d) => d.id === parked.activeDeskId) ?? parked?.desks[0];
-      if (parked && back) {
+      if (parked && parked.desks.length > 0) {
+        const back = parked.desks.find((d) => d.id === parked.activeDeskId);
         set({ mode: 'desks', desks: parked.desks, singleSelections: selections, parked: null });
-        goTo(back, false);
+        if (back) goTo(back, false);
+        else useWorkspaceStore.getState().close();
         return;
       }
       const workspace = useWorkspaceStore.getState();
@@ -190,10 +195,11 @@ export const useDesksStore = create<DesksState>()((set, get) => {
           selections: defaultSelections(product),
         })),
       ];
-      set({ mode: 'desks', desks, singleSelections: selections });
+      set({ mode: 'desks', desks, activeDeskId: null, singleSelections: selections });
       // The desk the visitor had stays at its height; the new desks start at the default.
       useMotionStore.getState().copyDesk(SINGLE_DESK_KEY, firstDesk.id);
-      goTo(firstDesk, false);
+      // The overview, with no desk chosen: the single desk's sites go off.
+      useWorkspaceStore.getState().close();
     },
 
     exitDesks: () => {
@@ -248,10 +254,14 @@ export const useDesksStore = create<DesksState>()((set, get) => {
 
     stepDesk: (step) => {
       const { desks, activeDeskId } = get();
-      if (desks.length < 2) return;
       const index = desks.findIndex((d) => d.id === activeDeskId);
-      const next = desks[(index + step + desks.length) % desks.length];
-      if (next) goTo(next, true);
+      // From the overview with no desk chosen, the first or the last desk.
+      const next =
+        index < 0
+          ? desks[step > 0 ? 0 : desks.length - 1]
+          : desks[(index + step + desks.length) % desks.length];
+      if (!next || next.id === activeDeskId) return;
+      goTo(next, true);
     },
 
     setDeskWorkspace: (deskId, workspaceId) => {
@@ -297,12 +307,15 @@ export function deskName(product: ProductDefinition, desks: readonly Desk[], des
   return same.length > 1 ? `${label} ${same.indexOf(desk) + 1}` : label;
 }
 
-// A room from the link: the panel shows the active desk and its sites go live.
+// A room from the link: the panel shows the active desk (if the link names one) and its
+// sites go live.
 {
   const { mode, desks, activeDeskId } = useDesksStore.getState();
+  if (mode === 'desks') {
+    useDesksStore.setState({ singleSelections: useConfiguratorStore.getState().selections });
+  }
   const desk = mode === 'desks' ? desks.find((d) => d.id === activeDeskId) : undefined;
   if (desk) {
-    useDesksStore.setState({ singleSelections: useConfiguratorStore.getState().selections });
     useMotionStore.getState().setDesk(desk.id);
     useConfiguratorStore.getState().setSelections(desk.selections);
     useWorkspaceStore.getState().showDesk(desk.id, desk.workspaceId, false);

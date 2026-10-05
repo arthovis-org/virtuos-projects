@@ -118,7 +118,8 @@ export function Header() {
           className={`${styles.button} ${styles.primary}`}
           onClick={() => void copyShareLink()}
         >
-          {copied ? 'Link copied' : 'Copy share link'}
+          <span className={styles.long}>{copied ? 'Link copied' : 'Copy share link'}</span>
+          <span className={styles.short}>{copied ? 'Copied' : 'Share'}</span>
         </button>
       </div>
     </header>

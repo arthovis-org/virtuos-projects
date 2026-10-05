@@ -97,3 +97,10 @@
   font-size: 0.8125rem;
   color: var(--text-muted);
 }
+
+/* The room before a desk is chosen. */
+.pick {
+  padding: 0.875rem 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+}

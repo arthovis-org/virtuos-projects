@@ -9,8 +9,17 @@ import { fitDistance } from './fitDistance';
 import styles from './HeightInset.module.css';
 import { screenHoleMaterial } from './workspace/cssProjection';
 
-/** Size of the side view, in CSS pixels, and its distance from the viewer's right edge. */
+/**
+ * Largest size of the side view, in CSS pixels (it takes at most `WIDTH_SHARE` of the
+ * viewer's width, so it stays small on a phone), and its distance from the right edge.
+ */
 const INSET = { width: 240, height: 170, margin: 16 };
+const WIDTH_SHARE = 0.42;
+/** The side view's size in a viewer `viewerWidth` CSS pixels wide. */
+const insetSize = (viewerWidth: number) => {
+  const width = Math.round(Math.min(INSET.width, viewerWidth * WIDTH_SHARE));
+  return { width, height: Math.round((width * INSET.height) / INSET.width) };
+};
 /** How long the side view stays after the desk stops, in milliseconds. */
 const LINGER_MS = 1500;
 /** Where the side camera looks from, in the desk's own axes: its right side, a little ahead. */
@@ -63,7 +72,13 @@ export function HeightInsetFrame() {
   return (
     <div
       className={styles.frame}
-      style={{ right: INSET.margin, bottom, width: INSET.width, height: INSET.height }}
+      style={{
+        right: INSET.margin,
+        bottom,
+        // As `insetSize`, from the viewer's width (the frame's containing block).
+        width: `min(${INSET.width}px, ${WIDTH_SHARE * 100}%)`,
+        aspectRatio: `${INSET.width} / ${INSET.height}`,
+      }}
       aria-hidden="true"
     >
       <span className={styles.title}>{motion.label}</span>
@@ -135,10 +150,11 @@ export function HeightInset({ desk, reach }: HeightInsetProps) {
     gl.getClearColor(previousClear);
     const previousAlpha = gl.getClearAlpha();
 
-    const x = size.width - INSET.margin - INSET.width;
+    const { width, height } = insetSize(size.width);
+    const x = size.width - INSET.margin - width;
     gl.setScissorTest(true);
-    gl.setScissor(x, bottom, INSET.width, INSET.height);
-    gl.setViewport(x, bottom, INSET.width, INSET.height);
+    gl.setScissor(x, bottom, width, height);
+    gl.setViewport(x, bottom, width, height);
     gl.setClearColor(background, 1);
     gl.render(scene, camera);
 

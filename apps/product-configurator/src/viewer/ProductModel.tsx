@@ -11,7 +11,7 @@ import { useWorkspaceStore } from '@/state/workspaceStore';
 import { Decals } from './Decals';
 import { DeskLabel } from './DeskLabel';
 import { HeightInset } from './HeightInset';
-import { deskArcs } from './deskLayout';
+import { deskArcs, TALL_ARCS, WIDE_ARCS } from './deskLayout';
 import { MaterialAppearance } from './MaterialAppearance';
 import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskModel } from './models';
 import { motionEnvelope, useMotions } from './motion';
@@ -50,9 +50,14 @@ export function ProductModel() {
     () => modelBounds(scene, product.model).getSize(new Vector3()),
     [scene, product.model],
   );
+  // A phone held upright gets a tighter, deeper room (see `TALL_ARCS`).
+  const tall = useThree((s) => s.size.height > s.size.width * 1.1);
   const layout = useMemo(
-    () => (desksMode ? deskArcs(desks.length, footprint.x, footprint.z) : null),
-    [desksMode, desks.length, footprint],
+    () =>
+      desksMode
+        ? deskArcs(desks.length, footprint.x, footprint.z, tall ? TALL_ARCS : WIDE_ARCS)
+        : null,
+    [desksMode, desks.length, footprint, tall],
   );
   useEffect(() => setRoom(layout?.room ?? { width: 0, depth: 0 }), [layout, setRoom]);
   useEffect(
@@ -83,7 +88,8 @@ export function ProductModel() {
           rotation: 0,
         },
       ];
-  const active = items.find((item) => item.desk?.id === activeDeskId) ?? items[0];
+  // In the room, no desk is live until the visitor picks one (all show posters).
+  const active = desksMode ? items.find((item) => item.desk?.id === activeDeskId) : items[0];
   const activeConfig = useMemo(
     () => resolveConfiguration(product, activeSelections),
     [product, activeSelections],
@@ -107,7 +113,7 @@ export function ProductModel() {
           selections={item.selections}
           position={item.position}
           rotation={item.rotation}
-          layoutKey={items.length}
+          layoutKey={`${items.length}${tall ? ' tall' : ''}`}
           reportsMotion={i === 0}
           motionKey={item.desk?.id ?? SINGLE_DESK_KEY}
           desk={
@@ -136,7 +142,7 @@ interface DeskInstanceProps {
    * Changes when the room grows or shrinks: desks then jump to their places (the camera
    * frames the new room at once); otherwise (two desks swapped) they glide there.
    */
-  layoutKey: number;
+  layoutKey: string;
   /** Reports names the loaded model lacks (one desk is enough). */
   reportsMotion: boolean;
   /** Where this desk's height lives in the motion store. */
@@ -165,7 +171,7 @@ function DeskInstance({
 
   const [px, py, pz] = position;
   const goal = useMemo(() => new Vector3(px, py, pz), [px, py, pz]);
-  const placedFor = useRef<number | null>(null);
+  const placedFor = useRef<string | null>(null);
   useLayoutEffect(() => {
     const desk = group.current;
     if (!desk) return;

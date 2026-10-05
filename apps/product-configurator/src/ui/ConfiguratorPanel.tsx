@@ -22,6 +22,22 @@ export function ConfiguratorPanel() {
   const desks = useDesksStore((s) => s.desks);
   const desk = useDesksStore((s) => (s.mode === 'desks' ? activeDesk(s) : undefined));
   const workspace = product.workspaces.find((w) => w.id === desk?.workspaceId);
+  const desksMode = useDesksStore((s) => s.mode === 'desks');
+
+  // The room with no desk chosen: nothing to configure yet.
+  if (desksMode && !desk) {
+    return (
+      <div className={styles.panel}>
+        <section className={styles.pick} aria-label="Desk">
+          <h2 className={styles.deskName}>Pick a desk to set it up</h2>
+          <p className={styles.deskNote}>
+            Tap a desk, its name or a button in the desk bar. Every desk has its own setup and
+            height; drag one desk onto another to swap them.
+          </p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.panel}>

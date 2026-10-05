@@ -2,15 +2,23 @@ import type { Room } from '@/state/desksStore';
 
 /** Space between neighbouring desks along an arc, in metres. */
 const GAP = 0.7;
-/**
- * Radius of the first arc, in metres: the distance from the focal point to the desks. Wide
- * enough for eight desks side by side.
- */
-const FIRST_RADIUS = 6.5;
 /** Aisle between one arc and the next, room for a chair, in metres. */
 const AISLE = 1.8;
-/** Widest an arc may open, in radians: wider and the end desks are seen edge-on. */
-const MAX_ARC = (150 * Math.PI) / 180;
+
+export interface ArcShape {
+  /** Radius of the first arc, in metres: the distance from the focal point to the desks. */
+  firstRadius: number;
+  /** Widest an arc may open, in radians. */
+  maxArc: number;
+}
+
+/** A wide screen: a big arc, eight desks side by side before the next row. */
+export const WIDE_ARCS: ArcShape = { firstRadius: 6.5, maxArc: (150 * Math.PI) / 180 };
+/**
+ * A tall screen (a phone held upright): a tight arc of three, then rows behind it, so the
+ * room fills the screen's height instead of shrinking to fit its width.
+ */
+export const TALL_ARCS: ArcShape = { firstRadius: 3.6, maxArc: (80 * Math.PI) / 180 };
 
 export interface DeskPlacement {
   position: [number, number, number];
@@ -30,13 +38,18 @@ export interface DeskLayout {
  * middle they see a desk's screens. A full arc continues on a wider one behind it (which
  * holds more desks). Centred on the origin.
  */
-export function deskArcs(count: number, width: number, depth: number): DeskLayout {
+export function deskArcs(
+  count: number,
+  width: number,
+  depth: number,
+  { firstRadius, maxArc }: ArcShape = WIDE_ARCS,
+): DeskLayout {
   const pitch = width + GAP;
   const raw: DeskPlacement[] = [];
   for (let row = 0, placed = 0; placed < count; row++) {
-    const radius = FIRST_RADIUS + row * (depth + AISLE);
+    const radius = firstRadius + row * (depth + AISLE);
     const step = 2 * Math.asin(Math.min(1, pitch / (2 * radius)));
-    const capacity = Math.floor(MAX_ARC / step) + 1;
+    const capacity = Math.floor(maxArc / step) + 1;
     const inRow = Math.min(capacity, count - placed);
     // Left to right, like the switcher, so Ctrl + → moves to the desk on the right.
     for (let i = 0; i < inRow; i++) {

@@ -224,7 +224,64 @@
 
 @media (max-width: 640px) {
   /* The workspace menu next to it says the same. */
-  .bar .name {
+  .bar .name:not(.prompt) {
     display: none;
   }
+}
+
+/* Long labels, or short ones on a phone. */
+.short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .long {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
+}
+
+/* The card folded away (at first on a phone), and the button that folds it. */
+.pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pillDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2e8b57;
+  box-shadow: 0 0 0 3px rgb(46 139 87 / 25%);
+}
+
+.hide {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.hide:hover {
+  background: var(--surface-hover);
 }

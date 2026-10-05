@@ -69,6 +69,14 @@ src/
 docs/ARCHITECTURE.md       data flow in more detail
 ```
 
+## Phones
+
+Below 900 px wide the option panel is a bottom sheet, closed to a bar at first so the desk keeps
+the screen; opened, it takes the lower part and the camera reframes the desk above it. Below
+640 px the header fits one row, the live demo card starts folded into a pill, and the toolbars
+use short labels. On a tall screen the room of desks uses tighter arcs with rows behind, so it
+fills the height (`TALL_ARCS` in `src/viewer/deskLayout.ts`).
+
 ## Performance
 
 - The viewer (Three.js is most of the bundle) loads lazily, so the panel renders first; the

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useProduct } from '@/state/configuratorStore';
 import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
@@ -37,27 +37,47 @@ export function WorkspaceHud() {
   const exitDesks = useDesksStore((s) => s.exitDesks);
   const setDeskWorkspace = useDesksStore((s) => s.setDeskWorkspace);
   const top = useRef<HTMLDivElement>(null);
+  // On a phone the card would cover the desk: it starts folded into a pill.
+  const [cardOpen, setCardOpen] = useState(() => !window.matchMedia('(max-width: 640px)').matches);
 
   // The camera keeps the screens below the toolbar, however tall it wraps.
   useEffect(() => {
     const element = top.current;
-    if (!active || !element) return;
+    if (!(active || desksMode) || !element) return;
     const measure = () => setHudInset(element.offsetTop + element.offsetHeight + 8);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [active, setHudInset]);
+  }, [active, desksMode, setHudInset]);
   if (product.workspaces.length === 0) return null;
 
   const workspace = workspaceById(product, workspaceId);
   const [first, ...others] = product.workspaces;
 
-  if (!active) {
+  // The room always has its toolbar, even before a desk is chosen.
+  if (!active && !desksMode) {
     // Hidden while the camera flies back from a workspace.
     if (!cameraFree || !first) return null;
+    if (!cardOpen) {
+      return (
+        <button type="button" className={styles.pill} onClick={() => setCardOpen(true)}>
+          <span className={styles.pillDot} aria-hidden="true" />
+          Live demo · try the screens
+        </button>
+      );
+    }
     return (
       <section className={styles.card} aria-labelledby="workspace-demo">
+        <button
+          type="button"
+          className={styles.hide}
+          aria-label="Hide the live demo card"
+          title="Hide"
+          onClick={() => setCardOpen(false)}
+        >
+          ×
+        </button>
         <span className={styles.eyebrow}>Live demo</span>
         <h2 id="workspace-demo" className={styles.title}>
           Work on these screens
@@ -142,7 +162,9 @@ export function WorkspaceHud() {
     <>
       <div ref={top} className={styles.top}>
         <div className={styles.bar} role="toolbar" aria-label="Workspace">
-          {desksMode && desk ? (
+          {desksMode && !desk ? (
+            <span className={`${styles.name} ${styles.prompt}`}>Pick a desk</span>
+          ) : desksMode && desk ? (
             <>
               <span className={styles.name}>
                 Desk {desks.indexOf(desk) + 1} · {deskName(product, desks, desk)}
@@ -172,35 +194,56 @@ export function WorkspaceHud() {
           ) : (
             <span className={styles.name}>{workspace?.label} workspace</span>
           )}
-          <div className={styles.tabs} role="radiogroup" aria-label="Camera">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={seated}
-              className={styles.tab}
-              onClick={seated && focus ? () => setFocus(null) : sit}
-            >
-              {seated && focus ? 'All screens' : 'Seated view'}
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={!seated}
-              className={styles.tab}
-              onClick={standUp}
-            >
-              {desksMode ? 'All desks' : 'Look around'}
-            </button>
-          </div>
-          <button type="button" className={styles.button} onClick={resetWindows}>
-            Reset windows
-          </button>
+          {(!desksMode || desk) && (
+            <>
+              <div className={styles.tabs} role="radiogroup" aria-label="Camera">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={seated}
+                  className={styles.tab}
+                  onClick={seated && focus ? () => setFocus(null) : sit}
+                >
+                  <span className={styles.long}>
+                    {seated && focus ? 'All screens' : 'Seated view'}
+                  </span>
+                  <span className={styles.short}>{seated && focus ? 'All' : 'Seat'}</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!seated}
+                  className={styles.tab}
+                  onClick={standUp}
+                >
+                  <span className={styles.long}>{desksMode ? 'All desks' : 'Look around'}</span>
+                  <span className={styles.short}>{desksMode ? 'Desks' : 'Orbit'}</span>
+                </button>
+              </div>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={resetWindows}
+                aria-label="Reset windows"
+                title="Reset windows"
+              >
+                <span className={styles.long}>Reset windows</span>
+                <span className={styles.short} aria-hidden="true">
+                  ↺
+                </span>
+              </button>
+            </>
+          )}
           <button
             type="button"
             className={`${styles.button} ${styles.primary}`}
             onClick={desksMode ? exitDesks : close}
+            aria-label={desksMode ? 'Back to one desk' : 'Close'}
           >
-            {desksMode ? 'Back to one desk' : 'Close'}
+            <span className={styles.long}>{desksMode ? 'Back to one desk' : 'Close'}</span>
+            <span className={styles.short} aria-hidden="true">
+              {desksMode ? '1 desk' : '✕'}
+            </span>
           </button>
         </div>
       </div>

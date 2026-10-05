@@ -1,0 +1,60 @@
+/* The phone's handle on the option panel; the panel is a column on wider screens. */
+.bar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+    padding: 8px 16px 12px;
+    border: 0;
+    background: var(--surface);
+    text-align: left;
+  }
+}
+
+.handle {
+  align-self: center;
+  width: 2.5rem;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.detail {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.action {
+  flex-shrink: 0;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}

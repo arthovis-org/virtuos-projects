@@ -12,6 +12,7 @@ import { useWorkspaceStore } from '@/state/workspaceStore';
 import { WorkspaceHud } from '@/ui/workspace/WorkspaceHud';
 import { preloadCurrentProduct } from './models';
 import { ProductModel } from './ProductModel';
+import { CssProjectionDriver } from './workspace/CssProjectionDriver';
 import { ScreenLayer } from './workspace/ScreenLayer';
 import styles from './Scene.module.css';
 
@@ -20,6 +21,11 @@ preloadCurrentProduct();
 
 /** Lowest angle the room overview looks down at the desks from, so back rows show too. */
 const ROOM_ELEVATION = MathUtils.degToRad(32);
+/**
+ * On a tall view (a phone held upright) the room is seen from higher up, so the arc's depth
+ * uses the height of the screen instead of shrinking to fit its width.
+ */
+const ROOM_ELEVATION_TALL = MathUtils.degToRad(52);
 /** Farthest the orbit camera may go: one desk, or a room of them. */
 const MAX_DISTANCE = { desk: 6, room: 60 };
 
@@ -84,8 +90,10 @@ function Refit() {
     const target = controls?.target ?? center;
     // The room from behind the point its desks face, high enough to see over the front row;
     // one desk from the side the visitor looks from now.
+    const elevation =
+      (camera as PerspectiveCamera).aspect < 0.9 ? ROOM_ELEVATION_TALL : ROOM_ELEVATION;
     const aim = desksMode
-      ? new Vector3(0, Math.sin(ROOM_ELEVATION), Math.cos(ROOM_ELEVATION))
+      ? new Vector3(0, Math.sin(elevation), Math.cos(elevation))
       : camera.position.clone().sub(target).normalize();
     const distance = fitDistance(box, center, aim, camera as PerspectiveCamera) * FIT_MARGIN;
     flight.current = {
@@ -214,6 +222,7 @@ export function Scene() {
           // which includes the full height range of a motorised desk.
         />
         <RoomLimits />
+        <CssProjectionDriver />
       </Canvas>
       <WorkspaceHud />
       <HeightInsetFrame />

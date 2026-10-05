@@ -214,6 +214,7 @@ having a desk for every kind of work is like. The room starts with the visitor's
 switcher, the name tags or Ctrl + ← / →, swap two desks by dragging one (its name tag or a
 screen) onto the other in the overview, and change a desk's workspace from the toolbar.
 
+The room opens on the overview with no desk chosen; the visitor picks one to sit down at it.
 Only the desk the visitor is at runs live sites; the screens of the others show a poster of
 their workspace, so the room stays light however many desks it has (up to `MAX_DESKS`, 36).
 Leaving for one desk keeps the room: coming back brings back every desk with its workspace,

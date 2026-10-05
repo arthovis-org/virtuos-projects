@@ -207,6 +207,16 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   const setCameraFree = useWorkspaceStore((s) => s.setCameraFree);
 
   const saved = useRef<(Pose & { limits: Partial<Controls> }) | null>(null);
+  // Unmounted while seated (the room opened with no desk chosen): hand the camera back.
+  useEffect(
+    () => () => {
+      if (controls && saved.current)
+        Object.assign(controls, { ...saved.current.limits, enabled: true });
+      saved.current = null;
+      useWorkspaceStore.getState().setCameraFree(true);
+    },
+    [controls],
+  );
   const move = useRef<Move | null>(null);
   /** Where the screen the camera faces was last frame, to follow it up and down. */
   const anchor = useRef<Vector3 | null>(null);

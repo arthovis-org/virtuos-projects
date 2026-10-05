@@ -8,17 +8,11 @@ import {
   Vector2,
   Vector3,
   type Object3D,
-  type PerspectiveCamera,
 } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import { matrixRelativeTo } from '../nodeUtils';
-import {
-  coverScreens,
-  cssProjection,
-  screenHoleMaterial,
-  updateCssProjection,
-} from './cssProjection';
+import { coverScreens, cssProjection, screenHoleMaterial } from './cssProjection';
 import { dropTargetAt } from './dropTarget';
 import { isShown, resolveScreens, screenPixels, type ResolvedScreen } from './resolveScreens';
 import { WorkspaceCamera, type CameraTarget } from './WorkspaceCamera';
@@ -80,6 +74,8 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
       primary?.screen.id,
     );
   }, [visible, primary, product, setSurfaces]);
+  // No live screens without this layer (the room with no desk chosen).
+  useEffect(() => () => setSurfaces([], undefined), [setSurfaces]);
 
   // The live screens' frames, for the projection that lays the sites over them.
   useEffect(() => {
@@ -91,12 +87,6 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
     };
   }, [active, visible]);
 
-  useEffect(() => {
-    cssProjection.invalidate = invalidate;
-    return () => {
-      cssProjection.invalidate = null;
-    };
-  }, [invalidate]);
   // Off, the screens look like switched-off displays: glossy black glass. On, each draws as a
   // transparent hole that still hides what is behind it: the sites under the canvas show
   // through it, and whatever is in front of the screen (another monitor, its own back, the
@@ -119,25 +109,6 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
       invalidate();
     };
   }, [active, screens, product.screenMaterial, invalidate]);
-
-  // When the scene is drawn, after everything moved this frame (camera, desk height), so the
-  // sites never lag behind. Other renders of the scene (contact shadows) use other cameras.
-  const root = useThree((s) => s.scene);
-  const size = useThree((s) => s.size);
-  useEffect(() => {
-    if (!active) return;
-    const previous = root.onAfterRender.bind(root);
-    root.onAfterRender = (renderer, scene, drawn, ...rest) => {
-      previous(renderer, scene, drawn, ...rest);
-      if (drawn === camera) {
-        updateCssProjection(camera as PerspectiveCamera, size, product.pixelsPerMetre);
-      }
-    };
-    invalidate();
-    return () => {
-      root.onAfterRender = previous;
-    };
-  }, [active, root, camera, size, product.pixelsPerMetre, invalidate]);
 
   // Screen positions under the pointer: the drop target of a dragged window, and the point on
   // a screen's plane a divider is dragged to (the plane, so it works past the screen's edge).
