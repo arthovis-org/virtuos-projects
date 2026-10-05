@@ -82,7 +82,7 @@ A second mode: a room of desks, each a copy of the model (`deskModel` in `viewer
 cloned from an untouched copy taken before the configurator changes the loaded scene) with its
 own selections and workspace. The configurator store always holds the selections of the desk
 the visitor is at, so the panel works unchanged; the desks store keeps every desk's copy and
-swaps them as the visitor moves. `ProductModel` lays the desks out (`deskLayout.ts`) and renders
+swaps them as the visitor moves. `ProductModel` lays the desks out on arcs facing one point (`deskLayout.ts`) and renders
 one `DeskInstance` per desk; the single `WorkspaceLayer` follows the active desk (it is never
 remounted, so the seated camera keeps its state while flying between desks), and the workspace
 store keeps each other desk's windows in `saved`. The other desks' screens show posters

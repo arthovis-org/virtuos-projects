@@ -3,21 +3,26 @@
   "icon": "⚽",
   "accent": "#00a651",
   "order": 40,
-  "description": "Premier League highlights, the league and the Champions League, and a tactics board.",
+  "description": "Live scores from every league, highlights, transfers and market values on Transfermarkt, the Premier League and a tactics board.",
   "windows": [
+    {
+      "title": "Live scores",
+      "url": "https://www.fotmob.com/",
+      "screen": "MainMonitor"
+    },
     {
       "title": "Premier League highlights",
       "url": "https://www.youtube-nocookie.com/embed/videoseries?list=UUG5qGWdu8nIRZqJ_GgDwQ-w",
       "screen": "MainMonitor"
     },
     {
-      "title": "Premier League",
-      "url": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
+      "title": "Transfermarkt",
+      "url": "https://www.transfermarkt.com/premier-league/startseite/wettbewerb/GB1",
       "screen": "MonitorLeft"
     },
     {
-      "title": "Champions League",
-      "url": "https://en.wikipedia.org/wiki/2026%E2%80%9327_UEFA_Champions_League",
+      "title": "Premier League",
+      "url": "https://en.wikipedia.org/wiki/2026%E2%80%9327_Premier_League",
       "screen": "MonitorRight"
     },
     {

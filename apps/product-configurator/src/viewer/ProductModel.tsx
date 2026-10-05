@@ -10,7 +10,7 @@ import { SINGLE_DESK_KEY } from '@/state/motionStore';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import { Decals } from './Decals';
 import { DeskLabel } from './DeskLabel';
-import { deskGrid } from './deskLayout';
+import { deskArcs } from './deskLayout';
 import { MaterialAppearance } from './MaterialAppearance';
 import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskModel } from './models';
 import { motionEnvelope, useMotions } from './motion';
@@ -48,7 +48,7 @@ export function ProductModel() {
     [scene, product.model],
   );
   const layout = useMemo(
-    () => (desksMode ? deskGrid(desks.length, footprint.x, footprint.z) : null),
+    () => (desksMode ? deskArcs(desks.length, footprint.x, footprint.z) : null),
     [desksMode, desks.length, footprint],
   );
   useEffect(() => setRoom(layout?.room ?? { width: 0, depth: 0 }), [layout, setRoom]);
@@ -67,9 +67,19 @@ export function ProductModel() {
         desk,
         model: deskModel(scene, desk.id),
         selections: desk.selections,
-        position: layout?.positions[i] ?? ORIGIN,
+        position: layout?.placements[i]?.position ?? ORIGIN,
+        rotation: layout?.placements[i]?.rotation ?? 0,
       }))
-    : [{ id: '', desk: undefined, model: deskModel(scene, null), selections, position: ORIGIN }];
+    : [
+        {
+          id: '',
+          desk: undefined,
+          model: deskModel(scene, null),
+          selections,
+          position: ORIGIN,
+          rotation: 0,
+        },
+      ];
   const active = items.find((item) => item.desk?.id === activeDeskId) ?? items[0];
   const activeConfig = useMemo(
     () => resolveConfiguration(product, activeSelections),
@@ -93,6 +103,7 @@ export function ProductModel() {
           model={item.model}
           selections={item.selections}
           position={item.position}
+          rotation={item.rotation}
           reportsMotion={i === 0}
           motionKey={item.desk?.id ?? SINGLE_DESK_KEY}
           desk={
@@ -115,6 +126,8 @@ interface DeskInstanceProps {
   model: DeskModel;
   selections: Selections;
   position: [number, number, number];
+  /** Turn about the vertical axis, in radians (desks in the room face a common point). */
+  rotation: number;
   /** Reports names the loaded model lacks (one desk is enough). */
   reportsMotion: boolean;
   /** Where this desk's height lives in the motion store. */
@@ -130,6 +143,7 @@ function DeskInstance({
   model,
   selections,
   position,
+  rotation,
   reportsMotion,
   motionKey,
   desk,
@@ -214,7 +228,7 @@ function DeskInstance({
   }, [envelope, motions.length]);
 
   return (
-    <group position={position}>
+    <group position={position} rotation={[0, rotation, 0]}>
       <group position={offset}>
         <Suspense fallback={null}>
           <Decals

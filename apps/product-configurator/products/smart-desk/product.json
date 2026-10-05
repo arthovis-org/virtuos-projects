@@ -59,6 +59,8 @@
   "workspaces": {
     "office": {
       "label": "Office",
+      "icon": "💼",
+      "accent": "#64748b",
       "description": "Calendar, research, notes and a whiteboard, each on its own screen.",
       "windows": [
         {

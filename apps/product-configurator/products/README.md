@@ -132,7 +132,7 @@ to judge scale; what you see there with 1 UV unit ≈ 1 m is what `repeat: 1` sh
 ## Screens and workspaces
 
 A workspace puts **live websites on the product's monitors**, so visitors can feel what the extra
-screens are for: they press "Try the … workspace" on the card over the viewer, the camera moves to
+screens are for: they pick a workspace on the card over the viewer, the camera moves to
 a seated view (looking down a little when a screen lies on the desk), and they can use the sites,
 zoom to one screen (⤢), or drag a window by its title bar onto another one: dropped on the
 window's edge the two share the screen side by side (stacked on a portrait screen), dropped on its
@@ -205,7 +205,7 @@ toggle; windows on a switched-off screen move to the main screen until it's back
 ### Unlimited desks
 
 With more than one workspace, the demo card and the header offer **Unlimited desks**: a room of
-desks, each a copy of the model with its own workspace and its own configuration, to show what
+desks, side by side on arcs around one point so they all face it, each a copy of the model with its own workspace and its own configuration, to show what
 having a desk for every kind of work is like. The room starts with the visitor's desk and the
 `finance`, `crypto`, `nba` and `soccer` workspaces, where they exist (`STARTER_DESKS` in
 `src/state/desksStore.ts`). Visitors add desks with any workspace, remove them, switch with the

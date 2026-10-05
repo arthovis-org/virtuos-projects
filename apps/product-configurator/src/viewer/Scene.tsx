@@ -1,7 +1,7 @@
 import { Bounds, ContactShadows, OrbitControls, useBounds } from '@react-three/drei';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { MathUtils, Vector3 } from 'three';
+import { MathUtils, Vector3, type Box3, type PerspectiveCamera } from 'three';
 import { useDesksStore } from '@/state/desksStore';
 import { LoadingIndicator } from './LoadingIndicator';
 import { StudioEnvironment } from './StudioEnvironment';
@@ -21,20 +21,80 @@ const ROOM_ELEVATION = MathUtils.degToRad(32);
 /** Farthest the orbit camera may go: one desk, or a room of them. */
 const MAX_DISTANCE = { desk: 6, room: 60 };
 
+/** The parts of drei's OrbitControls a refit moves. */
+interface RefitControls {
+  target: Vector3;
+  update: () => void;
+  addEventListener: (type: 'start', listener: () => void) => void;
+  removeEventListener: (type: 'start', listener: () => void) => void;
+}
+
+interface Flight {
+  from: Vector3;
+  fromTarget: Vector3;
+  to: Vector3;
+  toTarget: Vector3;
+  t: number;
+  started: boolean;
+}
+
+/** Space around the product when it is framed. */
+const FIT_MARGIN = 1.1;
+
+/**
+ * How far from `center` along `aim` the camera must be to see every corner of `box`. Unlike
+ * drei's estimate this counts the corners nearer the camera, which look bigger: a room of
+ * desks is deep, and its front corners were cut off.
+ */
+function fitDistance(box: Box3, center: Vector3, aim: Vector3, camera: PerspectiveCamera) {
+  const tanV = Math.tan((camera.fov * Math.PI) / 360);
+  const tanH = tanV * camera.aspect;
+  const right = new Vector3().crossVectors(new Vector3(0, 1, 0), aim).normalize();
+  const up = new Vector3().crossVectors(aim, right).normalize();
+  let distance = 0;
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const offset = new Vector3(x, y, z).sub(center);
+        const depth = offset.dot(aim);
+        distance = Math.max(
+          distance,
+          depth + Math.abs(offset.dot(right)) / tanH,
+          depth + Math.abs(offset.dot(up)) / tanV,
+        );
+      }
+    }
+  }
+  return distance;
+}
+
+/** How long a refit takes, in seconds. */
+const REFIT_SECONDS = 0.9;
+/** Fast in the middle, soft at both ends. */
+const ease = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+
 /**
  * Reframes the product when the canvas is resized or the room of desks changes, unless
  * workspace mode has the camera (then once it hands the camera back). `Bounds observe`
  * can't be switched off for that: turning it off makes drei refit once.
+ *
+ * The camera flies here rather than through `Bounds`: drei turns the camera's up vector
+ * during its animations, and one cut short (the visitor sitting down mid-flight) left every
+ * later view rolled. This keeps the horizon level.
  */
 function Refit() {
   const bounds = useBounds();
   const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as unknown as RefitControls | null;
+  const invalidate = useThree((s) => s.invalidate);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
   const cameraFree = useWorkspaceStore((s) => s.cameraFree);
   const desksMode = useDesksStore((s) => s.mode === 'desks');
   const deskCount = useDesksStore((s) => s.desks.length);
   const fitted = useRef<string | null>(null);
+  const flight = useRef<Flight | null>(null);
+
   useEffect(() => {
     const key = `${width}x${height}:${desksMode ? deskCount : 'single'}`;
     // `Bounds fit` frames a single desk itself when it mounts; a room needs the view above.
@@ -45,22 +105,58 @@ function Refit() {
     if (!cameraFree || fitted.current === key) return;
     fitted.current = key;
     bounds.refresh().clip();
-    if (!desksMode) {
-      bounds.fit();
+    const { box, center } = bounds.getSize();
+    const target = controls?.target ?? center;
+    // The room from behind the point its desks face, high enough to see over the front row;
+    // one desk from the side the visitor looks from now.
+    const aim = desksMode
+      ? new Vector3(0, Math.sin(ROOM_ELEVATION), Math.cos(ROOM_ELEVATION))
+      : camera.position.clone().sub(target).normalize();
+    const distance = fitDistance(box, center, aim, camera as PerspectiveCamera) * FIT_MARGIN;
+    flight.current = {
+      from: camera.position.clone(),
+      fromTarget: target.clone(),
+      to: center.clone().addScaledVector(aim, distance),
+      toTarget: center.clone(),
+      t: 0,
+      started: false,
+    };
+    invalidate();
+  }, [bounds, camera, controls, invalidate, width, height, cameraFree, desksMode, deskCount]);
+
+  // Dragging takes the camera over.
+  useEffect(() => {
+    if (!controls) return;
+    const stop = () => {
+      flight.current = null;
+    };
+    controls.addEventListener('start', stop);
+    return () => controls.removeEventListener('start', stop);
+  }, [controls]);
+
+  useFrame((_, delta) => {
+    const f = flight.current;
+    if (!f) return;
+    // Workspace mode took the camera (the visitor sat down): it flies from wherever this is.
+    if (!useWorkspaceStore.getState().cameraFree) {
+      flight.current = null;
       return;
     }
-    // From the same side as now, but high enough to see over the front row.
-    const { center, distance } = bounds.getSize();
-    const direction = camera.position.clone().sub(center);
-    const level = Math.hypot(direction.x, direction.z) || 1;
-    const elevation = Math.max(ROOM_ELEVATION, Math.atan2(direction.y, level));
-    const aim = new Vector3(
-      (direction.x / level) * Math.cos(elevation),
-      Math.sin(elevation),
-      (direction.z / level) * Math.cos(elevation),
-    );
-    bounds.moveTo(center.clone().addScaledVector(aim, distance)).lookAt({ target: center });
-  }, [bounds, camera, width, height, cameraFree, desksMode, deskCount]);
+    // After a still period the first delta spans the whole pause; start the clock now instead.
+    if (f.started) f.t = Math.min(1, f.t + Math.min(delta, 0.05) / REFIT_SECONDS);
+    f.started = true;
+    const k = ease(f.t);
+    camera.position.lerpVectors(f.from, f.to, k);
+    const target = controls?.target ?? new Vector3();
+    target.lerpVectors(f.fromTarget, f.toTarget, k);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(target);
+    if (f.t >= 1) {
+      flight.current = null;
+      controls?.update();
+    }
+    invalidate();
+  });
   return null;
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { useProduct } from '@/state/configuratorStore';
 import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
@@ -62,46 +62,59 @@ export function WorkspaceHud() {
         <h2 id="workspace-demo" className={styles.title}>
           Work on these screens
         </h2>
-        <p className={styles.description}>
-          {product.workspaces.length === 1 && first.description
-            ? first.description
-            : 'Real websites on every monitor. Use them, and drag windows between screens.'}
-        </p>
-        <div className={styles.actions}>
-          <button
-            type="button"
-            className={`${styles.button} ${styles.primary}`}
-            onClick={() => enter(first.id)}
-          >
-            Try the {first.label.toLowerCase()} workspace
-          </button>
-        </div>
-        {others.length > 0 && (
-          <div className={styles.chips} aria-label="More workspaces">
-            {others.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                className={styles.chip}
-                onClick={() => enter(w.id)}
-                title={w.description}
-              >
-                {w.icon && <span aria-hidden="true">{w.icon}</span>} {w.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {others.length > 0 && (
-          <div className={styles.more}>
-            <h3 className={styles.moreTitle}>Unlimited desks</h3>
+        {others.length === 0 ? (
+          <>
             <p className={styles.description}>
-              A desk for every kind of work, each with its own setup and screens. Add as many as you
-              like.
+              {first.description ??
+                'Real websites on every monitor. Use them, and drag windows between screens.'}
             </p>
-            <button type="button" className={styles.button} onClick={enterDesks}>
-              Try unlimited desks →
-            </button>
-          </div>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={`${styles.button} ${styles.primary}`}
+                onClick={() => enter(first.id)}
+              >
+                Try the {first.label.toLowerCase()} workspace
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className={styles.description}>
+              Real websites on every monitor. Pick a workspace to sit down at it.
+            </p>
+            <div className={styles.tiles} aria-label="Workspaces">
+              {product.workspaces.map((w) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  className={styles.tile}
+                  style={{ '--desk-accent': w.accent ?? 'var(--border-strong)' } as CSSProperties}
+                  onClick={() => enter(w.id)}
+                  title={w.description}
+                >
+                  <span className={styles.tileIcon} aria-hidden="true">
+                    {w.icon ?? '🖥️'}
+                  </span>
+                  {w.label}
+                </button>
+              ))}
+            </div>
+            <div className={styles.more}>
+              <h3 className={styles.moreTitle}>Unlimited desks</h3>
+              <p className={styles.description}>
+                Every workspace on its own desk, side by side around you, each with its own setup.
+                Add as many as you like.
+              </p>
+              <button
+                type="button"
+                className={`${styles.button} ${styles.primary}`}
+                onClick={enterDesks}
+              >
+                Try unlimited desks →
+              </button>
+            </div>
+          </>
         )}
       </section>
     );

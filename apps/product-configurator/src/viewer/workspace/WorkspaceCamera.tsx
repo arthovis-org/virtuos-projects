@@ -318,6 +318,7 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
             : lag.clone().multiplyScalar(1 - Math.exp(-Math.min(delta, 0.1) / FOLLOW_LAG));
         camera.position.add(step);
         controls.target.add(step);
+        camera.up.copy(WORLD_UP);
         camera.lookAt(controls.target);
         lag.sub(step);
         invalidate();
@@ -339,6 +340,8 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
       MathUtils.lerp(m.fromAngle.theta, m.toAngle.theta, k),
     );
     camera.position.setFromSpherical(angle).add(target);
+    // Level, whatever turned the camera's up vector before (drei's Bounds animations do).
+    camera.up.copy(WORLD_UP);
     camera.lookAt(target);
     controls?.target.copy(target);
     if (m.t >= 1) {
