@@ -101,3 +101,35 @@ test('the command center sheet builds named desks', async ({ page }) => {
   await expect(page.getByRole('switch', { name: /desk monitor/i })).not.toBeChecked();
   expect(errors).toEqual([]);
 });
+
+test('a desk dragged to the trash is removed; the trash shows only while dragging', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await page.getByRole('radio', { name: 'Unlimited desks' }).click();
+  const desks = deskBar(page).locator('button[title^="Desk "]');
+  await expect(desks).toHaveCount(4);
+  const trash = page.getByText('Drop here to remove');
+  await expect(trash).toHaveCount(0);
+
+  // Press the NBA desk's name tag in the room and drag it onto the trash.
+  const tag = page.locator('button[data-desk-tag]', { hasText: 'NBA' });
+  const from = await tag.boundingBox();
+  expect(from).not.toBeNull();
+  const x = from!.x + from!.width / 2;
+  const y = from!.y + from!.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 20, y + 20, { steps: 4 });
+  await expect(trash).toBeVisible();
+  const bin = (await page.locator('[data-desk-trash]').boundingBox())!;
+  await page.mouse.move(bin.x + bin.width / 2, bin.y + bin.height / 2, { steps: 8 });
+  await expect(page.getByText('Release to remove')).toBeVisible();
+  await page.mouse.up();
+
+  await expect(desks).toHaveCount(3);
+  await expect(deskBar(page).getByRole('button', { name: 'NBA', exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-desk-trash]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

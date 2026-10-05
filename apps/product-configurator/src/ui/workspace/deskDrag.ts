@@ -1,9 +1,10 @@
 /**
- * Dragging a desk onto another in the room overview, to swap their places. A press on a
- * desk's name tag or one of its screens that moves becomes a drag; one that doesn't is a
- * click (sit down at the desk).
+ * Dragging a desk onto another in the room overview, to swap their places, or onto the trash
+ * that shows while dragging, to remove it. A press on a desk's name tag or one of its screens
+ * that moves becomes a drag; one that doesn't is a click (sit down at the desk).
  */
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { removeDesk } from '@/state/actions';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
 
@@ -11,6 +12,24 @@ import { useViewStore } from '@/state/viewStore';
 const THRESHOLD = 6;
 /** How near a name tag the pointer must be to drop on its desk, in CSS pixels. */
 const TAG_REACH = 120;
+
+/** Marks the trash (shown while a desk is dragged). */
+export const deskTrashAttribute = { 'data-desk-trash': '' };
+/** How near the trash the pointer counts as over it, in CSS pixels: an easy target. */
+const TRASH_REACH = 24;
+
+/** Whether a viewport position is on (or close to) the trash. */
+function overTrash(x: number, y: number): boolean {
+  const trash = document.querySelector<HTMLElement>('[data-desk-trash]');
+  if (!trash) return false;
+  const r = trash.getBoundingClientRect();
+  return (
+    x >= r.left - TRASH_REACH &&
+    x <= r.right + TRASH_REACH &&
+    y >= r.top - TRASH_REACH &&
+    y <= r.bottom + TRASH_REACH
+  );
+}
 
 /** Marks an element as part of a desk, for finding the desk under the pointer. */
 export const deskDropAttribute = (deskId: string) => ({ 'data-desk-drop': deskId });
@@ -65,11 +84,13 @@ export function pressDesk(
       document.body.classList.add('ws-dragging');
     }
     e.preventDefault();
+    const trash = overTrash(e.clientX, e.clientY);
     useViewStore.getState().setDeskDrag({
       deskId,
       x: e.clientX,
       y: e.clientY,
-      over: deskAt(e.clientX, e.clientY, deskId),
+      over: trash ? null : deskAt(e.clientX, e.clientY, deskId),
+      trash,
     });
   };
   const end = (e: PointerEvent) => {
@@ -84,7 +105,8 @@ export function pressDesk(
       if (e.type === 'pointerup') onClick();
       return;
     }
-    if (drag?.over) useSetupStore.getState().swapDesks(drag.deskId, drag.over);
+    if (drag?.trash) removeDesk(drag.deskId);
+    else if (drag?.over) useSetupStore.getState().swapDesks(drag.deskId, drag.over);
   };
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', end);

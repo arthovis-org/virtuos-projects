@@ -208,3 +208,30 @@ Lab,Space,Main,C,https://c.com/,`);
     expect(deskGroups(removeDesk(added.rows, lab)).map((d) => d.name)).toEqual(['Ops', 'Desk 3']);
   });
 });
+
+describe('the sheet follows the mode', () => {
+  const room = planFromRows(
+    product,
+    rowsFromText('Desk,Theme,Screen,URL\nA,Crypto,Main,https://a.com/\nB,NBA,Main,https://b.com/'),
+  );
+  const inRoom = setupWithPlan(initialSetup(product), room);
+
+  it('shows the room in the room, and the single desk back at one desk', () => {
+    expect(deskGroups(rowsFromSetup(product, inRoom)).map((d) => d.name)).toEqual(['A', 'B']);
+    const backAtOne = { ...inRoom, mode: 'single' as const };
+    expect(deskGroups(rowsFromSetup(product, backAtOne))).toHaveLength(1);
+  });
+
+  it('at one desk, one desk updates it and more open the room', () => {
+    const one = planFromRows(
+      product,
+      rowsFromText('Desk,Theme,Screen,URL\nMine,Crypto,Main,https://a.com/'),
+    );
+    const single = setupWithPlan(initialSetup(product), one);
+    expect(single.mode).toBe('single');
+    expect(single.single).toMatchObject({ id: 'single', workspaceId: 'crypto' });
+    expect(setupWithPlan(initialSetup(product), room).mode).toBe('desks');
+    // In the room, even one desk stays a room.
+    expect(setupWithPlan(inRoom, one)).toMatchObject({ mode: 'desks' });
+  });
+});

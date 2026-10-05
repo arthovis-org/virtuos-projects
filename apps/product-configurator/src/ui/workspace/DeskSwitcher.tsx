@@ -1,9 +1,11 @@
+import { Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useProduct } from '@/state/setupStore';
 import { addDesk, removeDesk, selectDesk, stepDesk } from '@/state/actions';
 import { deskName, MAX_DESKS } from '@/state/setup';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
+import { deskTrashAttribute } from './deskDrag';
 import styles from './DeskSwitcher.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
@@ -163,17 +165,36 @@ export function DeskSwitcher() {
       </nav>
       <p className={styles.hint}>
         {desks.length} {desks.length === 1 ? 'desk' : 'desks'} · Ctrl + ← → to switch
-        {!seated && desks.length > 1 && ' · drag a desk onto another to swap'}
+        {!seated && desks.length > 1 && ' · drag a desk onto another to swap, or to the trash'}
       </p>
+      {/* The trash shows only while a desk is dragged, and never for the last desk. */}
+      {deskDrag && desks.length > 1 && (
+        <div
+          className={styles.trash}
+          data-over={deskDrag.trash || undefined}
+          {...deskTrashAttribute}
+          aria-hidden="true"
+        >
+          <Trash2 size={22} />
+          <span>{deskDrag.trash ? 'Release to remove' : 'Drop here to remove'}</span>
+        </div>
+      )}
       {deskDrag && (
         <div
           className={styles.ghost}
+          data-trash={deskDrag.trash || undefined}
           style={{ left: deskDrag.x, top: deskDrag.y }}
           aria-hidden="true"
         >
           {nameOf(deskDrag.deskId)}
           <span className={styles.ghostTarget}>
-            {deskDrag.over ? `⇄ Swap with ${nameOf(deskDrag.over)}` : 'Drop on another desk'}
+            {deskDrag.trash
+              ? 'Remove this desk'
+              : deskDrag.over
+                ? `⇄ Swap with ${nameOf(deskDrag.over)}`
+                : desks.length > 1
+                  ? 'Drop on another desk, or on the trash'
+                  : 'Drop on another desk'}
           </span>
         </div>
       )}

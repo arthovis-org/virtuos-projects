@@ -137,6 +137,8 @@ function SheetDialog() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   const plan = useMemo(() => planFromRows(product, rows), [product, rows]);
+  // At the single desk, one desk updates it; more open the room of desks.
+  const intoSingle = !roomOpen && plan.desks.length === 1;
   const desks = useMemo(() => deskGroups(rows), [rows]);
   const errors = plan.problems.filter((p) => p.level === 'error').length;
   const key = (name: string) => name.trim().toLowerCase();
@@ -453,7 +455,7 @@ function SheetDialog() {
             disabled={plan.desks.length === 0}
             onClick={onBuild}
           >
-            {roomOpen ? 'Rebuild the desks' : 'Build the desks'}
+            {roomOpen ? 'Rebuild the desks' : intoSingle ? 'Apply to my desk' : 'Build the desks'}
           </button>
         </div>
       </div>
@@ -653,7 +655,6 @@ function DeskCard({
   onRenamed,
 }: DeskCardProps) {
   const workspace = themeOf(product, rows, desk);
-  const first = rows[desk.rows[0] ?? -1];
   // Rows with a site, or being filled in (a screen chosen).
   const filledIn = (row: SheetRow | undefined) =>
     !!row && [row.url, row.site, row.screen].some((cell) => cell.trim() !== '');
@@ -665,7 +666,6 @@ function DeskCard({
   const screens = [...new Set(sites.map((i) => screenLabel(rows[i]?.screen ?? '')))];
   const errors = problems.filter((p) => p.level === 'error').length;
   const warnings = problems.length - errors;
-  const motion = product.motions[0];
   const problemAt = (row: number, column: SheetColumn) =>
     problems.find((p) => p.row === row && p.column === column);
   const update = (index: number, column: SheetColumn, value: string) => {
@@ -694,7 +694,6 @@ function DeskCard({
             {sites.length === 0
               ? 'its theme’s own sites'
               : `${sites.length} ${sites.length === 1 ? 'site' : 'sites'}`}
-            {first?.height.trim() && motion && ` · ${first.height.trim()} ${motion.unit}`}
           </span>
         </span>
         <span className={styles.chips}>
@@ -752,23 +751,6 @@ function DeskCard({
                 ))}
               </select>
             </label>
-            {motion && (
-              <label className={`${styles.field} ${styles.fieldSmall}`}>
-                <span>Height ({motion.unit})</span>
-                <input
-                  className={styles.input}
-                  inputMode="decimal"
-                  value={first?.height ?? ''}
-                  placeholder="as is"
-                  data-problem={
-                    desk.rows.map((i) => problemAt(i, 'height')?.level).find(Boolean) ?? undefined
-                  }
-                  onChange={(event) =>
-                    onChange(setDeskField(rows, desk, 'height', event.target.value))
-                  }
-                />
-              </label>
-            )}
             {canPlanWithAI && (
               <button type="button" className={styles.askAI} onClick={onAskAI}>
                 <Sparkles size={14} aria-hidden="true" /> Ask AI
@@ -850,7 +832,7 @@ function DeskCard({
             </ul>
           )}
           {problems
-            .filter((p) => p.column === 'height' || p.column === 'theme' || p.column === 'desk')
+            .filter((p) => p.column === 'theme' || p.column === 'desk')
             .map((p) => (
               <p key={`${p.row}-${p.column}`} className={styles.siteProblem} data-level={p.level}>
                 {p.message}

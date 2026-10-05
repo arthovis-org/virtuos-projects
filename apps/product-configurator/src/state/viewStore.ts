@@ -35,6 +35,8 @@ export interface DeskDrag {
   y: number;
   /** The desk it would swap with. */
   over: string | null;
+  /** Over the trash: dropping removes the desk. */
+  trash: boolean;
 }
 
 /** Floor area the desks take, in metres; the viewer sizes the floor shadow and camera to it. */

@@ -33,7 +33,7 @@ export function ConfiguratorPanel() {
           <h2 className={styles.deskName}>Pick a desk to set it up</h2>
           <p className={styles.deskNote}>
             Tap a desk, its name or a button in the desk bar. Every desk has its own setup and
-            height; drag one desk onto another to swap them.
+            height. Drag a desk onto another to swap them, or onto the trash to remove it.
           </p>
         </section>
       </div>

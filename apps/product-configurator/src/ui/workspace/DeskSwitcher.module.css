@@ -234,3 +234,43 @@
     display: none;
   }
 }
+
+.ghost[data-trash] {
+  background: #d93036;
+  color: #ffffff;
+}
+
+/* The trash, above the desk bar while a desk is dragged. */
+.trash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  order: -1;
+  padding: 12px 18px;
+  border: 2px dashed rgb(217 48 54 / 55%);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: #d93036;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-soft);
+  animation: trash-in 140ms var(--ease);
+  transition:
+    transform var(--duration) var(--ease),
+    background-color var(--duration) var(--ease);
+}
+
+.trash[data-over] {
+  border-style: solid;
+  background: #d93036;
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+@keyframes trash-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

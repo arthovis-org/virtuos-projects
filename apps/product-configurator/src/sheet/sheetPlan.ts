@@ -9,6 +9,7 @@ import {
   deskWindows,
   MAX_DESKS,
   newDesk,
+  SINGLE_DESK,
   type DeskSetup,
   type Setup,
 } from '@/state/setup';
@@ -72,11 +73,11 @@ function withScreens(product: ProductDefinition, base: Selections, used: Readonl
   return selections;
 }
 
-/** A set-up as sheet rows: the room's desks, or the single desk when there is no room. */
+/** A set-up as sheet rows: the room's desks in the room, else the single desk. */
 export function rowsFromSetup(product: ProductDefinition, setup: Setup): SheetRow[] {
   const motion = product.motions[0];
   const main = mainScreen(product);
-  const desks = setup.room.length > 0 ? setup.room : [setup.single];
+  const desks = setup.mode === 'desks' && setup.room.length > 0 ? setup.room : [setup.single];
   const rows: SheetRow[] = [];
   for (const desk of desks) {
     const workspace = product.workspaces.find((w) => w.id === desk.workspaceId);
@@ -283,7 +284,14 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
   return { desks: built, problems, sites: siteCount };
 }
 
-/** The set-up with the plan's room, at the overview; the single desk stays as it is. */
+/**
+ * The set-up with the plan. At the single desk, a plan of one desk becomes the single desk (it
+ * stays one desk); more desks, or a plan made in the room, become the room, at its overview.
+ */
 export function setupWithPlan(setup: Setup, plan: SheetPlan): Setup {
+  const [only] = plan.desks;
+  if (setup.mode === 'single' && only && plan.desks.length === 1) {
+    return { ...setup, single: { ...only, id: SINGLE_DESK } };
+  }
   return { ...setup, mode: 'desks', room: plan.desks, activeDeskId: null };
 }

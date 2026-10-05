@@ -44,7 +44,7 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
         onClick={(event) => {
           if (event.detail === 0) selectDesk(deskId);
         }}
-        title={`Sit at desk ${number} (drag onto another desk to swap): ${workspace?.description ?? name}`}
+        title={`Sit at desk ${number} (drag onto another desk to swap, or to the trash to remove): ${workspace?.description ?? name}`}
       >
         <span className={styles.icon} aria-hidden="true">
           <WorkspaceIcon name={workspace?.icon} size={15} />
