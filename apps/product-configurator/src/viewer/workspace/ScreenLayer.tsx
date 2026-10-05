@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useProduct } from '@/state/configuratorStore';
 import { usePosterStore } from '@/state/posterStore';
 import {
@@ -32,6 +32,40 @@ export function ScreenLayer() {
   // Live sites, or the posters of the room's desks (also with no desk chosen yet).
   const shown = active || hasPosters;
   const camera = useRef<HTMLDivElement>(null);
+  const layer = useRef<HTMLDivElement>(null);
+
+  // Browsers don't hit-test the mouse wheel into this 3D-transformed layer: a wheel over a
+  // screen goes to whatever is under the layer (the orbit surface), so lists on the screens
+  // (an empty screen's suggestions) didn't scroll. Find the element the way clicks do and
+  // scroll its nearest scrollable box. (Websites in windows are other documents; their own
+  // scrolling is theirs.)
+  useEffect(() => {
+    if (!shown) return;
+    const onWheel = (event: WheelEvent) => {
+      const root = layer.current;
+      const hit = document.elementFromPoint(event.clientX, event.clientY);
+      if (!root || !hit || !root.contains(hit)) return;
+      for (let node: Element | null = hit; node && node !== root; node = node.parentElement) {
+        if (!(node instanceof HTMLElement)) continue;
+        const overflow = getComputedStyle(node).overflowY;
+        if (overflow !== 'auto' && overflow !== 'scroll') continue;
+        const room = node.scrollHeight - node.clientHeight;
+        const down = event.deltaY > 0;
+        if (room <= 0 || (down ? node.scrollTop >= room - 1 : node.scrollTop <= 0)) continue;
+        event.preventDefault();
+        const unit =
+          event.deltaMode === WheelEvent.DOM_DELTA_LINE
+            ? 40
+            : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+              ? node.clientHeight
+              : 1;
+        node.scrollTop += event.deltaY * unit;
+        return;
+      }
+    };
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    return () => window.removeEventListener('wheel', onWheel, { capture: true });
+  }, [shown]);
 
   useLayoutEffect(() => {
     if (!shown) return;
@@ -56,7 +90,7 @@ export function ScreenLayer() {
   const targets = surfaces.map((s) => s.screen);
 
   return (
-    <div className={styles.layer}>
+    <div ref={layer} className={styles.layer}>
       <div ref={camera} className={styles.camera}>
         {surfaces.map((surface) => (
           <ScreenSurface
