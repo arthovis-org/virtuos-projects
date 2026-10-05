@@ -6,12 +6,14 @@
   pointer-events: none;
 }
 
-/* A thin strip along each side: hovering it shows that side's arrow. */
+/* A strip along each side, the full height between the toolbar and the desk switcher (set
+   inline): hovering it shows that side's arrow. Wide enough to find, narrow enough to leave
+   the side monitors' sites usable. */
 .edge {
   position: absolute;
-  top: 18%;
-  bottom: 18%;
-  width: 40px;
+  top: 0;
+  bottom: 0;
+  width: 72px;
   pointer-events: auto;
 }
 

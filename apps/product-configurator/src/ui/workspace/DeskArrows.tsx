@@ -19,6 +19,9 @@ export function DeskArrows() {
   const activeDeskId = useDesksStore((s) => s.activeDeskId);
   const stepDesk = useDesksStore((s) => s.stepDesk);
   const seated = useWorkspaceStore((s) => s.seated);
+  // The strips run the full height between the toolbar and the desk switcher.
+  const top = useWorkspaceStore((s) => s.hudInset);
+  const bottom = useWorkspaceStore((s) => s.hudInsetBottom);
 
   const index = desks.findIndex((d) => d.id === activeDeskId);
   if (!seated || index < 0 || desks.length < 2) return null;
@@ -29,7 +32,7 @@ export function DeskArrows() {
     const name = deskName(product, desks, desk);
     const icon = product.workspaces.find((w) => w.id === desk.workspaceId)?.icon;
     return (
-      <div className={styles.edge} data-side={side}>
+      <div className={styles.edge} data-side={side} style={{ top, bottom }}>
         <button
           type="button"
           className={styles.arrow}
