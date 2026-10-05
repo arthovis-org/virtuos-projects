@@ -1,10 +1,10 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, type RefObject } from 'react';
 import { Color, PerspectiveCamera, Vector3, type Box3, type Object3D } from 'three';
-import { useProduct } from '@/state/configuratorStore';
-import { useDesksStore } from '@/state/desksStore';
+import { currentDesk, SINGLE_DESK } from '@/state/setup';
+import { useProduct, useSetupStore } from '@/state/setupStore';
 import { motionKey, useMotionStore } from '@/state/motionStore';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useViewStore } from '@/state/viewStore';
 import { fitDistance } from './fitDistance';
 import styles from './HeightInset.module.css';
 import { screenHoleMaterial } from './workspace/cssProjection';
@@ -27,7 +27,7 @@ const SIDE = new Vector3(1, 0.14, 0.3).normalize();
 
 /** Distance of the side view from the bottom of the viewer: above the desk switcher. */
 function useInsetBottom() {
-  const switcher = useWorkspaceStore((s) => s.hudInsetBottom);
+  const switcher = useViewStore((s) => s.hudInsetBottom);
   return Math.max(INSET.margin, switcher);
 }
 
@@ -44,18 +44,14 @@ export function HeightInsetFrame() {
   const peek = useMotionStore((s) => s.peek);
   const open = useMotionStore((s) => s.insetOpen);
   const setInsetOpen = useMotionStore((s) => s.setInsetOpen);
+  const deskId = useSetupStore((s) => currentDesk(s)?.id ?? SINGLE_DESK);
+  const target = useSetupStore((s) => (motion ? currentDesk(s)?.motions[motion.id] : undefined));
   const value = useMotionStore((s) =>
-    motion ? s.current[motionKey(s.deskKey, motion.id)] : undefined,
+    motion ? s.current[motionKey(deskId, motion.id)] : undefined,
   );
-  const direction = useMotionStore((s) => {
-    if (!motion) return 0;
-    const key = motionKey(s.deskKey, motion.id);
-    const current = s.current[key];
-    const target = s.targets[key];
-    return current === undefined || target === undefined ? 0 : Math.sign(target - current);
-  });
-  const seated = useWorkspaceStore((s) => s.seated);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const direction = value === undefined || target === undefined ? 0 : Math.sign(target - value);
+  const seated = useViewStore((s) => s.seated);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
   const wanted = Boolean(motion) && (seated || desksMode) && (direction !== 0 || peek);
 
   useEffect(() => {

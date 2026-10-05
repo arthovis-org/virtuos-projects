@@ -1,6 +1,7 @@
 import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { siteUrl } from './siteUrl';
 import styles from './WindowFrame.module.css';
 
@@ -27,13 +28,13 @@ const SANDBOX =
  * inside another page) or close it, and the site itself in an iframe.
  */
 export function WindowFrame({ window: win, screenId, screens, grow }: WindowFrameProps) {
-  const startDrag = useWorkspaceStore((s) => s.startDrag);
-  const moveWindow = useWorkspaceStore((s) => s.moveWindow);
-  const setFocus = useWorkspaceStore((s) => s.setFocus);
-  const closeWindow = useWorkspaceStore((s) => s.closeWindow);
-  const setMenu = useWorkspaceStore((s) => s.setMenu);
+  const startDrag = useViewStore((s) => s.startDrag);
+  const moveWindow = useSetupStore((s) => s.moveWindow);
+  const setFocus = useViewStore((s) => s.setFocus);
+  const closeWindow = useSetupStore((s) => s.closeWindow);
+  const setMenu = useViewStore((s) => s.setMenu);
   const pressedAt = useRef<{ x: number; y: number } | null>(null);
-  const focused = useWorkspaceStore((s) => s.focus === screenId);
+  const focused = useViewStore((s) => s.focus === screenId);
   const [iconFailed, setIconFailed] = useState(false);
   const url = siteUrl(win.url);
   const host = new URL(url).host;

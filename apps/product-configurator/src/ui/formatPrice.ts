@@ -1,4 +1,4 @@
-import { useProduct } from '@/state/configuratorStore';
+import { useProduct } from '@/state/setupStore';
 import { useCurrencyStore, type DisplayCurrency } from '@/state/currencyStore';
 
 const formatters = new Map<string, Intl.NumberFormat>();

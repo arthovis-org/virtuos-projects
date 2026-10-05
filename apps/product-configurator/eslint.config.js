@@ -38,6 +38,15 @@ export default tseslint.config(
     rules: { 'react-hooks/immutability': 'off' },
   },
   {
+    // Tests say "this must exist" with `!` (a wrong guess fails the test), and leave out
+    // fields they don't compare by destructuring them away.
+    files: ['src/**/*.test.ts', 'e2e/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
+    },
+  },
+  {
     files: ['scripts/**/*.mjs', 'eslint.config.js'],
     extends: [js.configs.recommended],
     languageOptions: { ecmaVersion: 2022, globals: globals.node },

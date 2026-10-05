@@ -1,7 +1,8 @@
 import { Html } from '@react-three/drei';
 import type { CSSProperties } from 'react';
 import type { Workspace } from '@/catalog/schema';
-import { useDesksStore } from '@/state/desksStore';
+import { selectDesk } from '@/state/actions';
+import { useViewStore } from '@/state/viewStore';
 import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import styles from './DeskLabel.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
@@ -21,9 +22,8 @@ interface DeskLabelProps {
  * at that desk, dragging it onto another desk swaps the two.
  */
 export function DeskLabel({ deskId, name, number, workspace, height, active }: DeskLabelProps) {
-  const selectDesk = useDesksStore((s) => s.selectDesk);
-  const dropTarget = useDesksStore((s) => s.deskDrag?.over === deskId);
-  const dragged = useDesksStore((s) => s.deskDrag?.deskId === deskId);
+  const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
+  const dragged = useViewStore((s) => s.deskDrag?.deskId === deskId);
   return (
     // Nearer tags cover farther ones: drei orders them by distance over the camera's whole
     // depth range, so the range must be wide; a narrow one (it was 50 steps) gave desks a few

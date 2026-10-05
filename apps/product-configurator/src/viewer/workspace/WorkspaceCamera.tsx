@@ -1,8 +1,8 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { MathUtils, type PerspectiveCamera, Spherical, Vector3 } from 'three';
-import { useDesksStore } from '@/state/desksStore';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import type { ScreenFrame } from './screenFrame';
 
 export interface CameraTarget {
@@ -181,7 +181,7 @@ interface Move {
 }
 
 function planMove(from: Pose, to: Pose, onDone?: () => void): Move {
-  const straight = useDesksStore.getState().mode === 'desks';
+  const straight = useSetupStore.getState().mode === 'desks';
   const fromAngle = new Spherical().setFromVector3(from.position.clone().sub(from.target));
   const toAngle = new Spherical().setFromVector3(to.position.clone().sub(to.target));
   // Swing the short way round.
@@ -215,11 +215,11 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   const controls = useThree((s) => s.controls) as unknown as Controls | null;
   const size = useThree((s) => s.size);
   const invalidate = useThree((s) => s.invalidate);
-  const seated = useWorkspaceStore((s) => s.seated);
-  const hudInset = useWorkspaceStore((s) => s.hudInset);
-  const hudInsetBottom = useWorkspaceStore((s) => s.hudInsetBottom);
-  const focus = useWorkspaceStore((s) => s.focus);
-  const setCameraFree = useWorkspaceStore((s) => s.setCameraFree);
+  const seated = useViewStore((s) => s.seated);
+  const hudInset = useViewStore((s) => s.hudInset);
+  const hudInsetBottom = useViewStore((s) => s.hudInsetBottom);
+  const focus = useViewStore((s) => s.focus);
+  const setCameraFree = useViewStore((s) => s.setCameraFree);
 
   const saved = useRef<(Pose & { limits: Partial<Controls> }) | null>(null);
   // Unmounted just as the visitor stood up (the room opened with no desk chosen, so the move
@@ -227,10 +227,10 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   // (React's development check mounts twice), and the seat must stay as it is.
   useEffect(
     () => () => {
-      if (useWorkspaceStore.getState().seated || !saved.current) return;
+      if (useViewStore.getState().seated || !saved.current) return;
       if (controls) Object.assign(controls, { ...saved.current.limits, enabled: true });
       saved.current = null;
-      useWorkspaceStore.getState().setCameraFree(true);
+      useViewStore.getState().setCameraFree(true);
     },
     [controls],
   );
@@ -316,7 +316,7 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
 
   // In the room, from the overview to looking around the desk (the camera is already free):
   // fly there with the orbit controls paused, then orbit it.
-  const aroundDesk = useWorkspaceStore((s) => s.aroundDesk);
+  const aroundDesk = useViewStore((s) => s.aroundDesk);
   useEffect(() => {
     if (seated || !aroundDesk || saved.current) return;
     const around = aroundPose();
@@ -333,9 +333,9 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   useEffect(() => {
     if (seated || !saved.current) return;
     const back = saved.current;
-    if (useDesksStore.getState().mode === 'desks') {
+    if (useSetupStore.getState().mode === 'desks') {
       // Looking around this desk: fly to a view of it, then orbit it like the single desk.
-      const around = useWorkspaceStore.getState().aroundDesk ? aroundPose() : null;
+      const around = useViewStore.getState().aroundDesk ? aroundPose() : null;
       if (around) {
         move.current = planMove(current(), around, () => {
           if (controls) Object.assign(controls, { ...back.limits, enabled: true });

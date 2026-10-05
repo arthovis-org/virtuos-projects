@@ -63,10 +63,17 @@ scripts/
   inspect.ts               `npm run inspect`
 src/
   catalog/                 schema (zod) and registry of validated products
-  state/                   configuration store, derived configuration, URL state, motions
+  state/                   the set-up (every desk's setup, height and windows), its store,
+                           the view state, links, derived configuration, motions
+  layouts/                 saved layouts (online)
+  sheet/                   the command center sheet
   viewer/                  canvas, model loading, finishes, height motion
   ui/                      option panel, controls, header, price summary
+e2e/                       browser smoke test (Playwright)
 docs/ARCHITECTURE.md       data flow in more detail
+
+`npm test` runs the unit tests and `npm run test:e2e` the browser smoke test (in an installed
+Chrome or Edge; `PW_CHANNEL` picks another). CI runs both.
 ```
 
 ## Phones

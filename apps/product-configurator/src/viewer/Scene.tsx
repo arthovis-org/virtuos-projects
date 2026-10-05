@@ -2,13 +2,13 @@ import { Bounds, ContactShadows, OrbitControls, useBounds } from '@react-three/d
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { MathUtils, Vector3, type PerspectiveCamera } from 'three';
-import { useDesksStore } from '@/state/desksStore';
+import { useSetupStore } from '@/state/setupStore';
 import { fitDistance } from './fitDistance';
 import { HeightInsetFrame } from './HeightInset';
 import { LoadingIndicator } from './LoadingIndicator';
 import { StudioEnvironment } from './StudioEnvironment';
 import { ViewerErrorBoundary } from './ViewerErrorBoundary';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useViewStore } from '@/state/viewStore';
 import { WorkspaceHud } from '@/ui/workspace/WorkspaceHud';
 import { preloadCurrentProduct } from './models';
 import { ProductModel } from './ProductModel';
@@ -70,11 +70,11 @@ function Refit() {
   const invalidate = useThree((s) => s.invalidate);
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
-  const cameraFree = useWorkspaceStore((s) => s.cameraFree);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
-  const deskCount = useDesksStore((s) => s.desks.length);
+  const cameraFree = useViewStore((s) => s.cameraFree);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
+  const deskCount = useSetupStore((s) => s.room.length);
   // Looking around the desk the visitor is at: the camera is theirs, not the room's.
-  const aroundDesk = useWorkspaceStore((s) => s.aroundDesk);
+  const aroundDesk = useViewStore((s) => s.aroundDesk);
   const wasAround = useRef(false);
   const fitted = useRef<string | null>(null);
   const flight = useRef<Flight | null>(null);
@@ -142,7 +142,7 @@ function Refit() {
     const f = flight.current;
     if (!f) return;
     // Workspace mode took the camera (the visitor sat down): it flies from wherever this is.
-    if (!useWorkspaceStore.getState().cameraFree) {
+    if (!useViewStore.getState().cameraFree) {
       flight.current = null;
       return;
     }
@@ -175,8 +175,8 @@ interface Limits {
  */
 function RoomLimits() {
   const controls = useThree((s) => s.controls) as unknown as Limits | null;
-  const cameraFree = useWorkspaceStore((s) => s.cameraFree);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const cameraFree = useViewStore((s) => s.cameraFree);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
   useEffect(() => {
     if (controls && cameraFree) {
       controls.maxDistance = desksMode ? MAX_DISTANCE.room : MAX_DISTANCE.desk;
@@ -194,8 +194,8 @@ function RoomLimits() {
  */
 export function Scene() {
   const [orbitSurface, setOrbitSurface] = useState<HTMLDivElement | null>(null);
-  const room = useDesksStore((s) => s.room);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const room = useViewStore((s) => s.room);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
   return (
     <div className={styles.viewer}>
       <div ref={setOrbitSurface} className={styles.orbitSurface} />

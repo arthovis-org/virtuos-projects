@@ -1,6 +1,8 @@
 import { useState, type KeyboardEvent } from 'react';
 import type { Motion } from '@/catalog/schema';
 import { motionKey, useMotionStore } from '@/state/motionStore';
+import { currentDesk, SINGLE_DESK } from '@/state/setup';
+import { useSetupStore } from '@/state/setupStore';
 import styles from './MotionControl.module.css';
 
 interface MotionControlProps {
@@ -20,12 +22,16 @@ function decimalsFor(step: number) {
 export function MotionControl({ motion }: MotionControlProps) {
   // Until the viewer has measured the model, a motion without `initial` has no value yet.
   // The desk the visitor is at (each desk of unlimited desks mode has its own height).
-  const current = useMotionStore((state) => state.current[motionKey(state.deskKey, motion.id)]);
-  const target = useMotionStore(
-    (state) => state.targets[motionKey(state.deskKey, motion.id)] ?? current,
-  );
-  const setTarget = useMotionStore((state) => state.setTarget);
-  const stop = useMotionStore((state) => state.stop);
+  const deskId = useSetupStore((state) => currentDesk(state)?.id ?? SINGLE_DESK);
+  const current = useMotionStore((state) => state.current[motionKey(deskId, motion.id)]);
+  const target = useSetupStore((state) => currentDesk(state)?.motions[motion.id]) ?? current;
+  const setMotion = useSetupStore((state) => state.setMotion);
+  const setTarget = (m: Motion, value: number) => setMotion(deskId, m, value);
+  // Stops where the desk is, e.g. when a hold-to-move button is released.
+  const stop = () => {
+    const now = useMotionStore.getState().current[motionKey(deskId, motion.id)];
+    if (now !== undefined) setMotion(deskId, motion, now);
+  };
   const setPeek = useMotionStore((state) => state.setPeek);
   // The slider shows where the desk is, moving with it (holding ▲/▼ or a preset sets a far
   // target, and the thumb would jump there); only while the visitor drags it does it follow
@@ -40,9 +46,9 @@ export function MotionControl({ motion }: MotionControlProps) {
 
   const holdProps = (direction: 1 | -1) => ({
     onPointerDown: () => setTarget(motion, direction > 0 ? motion.max : motion.min),
-    onPointerUp: () => stop(motion.id),
-    onPointerLeave: () => stop(motion.id),
-    onPointerCancel: () => stop(motion.id),
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
     onKeyDown: (event: KeyboardEvent) => {
       if ((event.key === 'Enter' || event.key === ' ') && !event.repeat) {
         event.preventDefault();
@@ -50,7 +56,7 @@ export function MotionControl({ motion }: MotionControlProps) {
       }
     },
     onKeyUp: (event: KeyboardEvent) => {
-      if (event.key === 'Enter' || event.key === ' ') stop(motion.id);
+      if (event.key === 'Enter' || event.key === ' ') stop();
     },
   });
 

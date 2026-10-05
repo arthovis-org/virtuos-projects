@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { useProduct } from '@/state/configuratorStore';
-import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
-import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
+import { enterRoom, enterWorkspace, exitRoom, switchWorkspace } from '@/state/actions';
+import { currentDesk, deskName, workspaceById } from '@/state/setup';
+import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { DeskArrows } from './DeskArrows';
 import { DeskSwitcher } from './DeskSwitcher';
 import { WindowMenu } from './WindowMenu';
@@ -19,27 +20,23 @@ const MAX_TABS = 4;
  */
 export function WorkspaceHud() {
   const product = useProduct();
-  const active = useWorkspaceStore((s) => s.active);
-  const cameraFree = useWorkspaceStore((s) => s.cameraFree);
-  const workspaceId = useWorkspaceStore((s) => s.workspaceId);
-  const focus = useWorkspaceStore((s) => s.focus);
-  const drag = useWorkspaceStore((s) => s.drag);
-  const enter = useWorkspaceStore((s) => s.enter);
-  const seated = useWorkspaceStore((s) => s.seated);
-  const aroundDesk = useWorkspaceStore((s) => s.aroundDesk);
-  const standUp = useWorkspaceStore((s) => s.standUp);
-  const sit = useWorkspaceStore((s) => s.sit);
-  const close = useWorkspaceStore((s) => s.close);
-  const select = useWorkspaceStore((s) => s.select);
-  const resetWindows = useWorkspaceStore((s) => s.resetWindows);
-  const setFocus = useWorkspaceStore((s) => s.setFocus);
-  const setHudInset = useWorkspaceStore((s) => s.setHudInset);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
-  const desks = useDesksStore((s) => s.desks);
-  const desk = useDesksStore(activeDesk);
-  const enterDesks = useDesksStore((s) => s.enterDesks);
-  const exitDesks = useDesksStore((s) => s.exitDesks);
-  const setDeskWorkspace = useDesksStore((s) => s.setDeskWorkspace);
+  const active = useViewStore((s) => s.active);
+  const cameraFree = useViewStore((s) => s.cameraFree);
+  const { workspaceId } = useCurrentWindows();
+  const focus = useViewStore((s) => s.focus);
+  const drag = useViewStore((s) => s.drag);
+  const seated = useViewStore((s) => s.seated);
+  const aroundDesk = useViewStore((s) => s.aroundDesk);
+  const standUp = useViewStore((s) => s.standUp);
+  const sit = useViewStore((s) => s.sit);
+  const close = useViewStore((s) => s.close);
+  const resetWindows = useSetupStore((s) => s.resetWindows);
+  const setFocus = useViewStore((s) => s.setFocus);
+  const setHudInset = useViewStore((s) => s.setHudInset);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
+  const desks = useSetupStore((s) => s.room);
+  const desk = useSetupStore((s) => (s.mode === 'desks' ? currentDesk(s) : undefined));
+  const setDeskWorkspace = useSetupStore((s) => s.setDeskWorkspace);
   const top = useRef<HTMLDivElement>(null);
   // On a phone the card would cover the desk: it starts folded into a pill.
   const [cardOpen, setCardOpen] = useState(
@@ -100,7 +97,7 @@ export function WorkspaceHud() {
               <button
                 type="button"
                 className={`${styles.button} ${styles.primary}`}
-                onClick={() => enter(first.id)}
+                onClick={() => enterWorkspace(first.id)}
               >
                 Try the {first.label.toLowerCase()} workspace
               </button>
@@ -118,7 +115,7 @@ export function WorkspaceHud() {
                   type="button"
                   className={styles.tile}
                   style={{ '--desk-accent': w.accent ?? 'var(--border-strong)' } as CSSProperties}
-                  onClick={() => enter(w.id)}
+                  onClick={() => enterWorkspace(w.id)}
                   title={w.description}
                 >
                   <span className={styles.tileIcon} aria-hidden="true">
@@ -137,7 +134,7 @@ export function WorkspaceHud() {
               <button
                 type="button"
                 className={`${styles.button} ${styles.primary}`}
-                onClick={enterDesks}
+                onClick={enterRoom}
               >
                 Try unlimited desks →
               </button>
@@ -182,7 +179,7 @@ export function WorkspaceHud() {
           ) : product.workspaces.length > MAX_TABS ? (
             <>
               <span className={styles.name}>Workspace</span>
-              {workspacePicker(select, 'Workspace')}
+              {workspacePicker(switchWorkspace, 'Workspace')}
             </>
           ) : product.workspaces.length > 1 ? (
             <div className={styles.tabs} role="radiogroup" aria-label="Workspace">
@@ -193,7 +190,7 @@ export function WorkspaceHud() {
                   role="radio"
                   aria-checked={w.id === workspace?.id}
                   className={styles.tab}
-                  onClick={() => select(w.id)}
+                  onClick={() => switchWorkspace(w.id)}
                 >
                   {w.label}
                 </button>
@@ -261,7 +258,7 @@ export function WorkspaceHud() {
             <button
               type="button"
               className={styles.button}
-              onClick={enterDesks}
+              onClick={enterRoom}
               aria-label="Unlimited desks"
               title="A desk for every workspace"
             >
@@ -274,7 +271,7 @@ export function WorkspaceHud() {
           <button
             type="button"
             className={`${styles.button} ${styles.primary}`}
-            onClick={desksMode ? exitDesks : close}
+            onClick={desksMode ? exitRoom : close}
             aria-label={desksMode ? 'Back to one desk' : 'Close'}
           >
             <span className={styles.long}>{desksMode ? 'Back to one desk' : 'Close'}</span>

@@ -1,7 +1,7 @@
 import { useGLTF } from '@react-three/drei';
 import type { Object3D } from 'three';
 import { getProduct } from '@/catalog';
-import { useConfiguratorStore } from '@/state/configuratorStore';
+import { useSetupStore } from '@/state/setupStore';
 import { indexNodes } from './nodeUtils';
 
 /**
@@ -29,8 +29,8 @@ export function preloadCurrentProduct(): () => void {
   const preload = ({ productId }: { productId: string }) => {
     preloadModel(getProduct(productId).model.src);
   };
-  preload(useConfiguratorStore.getState());
-  return useConfiguratorStore.subscribe(preload);
+  preload(useSetupStore.getState());
+  return useSetupStore.subscribe(preload);
 }
 
 /**

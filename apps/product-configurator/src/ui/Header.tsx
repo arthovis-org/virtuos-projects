@@ -1,9 +1,9 @@
 import { RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { productList } from '@/catalog';
-import { useConfiguratorStore, useProduct } from '@/state/configuratorStore';
+import { enterRoom, exitRoom } from '@/state/actions';
+import { useProduct, useSetupStore } from '@/state/setupStore';
 import { DISPLAY_CURRENCIES, useCurrencyStore } from '@/state/currencyStore';
-import { useDesksStore } from '@/state/desksStore';
 import { shareSearch } from '@/state/shareLink';
 import { CommandSheet } from './CommandSheet';
 import { Feedback } from './Feedback';
@@ -12,11 +12,9 @@ import styles from './Header.module.css';
 
 export function Header() {
   const product = useProduct();
-  const resetToDefaults = useConfiguratorStore((state) => state.resetToDefaults);
-  const selectProduct = useConfiguratorStore((state) => state.selectProduct);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
-  const enterDesks = useDesksStore((s) => s.enterDesks);
-  const exitDesks = useDesksStore((s) => s.exitDesks);
+  const resetSelections = useSetupStore((state) => state.resetSelections);
+  const selectProduct = useSetupStore((state) => state.selectProduct);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
   // A room of desks needs workspaces to tell the desks apart.
   const hasWorkspaces = product.workspaces.length > 1;
   const [copied, setCopied] = useState(false);
@@ -74,7 +72,7 @@ export function Header() {
               role="radio"
               aria-checked={!desksMode}
               className={styles.mode}
-              onClick={exitDesks}
+              onClick={exitRoom}
             >
               One desk
             </button>
@@ -83,7 +81,7 @@ export function Header() {
               role="radio"
               aria-checked={desksMode}
               className={styles.mode}
-              onClick={enterDesks}
+              onClick={enterRoom}
               title="A desk for every kind of work: finance, crypto, sports and more"
             >
               Unlimited desks
@@ -115,7 +113,7 @@ export function Header() {
         <button
           type="button"
           className={styles.button}
-          onClick={resetToDefaults}
+          onClick={resetSelections}
           title={desksMode ? "Reset this desk's setup" : 'Reset'}
           aria-label="Reset"
         >

@@ -1,4 +1,4 @@
-import type { DropTarget } from '@/state/workspaceStore';
+import type { DropTarget } from '@/state/viewStore';
 
 /** Share of a window, from each end, that puts the dropped window next to it. */
 const EDGE = 0.3;

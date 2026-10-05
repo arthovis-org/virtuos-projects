@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
-import { useConfiguratorStore, useProduct, useSelections } from '@/state/configuratorStore';
+import { useProduct, useSelections, useSetupStore } from '@/state/setupStore';
 import { selectedOption } from '@/state/derive';
-import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
+import { currentDesk, deskName } from '@/state/setup';
 import styles from './ConfiguratorPanel.module.css';
 import { MotionControl } from './controls/MotionControl';
 import { ModelCheck } from './ModelCheck';
@@ -18,12 +18,12 @@ import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 export function ConfiguratorPanel() {
   const product = useProduct();
   const selections = useSelections();
-  const selectOption = useConfiguratorStore((state) => state.selectOption);
+  const selectOption = useSetupStore((state) => state.selectOption);
   const format = usePriceFormat();
-  const desks = useDesksStore((s) => s.desks);
-  const desk = useDesksStore((s) => (s.mode === 'desks' ? activeDesk(s) : undefined));
+  const desks = useSetupStore((s) => s.room);
+  const desk = useSetupStore((s) => (s.mode === 'desks' ? currentDesk(s) : undefined));
   const workspace = product.workspaces.find((w) => w.id === desk?.workspaceId);
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
 
   // The room with no desk chosen: nothing to configure yet.
   if (desksMode && !desk) {

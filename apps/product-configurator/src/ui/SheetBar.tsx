@@ -1,5 +1,5 @@
-import { useProduct, useResolvedConfiguration } from '@/state/configuratorStore';
-import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
+import { useProduct, useResolvedConfiguration, useSetupStore } from '@/state/setupStore';
+import { currentDesk, deskName } from '@/state/setup';
 import { usePriceFormat } from './formatPrice';
 import styles from './SheetBar.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
@@ -18,9 +18,9 @@ export function SheetBar({ open, onToggle }: SheetBarProps) {
   const product = useProduct();
   const { totalPrice } = useResolvedConfiguration();
   const format = usePriceFormat();
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
-  const desks = useDesksStore((s) => s.desks);
-  const desk = useDesksStore(activeDesk);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
+  const desks = useSetupStore((s) => s.room);
+  const desk = useSetupStore((s) => (s.mode === 'desks' ? currentDesk(s) : undefined));
   const workspace = product.workspaces.find((w) => w.id === desk?.workspaceId);
 
   const title = !desksMode

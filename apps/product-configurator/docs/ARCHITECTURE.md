@@ -11,9 +11,9 @@ Blender names.
   product.json ─ settings ──┘   emits `virtual:catalog` with                               │
                                 asset URLs                                                  │
                                                                                             ▼
-                                state/configuratorStore ──▶ state/derive ──▶ viewer/ProductModel
-                                (product + selections,     (hidden nodes,     (visibility,
-                                 URL sync)                  finishes, price)   finishes, height)
+                                state/setupStore ─────────▶ state/derive ──▶ viewer/ProductModel
+                                (the set-up: every desk's   (hidden nodes,     (visibility,
+                                 setup, height, windows)     finishes, price)   finishes, height)
                                         │
                                         ▼
                                 ui/ConfiguratorPanel (one control per group)
@@ -38,11 +38,35 @@ one broken folder never takes down the others. `catalogIssues` feeds the develop
 check in the panel.
 
 **State (`src/state`)**
-The configurator store keeps only `productId` and `selections` (`groupId -> optionId`),
-initialised from the URL. `derive.ts` turns them into node-level instructions: which Blender
-objects to hide, which finish each Blender material gets, and the price breakdown. Motions
-(desk height) live in a separate store because they animate every frame and are not part of the
-shared configuration. `modelIssuesStore` collects names the loaded model turned out to lack.
+One source of truth, kept apart from how it is looked at:
+
+- `setup.ts`: the **set-up** as plain data with pure functions. The product, the mode, the
+  single desk and the room's desks, and the desk the visitor is at. Every desk (`DeskSetup`)
+  holds its workspace, its own name, its selections (`groupId -> optionId`), where its motions
+  (height) are set and the windows on its screens.
+- `setupStore.ts`: the current set-up and every change to it; changes to "the current desk" go
+  to the single desk or to the room desk the visitor is at. It starts from the page's link.
+- `viewStore.ts`: how it is being looked at, never saved: sites on or off, seated or looking
+  around, the screen zoomed to, window and desk drags, what the viewer reports about the screens.
+- `motionStore.ts`: where each desk's height is right now while it animates (the viewer writes
+  it every frame; the target is in the set-up), and the side view of the height control.
+- `actions.ts`: what changes both (moving to a desk sits down at it, opening the room starts at
+  the overview), as plain functions for event handlers.
+- Converters, all pure functions of a set-up: `setupUrl.ts` (shareable links, kept in the
+  address bar by `shareLink.ts`), `layouts/layoutData.ts` (saved layouts, a stored format that
+  only grows optional fields; `src/test/fixtures/layout-v1.json` is one saved by an earlier
+  version) and `sheet/sheetPlan.ts` (the command center sheet).
+
+`derive.ts` turns selections into node-level instructions: which Blender objects to hide, which
+finish each Blender material gets, and the price breakdown. `modelIssuesStore` collects names the
+loaded model turned out to lack.
+
+**Tests**
+`npm test` runs the unit tests (`src/**/*.test.ts`, Vitest in a simulated page with the real
+catalog): the set-up model, links, saved layouts (including the recorded fixture), the sheet and
+the behaviour of the stores. `npm run test:e2e` runs the browser smoke test (`e2e/`,
+Playwright) in an installed Chrome or Edge: the app loads and draws the desk, the room keeps
+every desk's own setup, the sheet builds desks, and no page errors. CI runs both.
 
 **Viewer (`src/viewer`)**
 A lazily loaded chunk, so the panel renders while Three.js downloads. `models.ts` wraps
@@ -73,23 +97,21 @@ layers, so dragging a site's title bar never orbits.
 controls disabled meanwhile; `Scene` only refits `Bounds` on resize while the orbit camera is free. Window
 drags start on a title bar and are followed on the whole window; the screen under the pointer
 is found by raycasting the screen meshes, and `dropTarget.ts` turns the hit into a drop action
-(side by side or swap) from the window layout on that screen. State lives in `src/state/workspaceStore.ts`, apart
-from the configuration (never priced or shared), and nothing loads until a visitor enters
-workspace mode.
+(side by side or swap) from the window layout on that screen. The windows belong to each desk in
+the set-up; whether the sites are on and where the camera is are view state, and nothing loads
+until a visitor turns the sites on.
 
-**Unlimited desks (`src/state/desksStore.ts`)**
+**Unlimited desks**
 A second mode: a room of desks, each a copy of the model (`deskModel` in `viewer/models.ts`,
 cloned from an untouched copy taken before the configurator changes the loaded scene) with its
-own selections and workspace. The configurator store always holds the selections of the desk
-the visitor is at, so the panel works unchanged; the desks store keeps every desk's copy and
-swaps them as the visitor moves. `ProductModel` lays the desks out on arcs facing one point (`deskLayout.ts`) and renders
-one `DeskInstance` per desk; the single `WorkspaceLayer` follows the active desk (it is never
-remounted, so the seated camera keeps its state while flying between desks), and the workspace
-store keeps each other desk's windows in `saved`. The other desks' screens show posters
-(`DeskPosters` inside the canvas, `PosterSurface` in the screen layer): DOM surfaces positioned
-by the same projection as the live sites, from a shared registry of frames in `cssProjection`,
-but nothing loads. `shareLink.ts` writes the room to the URL. Leaving the room parks it (`parked` in the desks
-store, the windows in the workspace store's `saved`) for coming back.
+own selections, height and windows, all in the set-up; the panel edits the desk the visitor is
+at. `ProductModel` lays the desks out on arcs facing one point (`deskLayout.ts`) and renders one
+`DeskInstance` per desk; the single `WorkspaceLayer` follows the active desk (it is never
+remounted, so the seated camera keeps its state while flying between desks). The other desks'
+screens show posters (`DeskPosters` inside the canvas, `PosterSurface` in the screen layer): DOM
+surfaces positioned by the same projection as the live sites, from a shared registry of frames
+in `cssProjection`, but nothing loads. Back at the single desk, the room stays in the set-up for
+coming back.
 
 **Side view of the height (`viewer/HeightInset.tsx`)**
 While the desk the visitor is at moves (or they are on the height control), a second camera

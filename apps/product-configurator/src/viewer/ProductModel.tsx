@@ -2,12 +2,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { Vector3, type Group, type Object3D } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
-import { useProduct, useSelections } from '@/state/configuratorStore';
 import { resolveConfiguration, type Selections } from '@/state/derive';
-import { activeDesk, deskName, useDesksStore, type Desk } from '@/state/desksStore';
 import { useModelIssuesStore } from '@/state/modelIssuesStore';
-import { SINGLE_DESK_KEY, useMotionStore } from '@/state/motionStore';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useMotionStore } from '@/state/motionStore';
+import { currentDesk, deskName, SINGLE_DESK, type DeskSetup } from '@/state/setup';
+import { useProduct, useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { Decals } from './Decals';
 import { DeskLabel } from './DeskLabel';
 import { HeightInset } from './HeightInset';
@@ -48,16 +48,14 @@ export function ProductModel() {
   const { scene } = useModel(product.model.src);
   // Before anything below changes the scene: desks are copied from the model as exported.
   rememberPristine(scene);
-  const selections = useSelections();
-  const desksMode = useDesksStore((s) => s.mode === 'desks');
-  const desks = useDesksStore((s) => s.desks);
-  const activeDeskId = useDesksStore((s) => s.activeDeskId);
-  const setRoom = useDesksStore((s) => s.setRoom);
-  const deskSelections = useDesksStore((s) =>
-    s.mode === 'desks' ? activeDesk(s)?.selections : undefined,
-  );
-  const activeSelections = deskSelections ?? selections;
-  const seated = useWorkspaceStore((s) => s.seated);
+  const single = useSetupStore((s) => s.single);
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
+  const desks = useSetupStore((s) => s.room);
+  const activeDeskId = useSetupStore((s) => s.activeDeskId);
+  const setRoom = useViewStore((s) => s.setRoom);
+  const seated = useViewStore((s) => s.seated);
+  // The desk whose sites can go live: the single desk, or the one the visitor is at.
+  const activeSelections = useSetupStore((s) => currentDesk(s)?.selections);
 
   const footprint = useMemo(
     () => modelBounds(scene, product.model).getSize(new Vector3()),
@@ -87,30 +85,28 @@ export function ProductModel() {
         id: desk.id,
         desk,
         model: deskModel(scene, desk.id),
-        selections: desk.selections,
         position: layout?.placements[i]?.position ?? ORIGIN,
         rotation: layout?.placements[i]?.rotation ?? 0,
       }))
     : [
         {
-          id: '',
-          desk: undefined,
+          id: SINGLE_DESK,
+          desk: single,
           model: deskModel(scene, null),
-          selections,
           position: ORIGIN,
           rotation: 0,
         },
       ];
   // In the room, no desk is live until the visitor picks one (all show posters).
-  const active = desksMode ? items.find((item) => item.desk?.id === activeDeskId) : items[0];
+  const active = desksMode ? items.find((item) => item.desk.id === activeDeskId) : items[0];
   const activeConfig = useMemo(
-    () => resolveConfiguration(product, activeSelections),
+    () => (activeSelections ? resolveConfiguration(product, activeSelections) : null),
     [product, activeSelections],
   );
 
   return (
     <>
-      {active && (
+      {active && activeConfig && (
         <WorkspaceLayer
           product={product}
           scene={active.model.scene}
@@ -123,20 +119,22 @@ export function ProductModel() {
           key={item.id}
           product={product}
           model={item.model}
-          selections={item.selections}
+          selections={item.desk.selections}
           position={item.position}
           rotation={item.rotation}
           layoutKey={`${items.length}${tall ? ' tall' : ''}`}
           reportsMotion={i === 0}
-          motionKey={item.desk?.id ?? SINGLE_DESK_KEY}
+          deskId={item.desk.id}
           desk={
-            item.desk && {
-              desk: item.desk,
-              number: i + 1,
-              name: deskName(product, desks, item.desk),
-              active: item === active,
-              showLabel: !seated,
-            }
+            desksMode
+              ? {
+                  desk: item.desk,
+                  number: i + 1,
+                  name: deskName(product, desks, item.desk),
+                  active: item === active,
+                  showLabel: !seated,
+                }
+              : undefined
           }
         />
       ))}
@@ -158,11 +156,12 @@ interface DeskInstanceProps {
   layoutKey: string;
   /** Reports names the loaded model lacks (one desk is enough). */
   reportsMotion: boolean;
-  /** Where this desk's height lives in the motion store. */
-  motionKey: string;
+  /** The desk this is (its height). */
+  deskId: string;
   /** In unlimited desks mode: which desk this is. */
   desk:
-    { desk: Desk; number: number; name: string; active: boolean; showLabel: boolean } | undefined;
+    | { desk: DeskSetup; number: number; name: string; active: boolean; showLabel: boolean }
+    | undefined;
 }
 
 /** One desk: a copy of the model with a configuration applied. */
@@ -174,7 +173,7 @@ function DeskInstance({
   rotation,
   layoutKey,
   reportsMotion,
-  motionKey,
+  deskId,
   desk,
 }: DeskInstanceProps) {
   const { scene, index } = model;
@@ -224,7 +223,7 @@ function DeskInstance({
   }, [index, product]);
   // A part stops where another part begins (monitors parented under the desk top).
   const boundaries = useMemo(() => new Set(partNodes.values()), [partNodes]);
-  const motions = useMotions(scene, index, product, boundaries, motionKey);
+  const motions = useMotions(scene, index, product, boundaries, deskId);
 
   // Report names the catalog expects but the loaded model lacks (after render, not in it).
   useEffect(() => {

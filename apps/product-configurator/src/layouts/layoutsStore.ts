@@ -4,9 +4,9 @@
  */
 import { create } from 'zustand';
 import { getProduct } from '@/catalog';
-import { useConfiguratorStore } from '@/state/configuratorStore';
-import { useDesksStore } from '@/state/desksStore';
-import { captureLayout } from './layoutData';
+import { loadSetup } from '@/state/actions';
+import { currentSetup } from '@/state/setupStore';
+import { layoutFromSetup, setupFromLayout } from './layoutData';
 import {
   createLayout,
   deleteLayout,
@@ -32,7 +32,10 @@ interface LayoutsState {
   remove: (id: string) => Promise<void>;
 }
 
-const productId = () => getProduct(useConfiguratorStore.getState().productId).id;
+const product = () => getProduct(currentSetup().productId);
+const productId = () => product().id;
+/** The set-up as it is now, as a layout. */
+const captureLayout = () => layoutFromSetup(product(), currentSetup());
 
 export const useLayoutsStore = create<LayoutsState>()((set, get) => {
   const remember = (layouts: MyLayout[]) => {
@@ -67,7 +70,7 @@ export const useLayoutsStore = create<LayoutsState>()((set, get) => {
       try {
         const layout = await fetchLayout(id);
         if (layout.product !== productId()) throw new Error('This layout is for another product');
-        useDesksStore.getState().loadLayout(layout.data);
+        loadSetup(setupFromLayout(product(), layout.data));
         set({ current: { id: layout.id, name: layout.name } });
         // Keep this browser's list in step with the saved name.
         if (keyOf(id)) {

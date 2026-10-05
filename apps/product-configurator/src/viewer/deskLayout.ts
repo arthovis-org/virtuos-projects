@@ -1,4 +1,4 @@
-import type { Room } from '@/state/desksStore';
+import type { Room } from '@/state/viewStore';
 
 /** Space between neighbouring desks along an arc, in metres. */
 const GAP = 0.7;

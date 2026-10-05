@@ -1,12 +1,8 @@
 import { Fragment, useLayoutEffect, useRef } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
-import {
-  screenWeights,
-  SINGLE_DESK,
-  useWorkspaceStore,
-  type ScreenSurfaceInfo,
-  type WindowDrag,
-} from '@/state/workspaceStore';
+import { currentDesk, screenWeights, SINGLE_DESK } from '@/state/setup';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore, type ScreenSurfaceInfo, type WindowDrag } from '@/state/viewStore';
 import { deskDropAttribute } from '@/ui/workspace/deskDrag';
 import { Divider } from '@/ui/workspace/Divider';
 import { EmptyScreen } from '@/ui/workspace/EmptyScreen';
@@ -33,13 +29,13 @@ export function ScreenSurface({ surface, windows, targets, closed }: ScreenSurfa
   const { screen, widthPx, heightPx } = surface;
   const ref = useRef<HTMLDivElement>(null);
   const portrait = heightPx > widthPx;
-  const sizes = useWorkspaceStore((s) => s.sizes);
+  const sizes = useSetupStore((s) => currentDesk(s)?.windows.sizes);
   const ids = windows.map((w) => w.id);
   // In the room, the live screens belong to a desk that others can be dragged onto.
-  const deskId = useWorkspaceStore((s) => s.deskId);
-  const weights = screenWeights(sizes, screen.id, ids);
-  const drop = useWorkspaceStore((s) => (s.drag?.over?.screen === screen.id ? s.drag.over : null));
-  const dropLabel = useWorkspaceStore((s) => (s.drag ? dropDescription(s.drag, windows) : ''));
+  const deskId = useSetupStore((s) => currentDesk(s)?.id ?? SINGLE_DESK);
+  const weights = screenWeights(sizes ?? {}, screen.id, ids);
+  const drop = useViewStore((s) => (s.drag?.over?.screen === screen.id ? s.drag.over : null));
+  const dropLabel = useViewStore((s) => (s.drag ? dropDescription(s.drag, windows) : ''));
 
   useLayoutEffect(() => {
     const element = ref.current;

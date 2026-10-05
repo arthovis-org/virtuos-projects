@@ -1,13 +1,17 @@
 /**
- * The command center sheet and the room of desks, both ways: the set-up as rows (one per
- * site on a screen) and rows built into a room. Building goes through a saved layout's data,
- * so it brings back everything a layout does: names, heights, screens and windows.
+ * The command center sheet and the room of desks, both ways: a set-up as rows (one per site
+ * on a screen) and rows built into a room (names, themes, heights, screens and windows).
  */
 import type { ProductDefinition, Screen, Workspace, WorkspaceWindow } from '@/catalog/schema';
-import { captureLayout, type LayoutData, type LayoutDesk } from '@/layouts/layoutData';
-import { defaultSelections, type Selections } from '@/state/derive';
-import { MAX_DESKS } from '@/state/desksStore';
-import { openWindows, type DeskWindows } from '@/state/workspaceStore';
+import { type Selections } from '@/state/derive';
+import {
+  deskName,
+  deskWindows,
+  MAX_DESKS,
+  newDesk,
+  type DeskSetup,
+  type Setup,
+} from '@/state/setup';
 import { parseAddress } from '@/ui/workspace/siteUrl';
 import { emptyRow, isBlank, type SheetColumn, type SheetRow } from './sheetTable';
 
@@ -22,7 +26,7 @@ export interface SheetProblem {
 
 export interface SheetPlan {
   /** The desks built; none when no row could be used. */
-  desks: LayoutDesk[];
+  desks: DeskSetup[];
   problems: SheetProblem[];
   sites: number;
 }
@@ -68,48 +72,33 @@ function withScreens(product: ProductDefinition, base: Selections, used: Readonl
   return selections;
 }
 
-/** The set-up as sheet rows: the room's desks, or the single desk when the room was never opened. */
-export function rowsFromSetup(product: ProductDefinition): SheetRow[] {
-  const layout = captureLayout();
+/** A set-up as sheet rows: the room's desks, or the single desk when there is no room. */
+export function rowsFromSetup(product: ProductDefinition, setup: Setup): SheetRow[] {
   const motion = product.motions[0];
   const main = mainScreen(product);
-  const entries: LayoutDesk[] = layout.room?.desks ?? [
-    {
-      workspaceId: layout.single.windows?.workspaceId ?? product.workspaces[0]?.id ?? '',
-      ...layout.single,
-    },
-  ];
+  const desks = setup.room.length > 0 ? setup.room : [setup.single];
   const rows: SheetRow[] = [];
-  entries.forEach((entry, index) => {
-    const workspace = product.workspaces.find((w) => w.id === entry.workspaceId);
-    const sameTheme = entries.filter((e) => e.workspaceId === entry.workspaceId);
-    const desk =
-      entry.name ??
-      (sameTheme.length > 1
-        ? `${workspace?.label ?? 'Desk'} ${sameTheme.indexOf(entry) + 1}`
-        : (workspace?.label ?? `Desk ${index + 1}`));
-    const height = entry.height ?? motion?.initial ?? motion?.modelledValue;
+  for (const desk of desks) {
+    const workspace = product.workspaces.find((w) => w.id === desk.workspaceId);
+    const height = (motion && desk.motions[motion.id]) ?? motion?.initial ?? motion?.modelledValue;
     const base = {
       ...emptyRow(),
-      desk,
+      desk: deskName(product, desks, desk),
       theme: workspace?.label ?? '',
       height: height === undefined ? '' : String(Math.round(height)),
     };
 
-    const windows: DeskWindows | undefined =
-      entry.windows?.workspaceId === entry.workspaceId ? entry.windows : undefined;
-    const open = openWindows(workspace, windows?.closed ?? [], windows?.opened ?? []);
-    const order = windows?.order ?? open.map((w) => w.id);
+    const { placement, order } = desk.windows;
     const rank = (w: WorkspaceWindow) => {
       const at = order.indexOf(w.id);
       return at < 0 ? Infinity : at;
     };
-    const sorted = [...open].sort((a, b) => rank(a) - rank(b));
+    const sorted = deskWindows(product, desk).sort((a, b) => rank(a) - rank(b));
     // Grouped by screen in the product's screen order, as they tile on each screen; a window
     // whose monitor is switched off shows on the main screen, so that's where it is listed.
     const screenOf = (w: WorkspaceWindow) => {
-      const wanted = product.screens.find((s) => s.id === (windows?.placement[w.id] ?? w.screen));
-      return wanted && screenOn(product, wanted, entry.selections) ? wanted : main;
+      const wanted = product.screens.find((s) => s.id === (placement[w.id] ?? w.screen));
+      return wanted && screenOn(product, wanted, desk.selections) ? wanted : main;
     };
     const sites = product.screens.flatMap((screen) =>
       sorted.filter((w) => screenOf(w)?.id === screen.id).map((w) => ({ screen, w })),
@@ -125,7 +114,7 @@ export function rowsFromSetup(product: ProductDefinition): SheetRow[] {
         url: w.url,
       }),
     );
-  });
+  }
   return rows;
 }
 
@@ -166,7 +155,7 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
   let siteCount = 0;
   let windowCount = 0;
 
-  const built = desks.flatMap((desk): LayoutDesk[] => {
+  const built = desks.flatMap((desk): DeskSetup[] => {
     const first = (key: SheetColumn) => {
       const at = desk.rows.find((i) => rows[i]?.[key].trim());
       return at === undefined ? undefined : { row: at, value: (rows[at]?.[key] ?? '').trim() };
@@ -241,37 +230,31 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
     }
     siteCount += sites.length;
 
-    const used = new Set(sites.map((s) => s.screen));
-    // Screens without a site are switched off; a desk with no sites keeps its theme's own.
-    const selections =
-      sites.length > 0
-        ? withScreens(product, defaultSelections(product), used)
-        : defaultSelections(product);
-    const windows: DeskWindows | undefined =
-      sites.length > 0
-        ? {
-            workspaceId: workspace.id,
-            placement: Object.fromEntries(sites.map((s) => [s.id, s.screen])),
-            order: sites.map((s) => s.id),
-            closed: workspace.windows.map((w) => w.id),
-            opened: sites,
-            sizes: {},
-          }
-        : undefined;
-
     // A desk named after its theme needs no name of its own ("Finance", or "Finance 2").
     const label = workspace.label.toLowerCase();
     const lower = desk.name.trim().toLowerCase();
     const themed =
       lower === label ||
       (lower.startsWith(`${label} `) && /^\d+$/.test(lower.slice(label.length + 1)));
+
+    const built = newDesk(product, workspace.id);
     return [
       {
-        workspaceId: workspace.id,
-        selections,
+        ...built,
         ...(!themed && { name: desk.name }),
-        ...(height !== undefined && { height }),
-        ...(windows && { windows }),
+        ...(motion &&
+          height !== undefined && { motions: { ...built.motions, [motion.id]: height } }),
+        // Screens without a site are switched off; a desk with no sites keeps its theme's own.
+        ...(sites.length > 0 && {
+          selections: withScreens(product, built.selections, new Set(sites.map((s) => s.screen))),
+          windows: {
+            placement: Object.fromEntries(sites.map((s) => [s.id, s.screen])),
+            order: sites.map((s) => s.id),
+            closed: workspace.windows.map((w) => w.id),
+            opened: sites,
+            sizes: {},
+          },
+        }),
       },
     ];
   });
@@ -279,12 +262,7 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
   return { desks: built, problems, sites: siteCount };
 }
 
-/** The plan as a layout to load: the room of desks, with the single desk as it is now. */
-export function layoutOf(plan: SheetPlan): LayoutData {
-  return {
-    version: 1,
-    mode: 'desks',
-    single: captureLayout().single,
-    room: { desks: plan.desks, active: null },
-  };
+/** The set-up with the plan's room, at the overview; the single desk stays as it is. */
+export function setupWithPlan(setup: Setup, plan: SheetPlan): Setup {
+  return { ...setup, mode: 'desks', room: plan.desks, activeDeskId: null };
 }

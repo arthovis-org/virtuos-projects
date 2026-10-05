@@ -1,5 +1,7 @@
 import type { KeyboardEvent, PointerEvent } from 'react';
-import { screenWeights, useWorkspaceStore } from '@/state/workspaceStore';
+import { currentDesk, screenWeights } from '@/state/setup';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import styles from './Divider.module.css';
 
 interface DividerProps {
@@ -24,11 +26,12 @@ const KEY_STEP = 0.05;
 export function Divider({ screenId, windows, index, stacked }: DividerProps) {
   const first = windows[index - 1] ?? '';
   const second = windows[index] ?? '';
-  const resizeWindows = useWorkspaceStore((s) => s.resizeWindows);
+  const resizeWindows = useSetupStore((s) => s.resizeWindows);
 
   // The screen's current weights; the two windows keep their combined share.
   const pair = () => {
-    const weights = screenWeights(useWorkspaceStore.getState().sizes, screenId, windows);
+    const sizes = currentDesk(useSetupStore.getState())?.windows.sizes ?? {};
+    const weights = screenWeights(sizes, screenId, windows);
     const a = weights[index - 1] ?? 1;
     const b = weights[index] ?? 1;
     return { weights, a, total: a + b };
@@ -56,7 +59,7 @@ export function Divider({ screenId, windows, index, stacked }: DividerProps) {
     const gap = end - start - sizeA - sizeB;
 
     const move = (e: globalThis.PointerEvent) => {
-      const point = useWorkspaceStore.getState().locateOnScreen?.(screenId, e.clientX, e.clientY);
+      const point = useViewStore.getState().locateOnScreen?.(screenId, e.clientX, e.clientY);
       if (!point) return;
       const at = (stacked ? point.y : point.x) - start - gap / 2;
       setShare(at / (sizeA + sizeB));

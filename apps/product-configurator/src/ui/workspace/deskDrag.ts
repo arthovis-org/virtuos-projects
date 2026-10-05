@@ -4,8 +4,8 @@
  * click (sit down at the desk).
  */
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { useDesksStore } from '@/state/desksStore';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 
 /** How far the pointer moves before a press becomes a drag, in CSS pixels. */
 const THRESHOLD = 6;
@@ -53,7 +53,7 @@ export function pressDesk(
   if (event.button !== 0) return;
   const startX = event.clientX;
   const startY = event.clientY;
-  const canDrag = !useWorkspaceStore.getState().seated;
+  const canDrag = !useViewStore.getState().seated;
   let dragging = false;
 
   const move = (e: PointerEvent) => {
@@ -65,7 +65,7 @@ export function pressDesk(
       document.body.classList.add('ws-dragging');
     }
     e.preventDefault();
-    useDesksStore.getState().setDeskDrag({
+    useViewStore.getState().setDeskDrag({
       deskId,
       x: e.clientX,
       y: e.clientY,
@@ -77,14 +77,14 @@ export function pressDesk(
     window.removeEventListener('pointerup', end);
     window.removeEventListener('pointercancel', end);
     document.body.classList.remove('ws-dragging');
-    const store = useDesksStore.getState();
-    const drag = store.deskDrag;
-    store.setDeskDrag(null);
+    const view = useViewStore.getState();
+    const drag = view.deskDrag;
+    view.setDeskDrag(null);
     if (!dragging) {
       if (e.type === 'pointerup') onClick();
       return;
     }
-    if (drag?.over) store.swapDesks(drag.deskId, drag.over);
+    if (drag?.over) useSetupStore.getState().swapDesks(drag.deskId, drag.over);
   };
   window.addEventListener('pointermove', move);
   window.addEventListener('pointerup', end);

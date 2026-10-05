@@ -1,4 +1,4 @@
-import { useProduct, useResolvedConfiguration } from '@/state/configuratorStore';
+import { useProduct, useResolvedConfiguration } from '@/state/setupStore';
 import { useCurrencyStore } from '@/state/currencyStore';
 import { usePriceFormat } from './formatPrice';
 import styles from './PriceSummary.module.css';

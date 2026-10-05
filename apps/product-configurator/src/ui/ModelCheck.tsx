@@ -1,5 +1,5 @@
 import { catalogIssues } from '@/catalog';
-import { useProduct } from '@/state/configuratorStore';
+import { useProduct } from '@/state/setupStore';
 import { useModelIssuesStore } from '@/state/modelIssuesStore';
 import styles from './ModelCheck.module.css';
 

@@ -1,12 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { useProduct } from '@/state/configuratorStore';
+import { useProduct } from '@/state/setupStore';
 import { usePosterStore } from '@/state/posterStore';
-import {
-  layoutWindows,
-  openWindows,
-  useWorkspaceStore,
-  workspaceById,
-} from '@/state/workspaceStore';
+import { layoutWindows, workspaceById } from '@/state/setup';
+import { useCurrentWindows } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { cssProjection } from './cssProjection';
 import { PosterSurface } from './PosterSurface';
 import styles from './ScreenLayer.module.css';
@@ -19,14 +16,10 @@ import { ScreenSurface } from './ScreenSurface';
  */
 export function ScreenLayer() {
   const product = useProduct();
-  const active = useWorkspaceStore((s) => s.active);
-  const workspaceId = useWorkspaceStore((s) => s.workspaceId);
-  const placement = useWorkspaceStore((s) => s.placement);
-  const order = useWorkspaceStore((s) => s.order);
-  const closed = useWorkspaceStore((s) => s.closed);
-  const opened = useWorkspaceStore((s) => s.opened);
-  const surfaces = useWorkspaceStore((s) => s.surfaces);
-  const primaryScreen = useWorkspaceStore((s) => s.primaryScreen);
+  const active = useViewStore((s) => s.active);
+  const { workspaceId, placement, order, closed, windows } = useCurrentWindows();
+  const surfaces = useViewStore((s) => s.surfaces);
+  const primaryScreen = useViewStore((s) => s.primaryScreen);
   const posters = usePosterStore((s) => s.posters);
   const hasPosters = usePosterStore((s) => Object.keys(s.posters).length > 0);
   // Live sites, or the posters of the room's desks (also with no desk chosen yet).
@@ -81,7 +74,7 @@ export function ScreenLayer() {
   const workspace = workspaceById(product, workspaceId);
   const closedWindows = (workspace?.windows ?? []).filter((w) => closed.includes(w.id));
   const layout = layoutWindows(
-    openWindows(workspace, closed, opened),
+    windows,
     placement,
     order,
     surfaces.map((s) => s.screen.id),

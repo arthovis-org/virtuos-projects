@@ -33,8 +33,7 @@ import {
   type SheetColumn,
   type SheetRow,
 } from '@/sheet/sheetTable';
-import { useProduct } from '@/state/configuratorStore';
-import { useDesksStore } from '@/state/desksStore';
+import { useProduct, useSetupStore } from '@/state/setupStore';
 import styles from './CommandSheet.module.css';
 
 /** Copies text; false where the browser doesn't allow it. */
@@ -99,7 +98,7 @@ function SheetDialog() {
   const build = useSheetStore((s) => s.build);
   const loadGoogle = useSheetStore((s) => s.loadGoogle);
   const savedLink = useSheetStore((s) => s.googleLink);
-  const roomOpen = useDesksStore((s) => s.mode === 'desks');
+  const roomOpen = useSetupStore((s) => s.mode === 'desks');
   const [panel, setPanel] = useState<Panel>(null);
   const [link, setLink] = useState(savedLink);
   const [workflow, setWorkflow] = useState('');

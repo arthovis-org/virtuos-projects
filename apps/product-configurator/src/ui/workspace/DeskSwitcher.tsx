@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { useProduct } from '@/state/configuratorStore';
-import { deskName, MAX_DESKS, useDesksStore } from '@/state/desksStore';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useProduct } from '@/state/setupStore';
+import { addDesk, removeDesk, selectDesk, stepDesk } from '@/state/actions';
+import { deskName, MAX_DESKS } from '@/state/setup';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import styles from './DeskSwitcher.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
@@ -20,15 +22,11 @@ function isEditable(target: EventTarget | null) {
  */
 export function DeskSwitcher() {
   const product = useProduct();
-  const desks = useDesksStore((s) => s.desks);
-  const activeDeskId = useDesksStore((s) => s.activeDeskId);
-  const selectDesk = useDesksStore((s) => s.selectDesk);
-  const removeDesk = useDesksStore((s) => s.removeDesk);
-  const addDesk = useDesksStore((s) => s.addDesk);
-  const stepDesk = useDesksStore((s) => s.stepDesk);
-  const seated = useWorkspaceStore((s) => s.seated);
-  const deskDrag = useDesksStore((s) => s.deskDrag);
-  const setHudInsetBottom = useWorkspaceStore((s) => s.setHudInsetBottom);
+  const desks = useSetupStore((s) => s.room);
+  const activeDeskId = useSetupStore((s) => s.activeDeskId);
+  const seated = useViewStore((s) => s.seated);
+  const deskDrag = useViewStore((s) => s.deskDrag);
+  const setHudInsetBottom = useViewStore((s) => s.setHudInsetBottom);
   const [picking, setPicking] = useState(false);
   const bar = useRef<HTMLElement>(null);
 
@@ -63,7 +61,7 @@ export function DeskSwitcher() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [stepDesk]);
+  }, []);
 
   const full = desks.length >= MAX_DESKS;
   const nameOf = (id: string | null | undefined) => {

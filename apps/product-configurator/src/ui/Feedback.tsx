@@ -1,10 +1,10 @@
 import { MessageSquare, Paperclip, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import { recentErrors } from '@/feedback/errorLog';
-import { useProduct } from '@/state/configuratorStore';
-import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
+import { useProduct, useSetupStore } from '@/state/setupStore';
+import { currentDesk, deskName, workspaceById } from '@/state/setup';
 import { shareSearch } from '@/state/shareLink';
-import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
+import { useViewStore } from '@/state/viewStore';
 import styles from './Feedback.module.css';
 
 /** The feedback Worker (services/feedback-worker); without it there is no Feedback button. */
@@ -62,24 +62,24 @@ export function Feedback() {
 
   /** What the visitor was looking at, in words. */
   const describeView = () => {
-    const desks = useDesksStore.getState();
-    const workspace = useWorkspaceStore.getState();
+    const setup = useSetupStore.getState();
+    const workspace = useViewStore.getState();
     const parts: string[] = [];
-    if (desks.mode === 'desks') {
-      const desk = activeDesk(desks);
+    if (setup.mode === 'desks') {
+      const desk = currentDesk(setup);
       parts.push(
-        `Unlimited desks (${desks.desks.length})`,
+        `Unlimited desks (${setup.room.length})`,
         desk
-          ? `at desk ${desks.desks.indexOf(desk) + 1}, ${deskName(product, desks.desks, desk)}`
+          ? `at desk ${setup.room.indexOf(desk) + 1}, ${deskName(product, setup.room, desk)}`
           : 'overview',
       );
     } else {
       parts.push('One desk');
       if (workspace.active) {
-        parts.push(`${workspaceById(product, workspace.workspaceId)?.label ?? ''} workspace`);
+        parts.push(`${workspaceById(product, setup.single.workspaceId)?.label ?? ''} workspace`);
       }
     }
-    if (workspace.active || desks.mode === 'desks') {
+    if (workspace.active || setup.mode === 'desks') {
       parts.push(
         workspace.seated
           ? workspace.focus

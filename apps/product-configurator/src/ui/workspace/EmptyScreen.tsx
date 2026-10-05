@@ -1,7 +1,7 @@
 import { useState, type SyntheticEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
-import { useProduct } from '@/state/configuratorStore';
-import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
+import { workspaceById } from '@/state/setup';
+import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
 import styles from './EmptyScreen.module.css';
 import { parseAddress } from './siteUrl';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
@@ -41,9 +41,8 @@ interface SiteGroup {
  */
 export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
   const product = useProduct();
-  const workspaceId = useWorkspaceStore((s) => s.workspaceId);
-  const opened = useWorkspaceStore((s) => s.opened);
-  const openWindow = useWorkspaceStore((s) => s.openWindow);
+  const { workspaceId, opened } = useCurrentWindows();
+  const openWindow = useSetupStore((s) => s.openWindow);
 
   // Every workspace's sites, each once, leaving out this workspace's own (on a screen, or
   // offered to reopen above) and the sites the visitor opened.

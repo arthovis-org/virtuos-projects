@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "mode": "desks",
+  "single": {
+    "selections": {
+      "material-desk-mat": "walnut",
+      "toggle-side-monitors": "with",
+      "toggle-monitor-bottom": "with"
+    },
+    "height": 100,
+    "windows": {
+      "workspaceId": "soccer",
+      "placement": {
+        "live-scores": "main-monitor",
+        "premier-league-highlights": "main-monitor",
+        "transfermarkt": "monitor-left",
+        "premier-league": "monitor-right",
+        "tactics-board": "monitor-bottom"
+      },
+      "order": ["premier-league-highlights", "transfermarkt", "premier-league", "tactics-board"],
+      "closed": ["live-scores"],
+      "opened": [],
+      "sizes": {}
+    }
+  },
+  "room": {
+    "desks": [
+      {
+        "workspaceId": "soccer",
+        "selections": {
+          "material-desk-mat": "walnut",
+          "toggle-side-monitors": "with",
+          "toggle-monitor-bottom": "with"
+        },
+        "height": 100
+      },
+      {
+        "workspaceId": "finance",
+        "selections": {
+          "material-desk-mat": "american-oak",
+          "toggle-side-monitors": "with",
+          "toggle-monitor-bottom": "without"
+        },
+        "height": 110,
+        "windows": {
+          "workspaceId": "finance",
+          "placement": {
+            "s-p-500": "monitor-bottom",
+            "markets": "monitor-left",
+            "sector-heatmap": "monitor-right",
+            "economic-calendar": "monitor-bottom",
+            "site-muvld62v-1": "monitor-left"
+          },
+          "order": ["markets", "sector-heatmap", "economic-calendar", "s-p-500", "site-muvld62v-1"],
+          "closed": [],
+          "opened": [
+            {
+              "id": "site-muvld62v-1",
+              "title": "Example",
+              "url": "https://example.com/",
+              "screen": "monitor-left"
+            }
+          ],
+          "sizes": {
+            "main-monitor": {
+              "windows": ["a", "b"],
+              "weights": [2, 1]
+            }
+          }
+        }
+      },
+      {
+        "workspaceId": "crypto",
+        "selections": {
+          "material-desk-mat": "american-oak",
+          "toggle-side-monitors": "with",
+          "toggle-monitor-bottom": "with"
+        },
+        "windows": {
+          "workspaceId": "crypto",
+          "placement": {
+            "btc-usdt": "main-monitor",
+            "screener": "monitor-left",
+            "crypto-news": "monitor-right",
+            "coin-heatmap": "monitor-bottom"
+          },
+          "order": ["btc-usdt", "screener", "crypto-news", "coin-heatmap"],
+          "closed": [],
+          "opened": [],
+          "sizes": {}
+        }
+      },
+      {
+        "workspaceId": "nba",
+        "selections": {
+          "material-desk-mat": "american-oak",
+          "toggle-side-monitors": "with",
+          "toggle-monitor-bottom": "with"
+        },
+        "name": "Night games"
+      }
+    ],
+    "active": 2
+  }
+}

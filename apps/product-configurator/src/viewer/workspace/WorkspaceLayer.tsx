@@ -10,7 +10,7 @@ import {
   type Object3D,
 } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useViewStore } from '@/state/viewStore';
 import { matrixRelativeTo } from '../nodeUtils';
 import { coverScreens, cssProjection, screenHoleMaterial } from './cssProjection';
 import { dropTargetAt } from './dropTarget';
@@ -34,12 +34,12 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
   const camera = useThree((s) => s.camera);
   const gl = useThree((s) => s.gl);
   const invalidate = useThree((s) => s.invalidate);
-  const active = useWorkspaceStore((s) => s.active);
-  const dragging = useWorkspaceStore((s) => s.drag !== null);
-  const setPicker = useWorkspaceStore((s) => s.setPicker);
-  const setSurfaces = useWorkspaceStore((s) => s.setSurfaces);
-  const updateDrag = useWorkspaceStore((s) => s.updateDrag);
-  const endDrag = useWorkspaceStore((s) => s.endDrag);
+  const active = useViewStore((s) => s.active);
+  const dragging = useViewStore((s) => s.drag !== null);
+  const setPicker = useViewStore((s) => s.setPicker);
+  const setSurfaces = useViewStore((s) => s.setSurfaces);
+  const updateDrag = useViewStore((s) => s.updateDrag);
+  const endDrag = useViewStore((s) => s.endDrag);
 
   const screens = useMemo(() => resolveScreens(product, scene, index), [product, index, scene]);
 
@@ -112,7 +112,7 @@ export function WorkspaceLayer({ product, scene, index, hiddenNodes }: Workspace
 
   // Screen positions under the pointer: the drop target of a dragged window, and the point on
   // a screen's plane a divider is dragged to (the plane, so it works past the screen's edge).
-  const setLocator = useWorkspaceStore((s) => s.setLocator);
+  const setLocator = useViewStore((s) => s.setLocator);
   useEffect(() => {
     const raycaster = new Raycaster();
     const pointer = new Vector2();

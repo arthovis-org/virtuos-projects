@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
-import { useProduct } from '@/state/configuratorStore';
-import { deskName, useDesksStore } from '@/state/desksStore';
+import { selectDesk } from '@/state/actions';
 import type { PosterSurfaceInfo } from '@/state/posterStore';
-import { openWindows, useWorkspaceStore } from '@/state/workspaceStore';
+import { deskName, deskWindows } from '@/state/setup';
+import { useProduct, useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import { cssProjection } from './cssProjection';
 import styles from './PosterSurface.module.css';
@@ -17,10 +18,8 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
   const { id, deskId, screen, widthPx, heightPx } = poster;
   const ref = useRef<HTMLButtonElement>(null);
   const product = useProduct();
-  const desks = useDesksStore((s) => s.desks);
-  const selectDesk = useDesksStore((s) => s.selectDesk);
-  const saved = useWorkspaceStore((s) => s.saved[deskId]);
-  const dropTarget = useDesksStore((s) => s.deskDrag?.over === deskId);
+  const desks = useSetupStore((s) => s.room);
+  const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -35,10 +34,9 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
   const desk = desks.find((d) => d.id === deskId);
   const workspace = product.workspaces.find((w) => w.id === desk?.workspaceId);
   if (!desk || !workspace) return null;
-  const kept = saved?.workspaceId === workspace.id ? saved : undefined;
-  const windows = (
-    kept ? openWindows(workspace, kept.closed, kept.opened) : workspace.windows
-  ).filter((w) => (kept?.placement[w.id] ?? w.screen) === screen.id);
+  const windows = deskWindows(product, desk).filter(
+    (w) => (desk.windows.placement[w.id] ?? w.screen) === screen.id,
+  );
   const name = deskName(product, desks, desk);
 
   return (

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useProduct } from '@/state/configuratorStore';
-import { deskName, useDesksStore } from '@/state/desksStore';
-import { useWorkspaceStore } from '@/state/workspaceStore';
+import { useProduct } from '@/state/setupStore';
+import { stepDesk } from '@/state/actions';
+import { deskName } from '@/state/setup';
+import { useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 import styles from './DeskArrows.module.css';
 
@@ -23,13 +25,12 @@ const EDGE = 96;
  */
 export function DeskArrows() {
   const product = useProduct();
-  const desks = useDesksStore((s) => s.desks);
-  const activeDeskId = useDesksStore((s) => s.activeDeskId);
-  const stepDesk = useDesksStore((s) => s.stepDesk);
-  const atDesk = useWorkspaceStore((s) => s.seated || s.aroundDesk);
+  const desks = useSetupStore((s) => s.room);
+  const activeDeskId = useSetupStore((s) => s.activeDeskId);
+  const atDesk = useViewStore((s) => s.seated || s.aroundDesk);
   // The arrows sit between the toolbar and the desk switcher.
-  const top = useWorkspaceStore((s) => s.hudInset);
-  const bottom = useWorkspaceStore((s) => s.hudInsetBottom);
+  const top = useViewStore((s) => s.hudInset);
+  const bottom = useViewStore((s) => s.hudInsetBottom);
   const [near, setNear] = useState<Side | null>(null);
   const area = useRef<HTMLDivElement>(null);
 

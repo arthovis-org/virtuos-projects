@@ -1,10 +1,6 @@
-import { useProduct } from '@/state/configuratorStore';
-import {
-  layoutWindows,
-  openWindows,
-  useWorkspaceStore,
-  workspaceById,
-} from '@/state/workspaceStore';
+import { layoutWindows } from '@/state/setup';
+import { useCurrentWindows, useSetupStore } from '@/state/setupStore';
+import { useViewStore } from '@/state/viewStore';
 import { siteUrl } from './siteUrl';
 import styles from './WindowMenu.module.css';
 
@@ -14,24 +10,18 @@ import styles from './WindowMenu.module.css';
  * shown small, and the same buttons in the window's title bar would be specks.
  */
 export function WindowMenu() {
-  const product = useProduct();
-  const menu = useWorkspaceStore((s) => s.menu);
-  const active = useWorkspaceStore((s) => s.active);
-  const workspaceId = useWorkspaceStore((s) => s.workspaceId);
-  const closed = useWorkspaceStore((s) => s.closed);
-  const opened = useWorkspaceStore((s) => s.opened);
-  const placement = useWorkspaceStore((s) => s.placement);
-  const order = useWorkspaceStore((s) => s.order);
-  const surfaces = useWorkspaceStore((s) => s.surfaces);
-  const primaryScreen = useWorkspaceStore((s) => s.primaryScreen);
-  const focus = useWorkspaceStore((s) => s.focus);
-  const setMenu = useWorkspaceStore((s) => s.setMenu);
-  const setFocus = useWorkspaceStore((s) => s.setFocus);
-  const moveWindow = useWorkspaceStore((s) => s.moveWindow);
-  const closeWindow = useWorkspaceStore((s) => s.closeWindow);
+  const menu = useViewStore((s) => s.menu);
+  const active = useViewStore((s) => s.active);
+  const { windows, placement, order } = useCurrentWindows();
+  const surfaces = useViewStore((s) => s.surfaces);
+  const primaryScreen = useViewStore((s) => s.primaryScreen);
+  const focus = useViewStore((s) => s.focus);
+  const setMenu = useViewStore((s) => s.setMenu);
+  const setFocus = useViewStore((s) => s.setFocus);
+  const moveWindow = useSetupStore((s) => s.moveWindow);
+  const closeWindow = useSetupStore((s) => s.closeWindow);
 
   if (!menu || !active) return null;
-  const windows = openWindows(workspaceById(product, workspaceId), closed, opened);
   const win = windows.find((w) => w.id === menu);
   if (!win) return null;
   const screens = surfaces.map((s) => s.screen);

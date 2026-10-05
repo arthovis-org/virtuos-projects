@@ -4,9 +4,9 @@
  */
 import { create } from 'zustand';
 import { getProduct } from '@/catalog';
-import { useConfiguratorStore } from '@/state/configuratorStore';
-import { useDesksStore } from '@/state/desksStore';
-import { layoutOf, planFromRows, rowsFromSetup } from './sheetPlan';
+import { loadSetup } from '@/state/actions';
+import { currentSetup } from '@/state/setupStore';
+import { planFromRows, rowsFromSetup, setupWithPlan } from './sheetPlan';
 import { fetchGoogleSheet, parseGoogleSheet } from './sheetSources';
 import { emptyRow, type SheetRow } from './sheetTable';
 
@@ -28,7 +28,7 @@ function writeLink(link: string) {
   }
 }
 
-const product = () => getProduct(useConfiguratorStore.getState().productId);
+const product = () => getProduct(currentSetup().productId);
 
 interface SheetState {
   visible: boolean;
@@ -54,10 +54,10 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
   rows: [],
   googleLink: readLink(),
 
-  show: () => set({ visible: true, rows: rowsFromSetup(product()) }),
+  show: () => set({ visible: true, rows: rowsFromSetup(product(), currentSetup()) }),
   hide: () => set({ visible: false }),
   setRows: (rows) => set({ rows: rows.length > 0 ? rows : [emptyRow()] }),
-  fromSetup: () => set({ rows: rowsFromSetup(product()) }),
+  fromSetup: () => set({ rows: rowsFromSetup(product(), currentSetup()) }),
 
   loadGoogle: async (link) => {
     const ref = parseGoogleSheet(link);
@@ -70,7 +70,7 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
   build: () => {
     const plan = planFromRows(product(), get().rows);
     if (plan.desks.length === 0) return 0;
-    useDesksStore.getState().loadLayout(layoutOf(plan));
+    loadSetup(setupWithPlan(currentSetup(), plan));
     return plan.desks.length;
   },
 

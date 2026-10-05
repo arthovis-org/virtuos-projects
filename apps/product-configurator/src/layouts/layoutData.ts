@@ -1,15 +1,26 @@
 /**
- * A saved layout: everything needed to bring a visitor's set-up back, on any device. The
- * single desk (its configuration, height and windows) and the room of desks (each desk's
- * workspace, configuration, height and windows, and the desk the visitor was at), whichever
- * mode they were in. Desk ids are not saved: a loaded room gets new ones.
+ * A saved layout: a set-up as stored online, to bring it back on any device. The single desk
+ * and the room of desks, each desk's workspace, name, configuration, height and windows, and
+ * the desk the visitor was at. Desk ids are not saved: a loaded room gets new ones.
+ *
+ * This is a stored format: layouts saved by earlier versions must keep opening, so it only
+ * ever gains optional fields (or a new `version` read alongside the old one).
  */
-import { getProduct } from '@/catalog';
-import { useConfiguratorStore } from '@/state/configuratorStore';
+import type { ProductDefinition } from '@/catalog/schema';
 import type { Selections } from '@/state/derive';
-import { useDesksStore } from '@/state/desksStore';
-import { motionKey, SINGLE_DESK_KEY, useMotionStore } from '@/state/motionStore';
-import { SINGLE_DESK, useWorkspaceStore, type DeskWindows } from '@/state/workspaceStore';
+import { sanitizeSelections } from '@/state/derive';
+import {
+  initialWindows,
+  newDesk,
+  SINGLE_DESK,
+  workspaceById,
+  type DeskSetup,
+  type DeskWindows,
+  type Setup,
+} from '@/state/setup';
+
+/** Windows as saved: with the workspace they were arranged for. */
+export type LayoutWindows = DeskWindows & { workspaceId: string | null };
 
 export interface LayoutDesk {
   workspaceId: string;
@@ -19,13 +30,14 @@ export interface LayoutDesk {
   /** Height, in the product's unit; the default when missing. */
   height?: number;
   /** Windows on the desk's screens; the workspace's own when missing. */
-  windows?: DeskWindows;
+  windows?: LayoutWindows;
 }
 
 export interface LayoutData {
   version: 1;
   /** The mode the visitor was in; the other one comes back too, behind the switch. */
   mode: 'single' | 'desks';
+  /** The single desk; its workspace is the one its windows name. */
   single: Omit<LayoutDesk, 'workspaceId'>;
   room: {
     desks: LayoutDesk[];
@@ -34,55 +46,84 @@ export interface LayoutData {
   } | null;
 }
 
-/** The visitor's set-up as it is now. */
-export function captureLayout(): LayoutData {
-  const product = getProduct(useConfiguratorStore.getState().productId);
-  const configured = useConfiguratorStore.getState().selections;
-  const desks = useDesksStore.getState();
-  const windows = useWorkspaceStore.getState().exportWindows();
-  const heights = useMotionStore.getState().targets;
+/** A set-up as a layout. */
+export function layoutFromSetup(product: ProductDefinition, setup: Setup): LayoutData {
   const motion = product.motions[0];
-  const heightOf = (deskKey: string) =>
-    motion ? heights[motionKey(deskKey, motion.id)] : undefined;
-
-  // In the room the panel holds the active desk's selections; the single desk's are kept aside.
-  const inRoom = desks.mode === 'desks';
-  const roomDesks = inRoom ? desks.desks : (desks.parked?.desks ?? []);
-  const activeId = inRoom ? desks.activeDeskId : (desks.parked?.activeDeskId ?? null);
-  const active = roomDesks.findIndex((d) => d.id === activeId);
-
-  const withOptional = <T extends object>(
-    base: T,
-    extra: { height: number | undefined; windows: DeskWindows | undefined },
-  ) => ({
-    ...base,
-    ...(extra.height !== undefined && { height: extra.height }),
-    ...(extra.windows !== undefined && { windows: extra.windows }),
-  });
-
+  /** A desk as saved, but for its workspace (the single desk's is the one its windows name). */
+  const saved = (desk: DeskSetup): Omit<LayoutDesk, 'workspaceId'> => {
+    const height = motion ? desk.motions[motion.id] : undefined;
+    return {
+      ...(desk.name && { name: desk.name }),
+      selections: desk.selections,
+      ...(height !== undefined && { height }),
+      windows: { workspaceId: desk.workspaceId, ...desk.windows },
+    };
+  };
+  const active = setup.room.findIndex((d) => d.id === setup.activeDeskId);
   return {
     version: 1,
-    mode: inRoom ? 'desks' : 'single',
-    single: withOptional(
-      { selections: inRoom ? (desks.singleSelections ?? configured) : configured },
-      { height: heightOf(SINGLE_DESK_KEY), windows: windows[SINGLE_DESK] },
-    ),
+    mode: setup.mode === 'desks' && setup.room.length > 0 ? 'desks' : 'single',
+    single: saved(setup.single),
     room:
-      roomDesks.length === 0
+      setup.room.length === 0
         ? null
         : {
-            desks: roomDesks.map((desk) =>
-              withOptional(
-                {
-                  workspaceId: desk.workspaceId,
-                  selections: desk.selections,
-                  ...(desk.name && { name: desk.name }),
-                },
-                { height: heightOf(desk.id), windows: windows[desk.id] },
-              ),
-            ),
+            desks: setup.room.map((desk) => ({ workspaceId: desk.workspaceId, ...saved(desk) })),
             active: active < 0 ? null : active,
           },
+  };
+}
+
+/**
+ * The set-up a layout describes, for this product. Desks whose workspace the product no
+ * longer has are left out, unknown options fall back to defaults, and windows arranged for
+ * another workspace give way to the desk's workspace's own.
+ */
+export function setupFromLayout(product: ProductDefinition, layout: LayoutData): Setup {
+  const motion = product.motions[0];
+  const restore = (entry: LayoutDesk, id?: string): DeskSetup => {
+    const desk = newDesk(product, entry.workspaceId, id);
+    const workspace = workspaceById(product, desk.workspaceId);
+    const windows = entry.windows;
+    return {
+      ...desk,
+      ...(entry.name && { name: entry.name }),
+      selections: sanitizeSelections(product, entry.selections),
+      motions:
+        motion && typeof entry.height === 'number'
+          ? { ...desk.motions, [motion.id]: entry.height }
+          : desk.motions,
+      windows:
+        windows && (windows.workspaceId ?? workspace?.id) === desk.workspaceId
+          ? {
+              placement: windows.placement,
+              order: windows.order,
+              closed: windows.closed,
+              opened: windows.opened,
+              sizes: windows.sizes,
+            }
+          : initialWindows(workspace),
+    };
+  };
+
+  const single = restore(
+    { workspaceId: layout.single.windows?.workspaceId ?? '', ...layout.single },
+    SINGLE_DESK,
+  );
+  const room: DeskSetup[] = [];
+  let activeDeskId: string | null = null;
+  (layout.room?.desks ?? []).forEach((entry, i) => {
+    if (!product.workspaces.some((w) => w.id === entry.workspaceId)) return;
+    const desk = restore(entry);
+    room.push(desk);
+    if (i === layout.room?.active) activeDeskId = desk.id;
+  });
+  return {
+    productId: product.id,
+    mode: layout.mode === 'desks' && room.length > 0 ? 'desks' : 'single',
+    single,
+    room,
+    activeDeskId,
   };
 }
 

@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber';
 import { useEffect } from 'react';
 import type { PerspectiveCamera } from 'three';
-import { useProduct } from '@/state/configuratorStore';
+import { useProduct } from '@/state/setupStore';
 import { cssProjection, updateCssProjection } from './cssProjection';
 
 /**

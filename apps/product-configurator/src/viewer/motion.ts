@@ -2,7 +2,9 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { type Box3, Matrix3, Vector3, type Object3D } from 'three';
 import type { Motion, ProductDefinition } from '@/catalog/schema';
-import { motionKey, SINGLE_DESK_KEY, useMotionStore } from '@/state/motionStore';
+import { motionKey, useMotionStore } from '@/state/motionStore';
+import { findDesk, SINGLE_DESK } from '@/state/setup';
+import { useSetupStore } from '@/state/setupStore';
 import {
   authoredPosition,
   collectMeshes,
@@ -151,7 +153,7 @@ const localDirection = new Vector3();
 
 /**
  * Drives the product's motions: poses the moved nodes for the current values and animates
- * them towards the targets in the motion store at a constant, motor-like speed. Returns the
+ * them towards the desk's values in the set-up at a constant, motor-like speed. Returns the
  * resolved motions (for camera framing).
  */
 export function useMotions(
@@ -159,8 +161,8 @@ export function useMotions(
   index: NodeIndex,
   product: ProductDefinition,
   boundaries: PartBoundaries,
-  /** Desk whose values in the motion store these are (each desk has its own height). */
-  deskKey = SINGLE_DESK_KEY,
+  /** The desk these are (each desk has its own height). */
+  deskId = SINGLE_DESK,
 ) {
   const invalidate = useThree((state) => state.invalidate);
   const motions = useMemo(
@@ -194,49 +196,49 @@ export function useMotions(
     };
   }, [motions, scene, invalidate]);
 
-  // A new product (or a remount) starts from wherever the store says the motion is; the
-  // first time, from `initial`, or else the height the model was exported at.
+  // A remount starts from wherever the motion is; a desk new to the view, where its set-up
+  // puts it (a desk brought along or loaded arrives there without moving); the first time,
+  // from `initial`, or else the height the model was exported at.
   useEffect(() => {
-    const store = useMotionStore.getState();
+    const { current: now, setCurrent } = useMotionStore.getState();
+    const setup = useSetupStore.getState();
+    const desk = findDesk(setup, deskId);
     current.current = new Map(
       motions.map(({ motion, modelledValue }) => {
         const clamp = (v: number) => Math.min(motion.max, Math.max(motion.min, v));
-        const key = motionKey(deskKey, motion.id);
-        const value = store.current[key] ?? clamp(motion.initial ?? modelledValue);
-        store.start(key, value);
+        const key = motionKey(deskId, motion.id);
+        const value =
+          now[key] ?? desk?.motions[motion.id] ?? clamp(motion.initial ?? modelledValue);
+        setCurrent(key, value);
+        setup.startMotion(deskId, motion.id, value);
         return [motion.id, value];
       }),
     );
     applyPose();
-  }, [motions, applyPose, deskKey]);
+  }, [motions, applyPose, deskId]);
 
-  // Wake the demand-driven render loop whenever a target changes.
-  useEffect(
-    () =>
-      useMotionStore.subscribe((state, previous) => {
-        if (state.targets !== previous.targets) invalidate();
-      }),
-    [invalidate],
-  );
+  // Wake the demand-driven render loop whenever the set-up changes (a desk's height may have).
+  useEffect(() => useSetupStore.subscribe(() => invalidate()), [invalidate]);
 
   // Runs before the default frame callbacks, so a seated workspace camera follows the desk in
   // the same frame.
   useFrame((_, delta) => {
     if (motions.length === 0) return;
-    const { targets, setCurrent } = useMotionStore.getState();
+    const { setCurrent } = useMotionStore.getState();
+    const targets = findDesk(useSetupStore.getState(), deskId)?.motions ?? {};
     const step = Math.min(delta, MAX_FRAME_SECONDS);
     let changed = false;
     for (const { motion, speed } of motions) {
       // Not started yet: the first frame can run before the effect above has set it.
       const value = current.current.get(motion.id);
-      const target = targets[motionKey(deskKey, motion.id)];
+      const target = targets[motion.id];
       if (value === undefined || target === undefined || value === target) continue;
       const next =
         Math.abs(target - value) <= speed * step
           ? target
           : value + Math.sign(target - value) * speed * step;
       current.current.set(motion.id, next);
-      setCurrent(motionKey(deskKey, motion.id), next);
+      setCurrent(motionKey(deskId, motion.id), next);
       changed = true;
     }
     // Posing invalidates, which keeps frames coming until every motion has arrived.
