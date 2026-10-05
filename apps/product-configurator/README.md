@@ -92,6 +92,22 @@ saved a layout keeps its edit key and the list of its layouts (local storage), a
 update, rename or delete them; anyone with the link can open one. The format is in
 `src/layouts/layoutData.ts`; the Worker's address is `VITE_LAYOUTS_URL` in `.env`.
 
+## Command center sheet
+
+The header's **Sheet** button shows every desk as a table, one row per site: **Desk, Theme,
+Screen, Site, URL, Height**. Edit it there, paste cells from Google Sheets or Excel (a pasted
+header row replaces the sheet; plain cells fill in from the cell pasted into), open or download a
+CSV, or load a Google Sheet shared as "Anyone with the link". **Plan with AI** copies a prompt
+that explains the sheet, the themes and the screens to ChatGPT, Claude or Gemini; its answer is
+pasted back. **Build the desks** turns the rows into the room: rows group into desks by name (a
+blank Desk continues the desk above), screens with a site are switched on and the others off,
+and a desk with no sites gets its theme's own. `?sheet=<Google Sheets link>` builds the room from
+the sheet for whoever opens the link, so the sheet works as a small database of command centers.
+
+The code is in `src/sheet/`: `sheetTable.ts` (CSV and pasted text), `sheetPlan.ts` (rows to a
+layout and back, through the saved-layout format), `sheetSources.ts` (Google Sheets, the AI
+prompt). Google Sheets are read through the layouts Worker's `/sheet` route.
+
 ## Feedback
 
 The header's **Feedback** button sends a message (with an optional screenshot) to the feedback

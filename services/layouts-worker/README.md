@@ -15,6 +15,16 @@ PUT    /layouts/:id      { name?, data? }   + key -> 200 { id, updatedAt }
 DELETE /layouts/:id                         + key -> 204
 ```
 
+It also reads Google Sheets for the configurator's command center sheet (Google's CSV export
+can't be fetched from a web page directly):
+
+```
+GET    /sheet?id=<sheet id>&gid=<tab id>[&published=1]  -> 200 text/csv
+```
+
+Only Google's own export addresses are fetched, and only sheets shared as "Anyone with the link"
+(or published to the web) can be read; a private sheet gets a 403 saying how to share it.
+
 The key goes in `Authorization: Bearer <key>`. Only the sites in `ALLOWED_ORIGINS`
 (`wrangler.toml`) may call it. Limits: names up to 80 characters, layouts up to 256 KB, 30 new
 layouts per visitor per 10 minutes.

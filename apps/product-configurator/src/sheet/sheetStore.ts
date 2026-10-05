@@ -1,0 +1,81 @@
+/**
+ * The command center sheet in the page: its rows while it is being edited, the Google Sheet
+ * it was loaded from (remembered in this browser), and building the room from it.
+ */
+import { create } from 'zustand';
+import { getProduct } from '@/catalog';
+import { useConfiguratorStore } from '@/state/configuratorStore';
+import { useDesksStore } from '@/state/desksStore';
+import { layoutOf, planFromRows, rowsFromSetup } from './sheetPlan';
+import { fetchGoogleSheet, parseGoogleSheet } from './sheetSources';
+import { emptyRow, type SheetRow } from './sheetTable';
+
+const LINK_KEY = 'virtuos.sheetLink';
+
+function readLink() {
+  try {
+    return localStorage.getItem(LINK_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function writeLink(link: string) {
+  try {
+    localStorage.setItem(LINK_KEY, link);
+  } catch {
+    // Private browsing: the link just isn't remembered.
+  }
+}
+
+const product = () => getProduct(useConfiguratorStore.getState().productId);
+
+interface SheetState {
+  visible: boolean;
+  rows: readonly SheetRow[];
+  /** The Google Sheet last loaded, for loading it again after editing it there. */
+  googleLink: string;
+  /** Opens the sheet on the set-up as it is now. */
+  show: () => void;
+  hide: () => void;
+  setRows: (rows: readonly SheetRow[]) => void;
+  /** Rows from the set-up as it is now, replacing the sheet's. */
+  fromSetup: () => void;
+  /** Loads a Google Sheet's rows into the sheet. */
+  loadGoogle: (link: string) => Promise<void>;
+  /** Builds the room from the rows; returns the number of desks built. */
+  build: () => number;
+  /** Builds the room straight from a Google Sheet (a `?sheet=` link). */
+  buildFromGoogle: (link: string) => Promise<number>;
+}
+
+export const useSheetStore = create<SheetState>()((set, get) => ({
+  visible: false,
+  rows: [],
+  googleLink: readLink(),
+
+  show: () => set({ visible: true, rows: rowsFromSetup(product()) }),
+  hide: () => set({ visible: false }),
+  setRows: (rows) => set({ rows: rows.length > 0 ? rows : [emptyRow()] }),
+  fromSetup: () => set({ rows: rowsFromSetup(product()) }),
+
+  loadGoogle: async (link) => {
+    const ref = parseGoogleSheet(link);
+    if (!ref) throw new Error('That is not a Google Sheets link');
+    const rows = await fetchGoogleSheet(ref);
+    writeLink(link.trim());
+    set({ rows, googleLink: link.trim() });
+  },
+
+  build: () => {
+    const plan = planFromRows(product(), get().rows);
+    if (plan.desks.length === 0) return 0;
+    useDesksStore.getState().loadLayout(layoutOf(plan));
+    return plan.desks.length;
+  },
+
+  buildFromGoogle: async (link) => {
+    await get().loadGoogle(link);
+    return get().build();
+  },
+}));

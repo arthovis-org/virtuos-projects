@@ -648,9 +648,12 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
     return found;
   };
 
+  /** The toggle group that shows each toggled object, by object name (for the screens). */
+  const toggleOfNode = new Map<string, string>();
   for (const toggle of panelToggles.values()) {
     const settings = lookup(config.options, toggle.name, usedOptions);
     const id = toId(toggle.name);
+    for (const name of toggle.nodes) toggleOfNode.set(name, `toggle-${id}`);
     const swap = (side: 'on' | 'off') =>
       (settings?.parts?.[side] ?? [])
         .map((name) => objectNamed(name, `options.${toggle.name}.parts.${side}`))
@@ -750,8 +753,19 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
   const screenMaterialIndex = (folder.gltf.materials ?? []).findIndex(
     (m) => m.name === screenMaterial,
   );
-  const screens: { id: string; node: string; label: string }[] = [];
-  for (const node of folder.gltf.nodes ?? []) {
+  const screens: { id: string; node: string; label: string; toggle?: string }[] = [];
+  const gltfNodes = folder.gltf.nodes ?? [];
+  const parentOf = new Map<number, number>();
+  gltfNodes.forEach((node, i) => node.children?.forEach((child) => parentOf.set(child, i)));
+  /** The toggle that shows a node: its own or the nearest toggled parent's. */
+  const toggleShowing = (index: number) => {
+    for (let at: number | undefined = index; at !== undefined; at = parentOf.get(at)) {
+      const toggle = toggleOfNode.get(gltfNodes[at]?.name ?? '');
+      if (toggle) return toggle;
+    }
+    return undefined;
+  };
+  for (const [index, node] of gltfNodes.entries()) {
     const primitives =
       node.mesh === undefined ? [] : (folder.gltf.meshes?.[node.mesh]?.primitives ?? []);
     if (!node.name || !primitives.some((p) => p.material === screenMaterialIndex)) continue;
@@ -766,6 +780,7 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
         lookup(config.screens?.labels, base, usedLabel) ??
         lookup(config.screens?.labels, node.name, usedLabel) ??
         humanize(base),
+      ...(toggleShowing(index) && { toggle: toggleShowing(index) }),
     });
   }
   if (config.screens?.material && screens.length === 0) {

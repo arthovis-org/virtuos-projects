@@ -3,6 +3,7 @@ import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { useProduct } from '@/state/configuratorStore';
 import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
 import styles from './EmptyScreen.module.css';
+import { parseAddress } from './siteUrl';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 /**
@@ -25,20 +26,6 @@ interface EmptyScreenProps {
   screen: Screen;
   /** Workspace windows the visitor closed, offered to reopen here. */
   closed: readonly WorkspaceWindow[];
-}
-
-/** Reads a typed address as an https link, or explains why it can't be used. */
-function parseAddress(value: string): { url: string; title: string } | { error: string } {
-  const text = value.trim();
-  if (!text) return { error: 'Type a web address' };
-  let url: URL;
-  try {
-    url = new URL(/^[a-z][a-z\d+.-]*:/i.test(text) ? text : `https://${text}`);
-  } catch {
-    return { error: 'That is not a web address' };
-  }
-  if (url.protocol !== 'https:') return { error: 'Only https:// addresses can be shown' };
-  return { url: url.href, title: url.hostname.replace(/^www\./, '') };
 }
 
 interface SiteGroup {

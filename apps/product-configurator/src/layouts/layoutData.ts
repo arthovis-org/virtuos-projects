@@ -13,6 +13,8 @@ import { SINGLE_DESK, useWorkspaceStore, type DeskWindows } from '@/state/worksp
 
 export interface LayoutDesk {
   workspaceId: string;
+  /** The desk's own name; the workspace's when missing. */
+  name?: string;
   selections: Selections;
   /** Height, in the product's unit; the default when missing. */
   height?: number;
@@ -71,7 +73,11 @@ export function captureLayout(): LayoutData {
         : {
             desks: roomDesks.map((desk) =>
               withOptional(
-                { workspaceId: desk.workspaceId, selections: desk.selections },
+                {
+                  workspaceId: desk.workspaceId,
+                  selections: desk.selections,
+                  ...(desk.name && { name: desk.name }),
+                },
                 { height: heightOf(desk.id), windows: windows[desk.id] },
               ),
             ),

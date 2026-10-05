@@ -1,9 +1,11 @@
+import { RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { productList } from '@/catalog';
 import { useConfiguratorStore, useProduct } from '@/state/configuratorStore';
 import { DISPLAY_CURRENCIES, useCurrencyStore } from '@/state/currencyStore';
 import { useDesksStore } from '@/state/desksStore';
 import { shareSearch } from '@/state/shareLink';
+import { CommandSheet } from './CommandSheet';
 import { Feedback } from './Feedback';
 import { Layouts } from './Layouts';
 import styles from './Header.module.css';
@@ -62,6 +64,7 @@ export function Header() {
         )}
       </div>
       <div className={styles.actions}>
+        <CommandSheet />
         <Layouts />
         <Feedback />
         {hasWorkspaces && (
@@ -113,9 +116,11 @@ export function Header() {
           type="button"
           className={styles.button}
           onClick={resetToDefaults}
-          title={desksMode ? "Reset this desk's setup" : undefined}
+          title={desksMode ? "Reset this desk's setup" : 'Reset'}
+          aria-label="Reset"
         >
-          Reset
+          <RotateCcw className={styles.short} size={14} aria-hidden="true" />
+          <span className={styles.long}>Reset</span>
         </button>
         <button
           type="button"

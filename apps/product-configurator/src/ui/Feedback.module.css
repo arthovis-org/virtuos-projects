@@ -223,7 +223,7 @@
 /* A phone: the button is just its icon. */
 @media (max-width: 640px), (orientation: landscape) and (max-height: 500px) {
   .trigger {
-    padding: 0.4375rem;
+    padding: 0.375rem;
   }
 
   .triggerLabel {

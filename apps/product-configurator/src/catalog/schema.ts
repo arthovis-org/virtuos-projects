@@ -194,6 +194,8 @@ export const screenSchema = z.object({
   /** Blender object name of the monitor. */
   node: z.string().min(1),
   label: z.string().min(1),
+  /** The toggle option group that switches the screen on and off; none when always on. */
+  toggle: identifier.optional(),
 });
 
 export const workspaceWindowSchema = z.object({

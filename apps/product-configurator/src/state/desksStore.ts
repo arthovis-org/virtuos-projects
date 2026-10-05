@@ -21,6 +21,8 @@ export interface Desk {
   id: string;
   workspaceId: string;
   selections: Selections;
+  /** A name of the visitor's (from a layout or the command center sheet); else the workspace's. */
+  name?: string;
 }
 
 /** A desk being dragged onto another in the room overview, to swap places with it. */
@@ -316,6 +318,7 @@ export const useDesksStore = create<DesksState>()((set, get) => {
           id: newDeskId(),
           workspaceId: entry.workspaceId,
           selections: sanitizeSelections(product, entry.selections),
+          ...(entry.name && { name: entry.name }),
         };
         desks.push(desk);
         keep(desk.id, desk.id, entry);
@@ -357,6 +360,7 @@ export function activeDesk(state: Pick<DesksState, 'desks' | 'activeDeskId'>) {
 
 /** A desk's name: its workspace, numbered when several desks share one ("Finance 2"). */
 export function deskName(product: ProductDefinition, desks: readonly Desk[], desk: Desk) {
+  if (desk.name) return desk.name;
   const label = knownWorkspace(product, desk.workspaceId)?.label ?? 'Desk';
   const same = desks.filter((d) => d.workspaceId === desk.workspaceId);
   return same.length > 1 ? `${label} ${same.indexOf(desk) + 1}` : label;
