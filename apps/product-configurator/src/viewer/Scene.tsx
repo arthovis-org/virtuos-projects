@@ -75,15 +75,19 @@ function Refit() {
   const deskCount = useDesksStore((s) => s.desks.length);
   const fitted = useRef<string | null>(null);
   const flight = useRef<Flight | null>(null);
+  const wasSeated = useRef(false);
 
   useEffect(() => {
     const key = `${width}x${height}:${desksMode ? deskCount : 'single'}`;
-    // `Bounds fit` frames a single desk itself when it mounts; a room needs the view above.
-    if (fitted.current === null && !desksMode) {
-      fitted.current = key;
-      return;
-    }
-    if (!cameraFree || fitted.current === key) return;
+    // The camera was just handed back in the room (the visitor stood up): to the overview,
+    // never back to wherever the camera was before they sat down.
+    const backInRoom = desksMode && cameraFree && wasSeated.current;
+    wasSeated.current = !cameraFree;
+    if (!cameraFree) return;
+    // The first framing is the only one: this, not `Bounds fit`, which could run alongside a
+    // seated camera's flight when a desk was picked before the model had loaded.
+    const first = fitted.current === null;
+    if (!first && !backInRoom && fitted.current === key) return;
     fitted.current = key;
     bounds.refresh().clip();
     const { box, center } = bounds.getSize();
@@ -101,7 +105,8 @@ function Refit() {
       fromTarget: target.clone(),
       to: center.clone().addScaledVector(aim, distance),
       toTarget: center.clone(),
-      t: 0,
+      // The first framing is there at once; later ones fly.
+      t: first ? 1 : 0,
       started: false,
     };
     invalidate();
@@ -185,12 +190,15 @@ export function Scene() {
         // Render only when something changes (camera, selection); the scene is static otherwise.
         frameloop="demand"
         dpr={[1, 2]}
-        camera={{ position: [2.2, 1.4, 2.6], fov: 35, near: 0.05, far: 200 }}
+        // Far out, outside any room of desks (the first framing then moves it in at once): a desk
+        // picked from the desk bar while the model loads flies from here, and from inside the
+        // room the flight went through the other desks.
+        camera={{ position: [9, 6, 11], fov: 35, near: 0.05, far: 200 }}
         gl={{ antialias: true, alpha: true }}
       >
         <ViewerErrorBoundary>
           <Suspense fallback={<LoadingIndicator />}>
-            <Bounds fit clip margin={1.25}>
+            <Bounds clip margin={1.25}>
               <Refit />
               <ProductModel />
             </Bounds>

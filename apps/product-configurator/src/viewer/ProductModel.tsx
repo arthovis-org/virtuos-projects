@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { Vector3, type Group, type Object3D } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
 import { useProduct, useSelections } from '@/state/configuratorStore';
@@ -20,6 +20,19 @@ import { DeskPosters } from './workspace/DeskPosters';
 import { WorkspaceLayer } from './workspace/WorkspaceLayer';
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
+/**
+ * A screen held upright. Decided by the screen, not the viewer: the viewer changes shape when
+ * the phone's option sheet opens, and rebuilding the room then moved desks under the seated
+ * camera (another desk ended up right in front of it).
+ */
+const PORTRAIT = '(orientation: portrait)';
+const subscribePortrait = (onChange: () => void) => {
+  const query = window.matchMedia(PORTRAIT);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+};
+const isPortrait = () => window.matchMedia(PORTRAIT).matches;
+
 /** How quickly swapped desks glide to their new places (per second, exponential). */
 const GLIDE_RATE = 6;
 /** Space between the top of a desk and its name tag, in metres. */
@@ -51,7 +64,7 @@ export function ProductModel() {
     [scene, product.model],
   );
   // A phone held upright gets a tighter, deeper room (see `TALL_ARCS`).
-  const tall = useThree((s) => s.size.height > s.size.width * 1.1);
+  const tall = useSyncExternalStore(subscribePortrait, isPortrait);
   const layout = useMemo(
     () =>
       desksMode

@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { MathUtils, type PerspectiveCamera, Spherical, Vector3 } from 'three';
+import { useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import type { ScreenFrame } from './screenFrame';
 
@@ -164,10 +165,17 @@ interface Move {
   seconds: number;
   t: number;
   started: boolean;
+  /**
+   * Fly in a straight line instead of swinging round the target. In the room of desks the
+   * swing cut through the neighbouring desks; the space between the desks and the point they
+   * face is empty, so a straight path between the overview and a seat, or two seats, is clear.
+   */
+  straight: boolean;
   onDone?: (() => void) | undefined;
 }
 
 function planMove(from: Pose, to: Pose, onDone?: () => void): Move {
+  const straight = useDesksStore.getState().mode === 'desks';
   const fromAngle = new Spherical().setFromVector3(from.position.clone().sub(from.target));
   const toAngle = new Spherical().setFromVector3(to.position.clone().sub(to.target));
   // Swing the short way round.
@@ -183,6 +191,7 @@ function planMove(from: Pose, to: Pose, onDone?: () => void): Move {
     seconds: MathUtils.lerp(MOVE_SECONDS.min, MOVE_SECONDS.max, sweep),
     t: 0,
     started: false,
+    straight,
     onDone,
   };
 }
@@ -207,11 +216,13 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   const setCameraFree = useWorkspaceStore((s) => s.setCameraFree);
 
   const saved = useRef<(Pose & { limits: Partial<Controls> }) | null>(null);
-  // Unmounted while seated (the room opened with no desk chosen): hand the camera back.
+  // Unmounted just as the visitor stood up (the room opened with no desk chosen, so the move
+  // back never ran): hand the camera back. Only then: while still seated this is a remount
+  // (React's development check mounts twice), and the seat must stay as it is.
   useEffect(
     () => () => {
-      if (controls && saved.current)
-        Object.assign(controls, { ...saved.current.limits, enabled: true });
+      if (useWorkspaceStore.getState().seated || !saved.current) return;
+      if (controls) Object.assign(controls, { ...saved.current.limits, enabled: true });
       saved.current = null;
       useWorkspaceStore.getState().setCameraFree(true);
     },
@@ -290,6 +301,14 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   useEffect(() => {
     if (seated || !saved.current) return;
     const back = saved.current;
+    // In the room the camera is handed back at once and flies to the overview from here
+    // (Refit): the pose before sitting down may be anywhere, even inside the room.
+    if (useDesksStore.getState().mode === 'desks') {
+      if (controls) Object.assign(controls, { ...back.limits, enabled: true });
+      saved.current = null;
+      setCameraFree(true);
+      return;
+    }
     move.current = planMove(current(), back, () => {
       if (controls) Object.assign(controls, { ...back.limits, enabled: true });
       saved.current = null;
@@ -345,12 +364,16 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     m.started = true;
     const k = ease(m.t);
     target.lerpVectors(m.from.target, m.to.target, k);
-    angle.set(
-      MathUtils.lerp(m.fromAngle.radius, m.toAngle.radius, k),
-      MathUtils.lerp(m.fromAngle.phi, m.toAngle.phi, k),
-      MathUtils.lerp(m.fromAngle.theta, m.toAngle.theta, k),
-    );
-    camera.position.setFromSpherical(angle).add(target);
+    if (m.straight) {
+      camera.position.lerpVectors(m.from.position, m.to.position, k);
+    } else {
+      angle.set(
+        MathUtils.lerp(m.fromAngle.radius, m.toAngle.radius, k),
+        MathUtils.lerp(m.fromAngle.phi, m.toAngle.phi, k),
+        MathUtils.lerp(m.fromAngle.theta, m.toAngle.theta, k),
+      );
+      camera.position.setFromSpherical(angle).add(target);
+    }
     // Level, whatever turned the camera's up vector before (drei's Bounds animations do).
     camera.up.copy(WORLD_UP);
     camera.lookAt(target);

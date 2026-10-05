@@ -159,3 +159,39 @@
     display: none;
   }
 }
+
+/* Touch screens: the monitors are shown small, so the row of buttons would be specks. A taller
+   title bar and one large button open a menu (WindowMenu) sized for fingers instead. Mouse and
+   trackpad screens keep the row. */
+.more {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .titleBar {
+    height: 96px;
+    padding: 0 12px 0 24px;
+    font-size: 34px;
+  }
+
+  .titleBar .icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .host,
+  .actions {
+    display: none;
+  }
+
+  .more {
+    display: grid;
+    width: 112px;
+    height: 80px;
+    margin-left: auto;
+    border-radius: 16px;
+    background: rgb(0 0 0 / 8%);
+    font-size: 56px;
+    line-height: 1;
+  }
+}

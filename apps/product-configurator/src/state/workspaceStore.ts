@@ -123,6 +123,8 @@ interface WorkspaceState {
   sizes: Readonly<Record<string, ScreenSizes>>;
   /** Screen the camera zooms to, or null for the overview of all screens. */
   focus: string | null;
+  /** Window whose touch menu is open (phones and tablets: the title bar buttons are tiny). */
+  menu: string | null;
   drag: WindowDrag | null;
   pickScreen: ScreenPicker | null;
   locateOnScreen: ScreenLocator | null;
@@ -151,6 +153,7 @@ interface WorkspaceState {
   /** Opens a site on a screen: a closed workspace window by id, or any https link. */
   openWindow: (screenId: string, site: { id?: string; title: string; url: string }) => void;
   setFocus: (screenId: string | null) => void;
+  setMenu: (windowId: string | null) => void;
   setCameraFree: (free: boolean) => void;
   setPicker: (picker: ScreenPicker | null) => void;
   setLocator: (locator: ScreenLocator | null) => void;
@@ -249,6 +252,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   opened: [],
   sizes: {},
   focus: null,
+  menu: null,
   drag: null,
   pickScreen: null,
   locateOnScreen: null,
@@ -333,6 +337,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
 
   // Zooming to one screen takes the seat again.
   setFocus: (focus) => set(focus ? { focus, seated: true, cameraFree: false } : { focus }),
+  setMenu: (menu) => set({ menu }),
   setCameraFree: (cameraFree) => set({ cameraFree }),
   setPicker: (pickScreen) => set({ pickScreen }),
   setLocator: (locateOnScreen) => set({ locateOnScreen }),

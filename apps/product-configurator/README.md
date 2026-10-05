@@ -74,7 +74,8 @@ docs/ARCHITECTURE.md       data flow in more detail
 Below 900 px wide the option panel is a bottom sheet, closed to a bar at first so the desk keeps
 the screen; opened, it takes the lower part and the camera reframes the desk above it. Below
 640 px the header fits one row, the live demo card starts folded into a pill, and the toolbars
-use short labels. On a tall screen the room of desks uses tighter arcs with rows behind, so it
+use short labels. On touch screens a window's title bar is taller, and its row of small
+buttons gives way to one ⋯ button (or a tap on the title bar) that opens a finger-sized menu. On a tall screen the room of desks uses tighter arcs with rows behind, so it
 fills the height (`TALL_ARCS` in `src/viewer/deskLayout.ts`).
 
 ## Performance

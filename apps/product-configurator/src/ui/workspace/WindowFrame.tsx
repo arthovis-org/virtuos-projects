@@ -1,4 +1,4 @@
-import { useState, type PointerEvent } from 'react';
+import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { useWorkspaceStore } from '@/state/workspaceStore';
 import { siteUrl } from './siteUrl';
@@ -12,6 +12,9 @@ interface WindowFrameProps {
   /** Share of the screen, as a flex weight against the other windows on it. */
   grow: number;
 }
+
+/** A touch screen: the title bar's buttons are too small to tap; a menu takes their place. */
+const isTouch = () => window.matchMedia('(pointer: coarse)').matches;
 
 // Keeps sites that need scripts, forms and their own storage working, while a sandbox still
 // stops them from navigating the configurator itself.
@@ -28,6 +31,8 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const moveWindow = useWorkspaceStore((s) => s.moveWindow);
   const setFocus = useWorkspaceStore((s) => s.setFocus);
   const closeWindow = useWorkspaceStore((s) => s.closeWindow);
+  const setMenu = useWorkspaceStore((s) => s.setMenu);
+  const pressedAt = useRef<{ x: number; y: number } | null>(null);
   const focused = useWorkspaceStore((s) => s.focus === screenId);
   const [iconFailed, setIconFailed] = useState(false);
   const url = siteUrl(win.url);
@@ -38,7 +43,16 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || (event.target as HTMLElement).closest('a, button, select')) return;
     event.preventDefault();
+    pressedAt.current = { x: event.clientX, y: event.clientY };
     startDrag(win, screenId, event.clientX, event.clientY);
+  };
+
+  // On a touch screen a tap on the title bar (not a drag) opens the window's menu.
+  const onTitleClick = (event: MouseEvent<HTMLDivElement>) => {
+    const at = pressedAt.current;
+    pressedAt.current = null;
+    if (!isTouch() || !at || (event.target as HTMLElement).closest('a, button, select')) return;
+    if (Math.hypot(event.clientX - at.x, event.clientY - at.y) < 10) setMenu(win.id);
   };
 
   return (
@@ -46,6 +60,7 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
       <div
         className={styles.titleBar}
         onPointerDown={onPointerDown}
+        onClick={onTitleClick}
         title="Drag onto another screen"
       >
         {!iconFailed && (
@@ -61,6 +76,15 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
         )}
         <span className={styles.title}>{win.title}</span>
         <span className={styles.host}>{host}</span>
+        {/* Touch screens: one big button for the window's menu, instead of the row below. */}
+        <button
+          type="button"
+          className={`${styles.button} ${styles.more}`}
+          aria-label={`${win.title}: window menu`}
+          onClick={() => setMenu(win.id)}
+        >
+          ⋯
+        </button>
         <div className={styles.actions}>
           <select
             className={styles.move}

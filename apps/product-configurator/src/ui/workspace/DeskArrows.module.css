@@ -1,0 +1,109 @@
+/* The viewer's area; only the side strips and the arrows take the pointer. */
+.area {
+  position: absolute;
+  inset: 0;
+  z-index: 190;
+  pointer-events: none;
+}
+
+/* A thin strip along each side: hovering it shows that side's arrow. */
+.edge {
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  width: 40px;
+  pointer-events: auto;
+}
+
+.edge[data-side='left'] {
+  left: 0;
+}
+
+.edge[data-side='right'] {
+  right: 0;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 7.5rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition:
+    opacity var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.edge[data-side='left'] .arrow {
+  left: 12px;
+}
+
+.edge[data-side='right'] .arrow {
+  right: 12px;
+}
+
+/* The arrow is inside its strip, so moving onto it keeps it shown. */
+.edge:hover .arrow,
+.arrow:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.arrow:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.chevron {
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Touch screens have no hover: the arrows stay, small and see-through, and the strips let
+   touches through to the screens. */
+@media (pointer: coarse) {
+  .edge {
+    pointer-events: none;
+  }
+
+  .arrow {
+    padding: 6px 8px;
+    opacity: 0.85;
+    pointer-events: auto;
+  }
+
+  .edge[data-side='left'] .arrow {
+    left: 6px;
+  }
+
+  .edge[data-side='right'] .arrow {
+    right: 6px;
+  }
+
+  .chevron {
+    font-size: 1.5rem;
+  }
+
+  .name {
+    display: none;
+  }
+}

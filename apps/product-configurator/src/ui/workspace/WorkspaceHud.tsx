@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useProduct } from '@/state/configuratorStore';
 import { activeDesk, deskName, useDesksStore } from '@/state/desksStore';
 import { useWorkspaceStore, workspaceById } from '@/state/workspaceStore';
+import { DeskArrows } from './DeskArrows';
 import { DeskSwitcher } from './DeskSwitcher';
+import { WindowMenu } from './WindowMenu';
 import styles from './WorkspaceHud.module.css';
 
 /** More workspaces than this are picked from a menu instead of tabs. */
@@ -264,6 +266,8 @@ export function WorkspaceHud() {
         </div>
       </div>
       {desksMode && <DeskSwitcher />}
+      {desksMode && <DeskArrows />}
+      <WindowMenu />
       {drag && (
         <div className={styles.ghost} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
           {drag.title}
