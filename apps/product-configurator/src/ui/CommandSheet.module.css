@@ -24,7 +24,9 @@
   /* A column no wider than the screen. */
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
-  padding: 16px;
+  /* Dims the whole window but centres on the 3D view: the sheet is about its desks, not the
+     options column beside it. */
+  padding: 16px calc(16px + var(--side-panel, 0px)) 16px 16px;
   background: rgb(0 0 0 / 35%);
 }
 

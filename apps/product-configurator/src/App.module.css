@@ -1,6 +1,10 @@
 .app {
+  /* The options column beside the viewer; none on a phone (a bottom sheet instead). Dialogs
+     over the 3D view (the command center sheet) centre on what is left of it. */
+  --side-panel: clamp(320px, 30vw, 420px);
+
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 420px);
+  grid-template-columns: minmax(0, 1fr) var(--side-panel);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'header header'
@@ -30,6 +34,8 @@
 
 @media (max-width: 900px) {
   .app {
+    --side-panel: 0px;
+
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
@@ -62,7 +68,9 @@
    viewer keeps the full height; the options are a narrow column beside it. */
 @media (orientation: landscape) and (max-height: 500px) {
   .app {
-    grid-template-columns: minmax(0, 1fr) 280px;
+    --side-panel: 280px;
+
+    grid-template-columns: minmax(0, 1fr) var(--side-panel);
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       'header header'
