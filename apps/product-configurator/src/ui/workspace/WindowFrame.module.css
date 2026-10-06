@@ -234,8 +234,9 @@
   font-weight: 400;
 }
 
-/* While a window is dragged, iframes must not catch the pointer. */
-:global(.ws-dragging) .frame {
+/* While a window or the camera is dragged, iframes must not catch the pointer (useOrbitGuard). */
+:global(.ws-dragging) .frame,
+:global(.ws-orbiting) .frame {
   pointer-events: none;
 }
 

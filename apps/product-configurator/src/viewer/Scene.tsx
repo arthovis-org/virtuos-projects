@@ -15,6 +15,7 @@ import { ProductModel } from './ProductModel';
 import { CssProjectionDriver } from './workspace/CssProjectionDriver';
 import { ScreenLayer } from './workspace/ScreenLayer';
 import { SmoothZoom } from './SmoothZoom';
+import { useOrbitGuard } from './useOrbitGuard';
 import styles from './Scene.module.css';
 
 // This module is loaded lazily, and this is the earliest point where three is available.
@@ -195,6 +196,7 @@ function RoomLimits() {
  */
 export function Scene() {
   const [orbitSurface, setOrbitSurface] = useState<HTMLDivElement | null>(null);
+  useOrbitGuard(orbitSurface);
   const room = useViewStore((s) => s.room);
   const desksMode = useSetupStore((s) => s.mode === 'desks');
   return (

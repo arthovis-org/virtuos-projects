@@ -242,3 +242,25 @@ test('the desktop app shows its version and offers a restart for a downloaded up
   );
   expect(errors).toEqual([]);
 });
+
+test('a camera drag that ends over a screen ends there (the sites let the release through)', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Office', exact: true }).first().click();
+  await page.waitForTimeout(3000);
+  await page.getByRole('radio', { name: /Look around/ }).click();
+  await page.waitForTimeout(2500);
+  const site = page.locator('[aria-label="Main screen"] iframe').first();
+  const frame = (await site.boundingBox())!;
+  const surface = (await page.locator('[class*="orbitSurface"]').boundingBox())!;
+  const catches = () => site.evaluate((f) => getComputedStyle(f).pointerEvents !== 'none');
+  await page.mouse.move(surface.x + 40, surface.y + surface.height - 60);
+  await page.mouse.down();
+  await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2, { steps: 10 });
+  expect(await catches()).toBe(false);
+  await page.mouse.up();
+  expect(await catches()).toBe(true);
+  expect(errors).toEqual([]);
+});
