@@ -5,6 +5,7 @@ import { syncAddressBar } from '@/state/shareLink';
 import { ConfiguratorPanel } from '@/ui/ConfiguratorPanel';
 import { Header } from '@/ui/Header';
 import { SheetBar } from '@/ui/SheetBar';
+import { UpdateNotice } from '@/ui/UpdateNotice';
 import styles from './App.module.css';
 
 // Three.js is most of the bundle; loading the viewer lazily lets the panel render first.
@@ -53,6 +54,7 @@ export function App() {
           <ConfiguratorPanel />
         </div>
       </aside>
+      <UpdateNotice />
     </div>
   );
 }

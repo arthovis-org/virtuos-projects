@@ -1,0 +1,56 @@
+/* Over the 3D view's bottom left corner, clear of the desk bar in the middle. */
+.notice {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(340px, calc(100vw - 40px));
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.875rem;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.text span {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.later,
+.restart {
+  padding: 0.4375rem 0.875rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.later {
+  border: 1px solid var(--border-strong);
+}
+
+.later:hover {
+  background: var(--surface-hover);
+}
+
+.restart {
+  background: var(--text);
+  color: var(--surface);
+}

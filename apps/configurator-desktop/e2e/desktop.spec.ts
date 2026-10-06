@@ -43,9 +43,13 @@ test('opens the bundled configurator, which knows it is the app', async () => {
   const page = await app.firstWindow();
   await expect(page).toHaveURL(/^app:\/\/configurator\//);
   await expect(page.getByText(/^\d+\s*cm$/).first()).toBeVisible({ timeout: 60_000 });
+  const { version } = require('../package.json') as { version: string };
   expect(await page.evaluate(() => (window as { virtuosDesktop?: unknown }).virtuosDesktop)).toMatchObject({
     framing: true,
+    version,
   });
+  // The page shows it, at the foot of the options.
+  await expect(page.getByText(`Version ${version}`, { exact: false })).toBeAttached();
 });
 
 for (const kind of ['x-frame-options', 'frame-ancestors']) {

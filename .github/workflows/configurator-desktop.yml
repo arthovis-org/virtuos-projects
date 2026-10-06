@@ -48,10 +48,27 @@ jobs:
         run: |
           version="$(node -p "require('./package.json').version")"
           test "v$version" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME, but package.json says $version"; exit 1; }
-      - name: Installer (published on a version tag)
-        run: npx electron-builder --win --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
+      - name: Installer
+        run: npx electron-builder --win --publish never
+      # Published here, not by electron-builder: it uploads its files at once, and each upload
+      # creating the release raced (v0.1.1 lost its installer and latest.yml). One step creates
+      # the release with all three files: the installer, its block map (for small updates) and
+      # latest.yml, which installed copies read to find the update.
+      - name: Publish the release (on a version tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          files=(release/VIRTUOS-Configurator-Setup-"$version".exe release/VIRTUOS-Configurator-Setup-"$version".exe.blockmap release/latest.yml)
+          ls -l "${files[@]}"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+          else
+            notes="Windows installer. Installed copies update themselves to this version."
+            gh release create "$GITHUB_REF_NAME" "${files[@]}" --verify-tag --title "VIRTUOS Configurator $version" --notes "$notes"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: installer

@@ -18,3 +18,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** The version, shared with the desktop app (vite.config.ts). */
+declare const __VERSION__: string;
+/** The commit the site was built from, short; '' when unknown (vite.config.ts). */
+declare const __BUILD__: string;

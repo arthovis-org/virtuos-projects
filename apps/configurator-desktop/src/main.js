@@ -10,6 +10,7 @@ const { app, BrowserWindow, net, protocol, session, shell } = require('electron'
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { allowFraming } = require('./frames');
+const { watchForUpdates } = require('./updates');
 const { watchVideosEmbedded } = require('./youtube');
 
 /** The bundled configurator is served from here, like a website. */
@@ -51,6 +52,8 @@ function createWindow() {
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      // The app's version, for the page to show (read by preload.js).
+      additionalArguments: [`--virtuos-version=${app.getVersion()}`],
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
@@ -109,15 +112,8 @@ if (!app.requestSingleInstanceLock()) {
     if (!DEV_URL) serveBundledSite();
     createWindow();
 
-    // Installed copies update themselves from the project's GitHub releases.
-    if (app.isPackaged) {
-      try {
-        const { autoUpdater } = require('electron-updater');
-        void autoUpdater.checkForUpdatesAndNotify().catch(() => undefined);
-      } catch {
-        // No updater (a local build): carry on.
-      }
-    }
+    // Installed copies update themselves from the project's GitHub releases (updates.js).
+    if (app.isPackaged) watchForUpdates();
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

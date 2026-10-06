@@ -4,6 +4,7 @@ import { selectedOption } from '@/state/derive';
 import { currentDesk, deskName } from '@/state/setup';
 import styles from './ConfiguratorPanel.module.css';
 import { MotionControl } from './controls/MotionControl';
+import { versionLabel } from '@/desktop';
 import { Feedback } from './Feedback';
 import { ModelCheck } from './ModelCheck';
 import { OptionGroupControl } from './OptionGroupControl';
@@ -110,6 +111,8 @@ export function ConfiguratorPanel() {
       <div className={styles.feedback}>
         <span>Something not right, or an idea?</span>
         <Feedback />
+        {/* Which version this is, to mention in feedback. */}
+        <span className={styles.version}>{versionLabel()}</span>
       </div>
     </div>
   );

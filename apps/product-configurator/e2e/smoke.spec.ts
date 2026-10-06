@@ -211,3 +211,34 @@ test('a window dropped on its own edge splits, with a new window to pick a site 
   await expect(main.getByText('New window')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('the desktop app shows its version and offers a restart for a downloaded update', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  // The desktop app's bridge (its preload script), with an update waiting.
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    w.virtuosDesktop = {
+      framing: true,
+      platform: 'win32',
+      version: '9.9.9',
+      updates: {
+        ready: () => Promise.resolve('9.9.10'),
+        onReady: () => () => undefined,
+        restart: () => {
+          w.restarted = true;
+          return Promise.resolve();
+        },
+      },
+    };
+  });
+  await page.goto('/');
+  await expect(page.getByText('Version 9.9.10 is ready')).toBeVisible();
+  await expect(page.getByText(/^Version 9\.9\.9/)).toBeAttached();
+  await page.getByRole('button', { name: 'Restart now' }).click();
+  expect(await page.evaluate(() => (window as unknown as { restarted?: boolean }).restarted)).toBe(
+    true,
+  );
+  expect(errors).toEqual([]);
+});

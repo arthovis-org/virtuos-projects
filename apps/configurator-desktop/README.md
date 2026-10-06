@@ -59,6 +59,14 @@ git push origin v0.2.0
 ```
 
 The `configurator-desktop` workflow builds the installer on Windows and publishes it as a GitHub
-release; installed copies update themselves from there. The installer is unsigned for now, so
+release with three files: the installer, its block map (smaller downloads) and `latest.yml`, which
+installed copies read. The workflow uploads them itself in one step: electron-builder's own
+publishing uploads files at once, and they raced to create the release (v0.1.1 lost two files).
+
+Installed copies update themselves (`src/updates.js`): they look for a new release at launch and
+every 4 hours, download it in the background, and show a notice in the page to **Restart now**
+or later; it installs when the app is next closed anyway. The version this is shows at the foot
+of the options panel, the same number on the website (whose build reads it from this
+`package.json`), with the commit it was built from. The installer is unsigned for now, so
 Windows shows "Windows protected your PC" the first time: **More info → Run anyway**. A
 code-signing certificate removes that.
