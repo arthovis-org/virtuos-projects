@@ -124,6 +124,13 @@ what CSV files, Google Sheets and links hold.
 - Paste a table anywhere in the sheet (from a spreadsheet or an AI's answer; with a header row it
   replaces the sheet), open or download a CSV, or load a Google Sheet shared as "Anyone with the
   link". Whole-sheet changes can be undone.
+- **Screens arranged by count:** a blank or **Auto** Screen leaves the screen to the sheet
+  (`arrangeScreens` in `sheetPlan.ts`): one site goes on the main screen; two on the main and desk
+  screens with the sides off; three with the main screen shared by two; four, one per screen;
+  more share screens, the main one first. Sites with a chosen screen keep it, and Auto sites take
+  the screens left free. The AI leaves screens blank, so its desks are arranged the same way.
+- **Default height:** new desks (added here, from a pasted table or by the AI) start at the
+  desk's default height; the AI never sets one.
 - **Build the desks** turns it into the room: rows group into desks by name (a blank Desk
   continues the desk above), screens with a site are switched on and the others off, and a desk
   with no sites gets its theme's own. `?sheet=<Google Sheets link>` builds the room from the sheet
@@ -138,7 +145,8 @@ and back), `sheetEdit.ts` (desk-by-desk edits), `sheetSources.ts` (Google Sheets
 [`apps/configurator-desktop`](../configurator-desktop) bundles this configurator in a Windows app
 that can show every website on the screens. The page knows it runs there through
 `window.virtuosDesktop` (`src/desktop.ts`): sites are then never marked as blocked or swapped for
-embed players, the AI may use any site, and shared links point to the public website. Develop
+embed players (YouTube embed links are even turned back into youtube.com itself:
+`nativeVersion` in `embedUrls.ts`), the AI may use any site, and shared links point to the public website. Develop
 here as usual; `npm run dev` in the desktop folder shows this dev server in the app.
 
 ## Feedback

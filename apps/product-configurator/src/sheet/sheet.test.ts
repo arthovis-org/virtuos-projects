@@ -146,8 +146,9 @@ describe('the AI’s answers', () => {
       ].join('\n'),
     );
     expect(rows.map((r) => [r.desk, r.theme, r.screen, r.site, r.height])).toEqual([
-      ['Trading', 'Crypto', 'Main', 'BTC / USDT', '74'],
-      ['Trading', 'Crypto', 'Main', 'Screener', '74'],
+      // New desks start at the default height: the AI's heights are not used.
+      ['Trading', 'Crypto', 'Main', 'BTC / USDT', ''],
+      ['Trading', 'Crypto', 'Main', 'Screener', ''],
       ['Trading', 'Crypto', 'Left', 'Bitcoin', ''],
     ]);
     expect(rows[0]!.url).toMatch(/^https:\/\/s\.tradingview\.com\//);
@@ -160,8 +161,8 @@ describe('the AI’s answers', () => {
       'Desk,Theme,Screen,Site,URL,Height\nMorning trading,Crypto,Main,@crypto/btc-usdt,@crypto/screener,110\nNBA evening,NBA,Left,@nba/rosters,',
     );
     expect(rows.map((r) => [r.desk, r.screen, r.site, r.height])).toEqual([
-      ['Morning trading', 'Main', 'BTC / USDT', '110'],
-      ['Morning trading', 'Main', 'Screener', '110'],
+      ['Morning trading', 'Main', 'BTC / USDT', ''],
+      ['Morning trading', 'Main', 'Screener', ''],
       ['NBA evening', 'Left', 'Rosters', ''],
     ]);
   });
@@ -233,5 +234,80 @@ describe('the sheet follows the mode', () => {
     expect(setupWithPlan(initialSetup(product), room).mode).toBe('desks');
     // In the room, even one desk stays a room.
     expect(setupWithPlan(inRoom, one)).toMatchObject({ mode: 'desks' });
+  });
+});
+
+describe('screens arranged by how many sites a desk has', () => {
+  const arranged = (count: number) => {
+    const cells = Array.from({ length: count }, (_, i) => `https://s${i}.example/`);
+    const csv = ['Desk,Screen,URL', ...cells.map((url) => `A,,${url}`)].join('\n');
+    const desk = planFromRows(product, rowsFromText(csv)).desks[0]!;
+    return {
+      screens: desk.windows.opened.map((w) => w.screen),
+      sides: desk.selections['toggle-side-monitors'],
+      deskMonitor: desk.selections['toggle-monitor-bottom'],
+    };
+  };
+
+  it('one site: the main screen only', () => {
+    expect(arranged(1)).toEqual({
+      screens: ['main-monitor'],
+      sides: 'without',
+      deskMonitor: 'without',
+    });
+  });
+
+  it('two: main and desk screens, no side monitors', () => {
+    expect(arranged(2)).toEqual({
+      screens: ['main-monitor', 'monitor-bottom'],
+      sides: 'without',
+      deskMonitor: 'with',
+    });
+  });
+
+  it('three: the main screen shared by two, and the desk screen', () => {
+    expect(arranged(3).screens).toEqual(['main-monitor', 'main-monitor', 'monitor-bottom']);
+    expect(arranged(3).sides).toBe('without');
+  });
+
+  it('four: every screen its own', () => {
+    expect(arranged(4)).toEqual({
+      screens: ['main-monitor', 'monitor-left', 'monitor-right', 'monitor-bottom'],
+      sides: 'with',
+      deskMonitor: 'with',
+    });
+  });
+
+  it('more: they share screens, the main one first', () => {
+    expect(arranged(6).screens).toEqual([
+      'main-monitor',
+      'monitor-left',
+      'monitor-right',
+      'monitor-bottom',
+      'main-monitor',
+      'monitor-bottom',
+    ]);
+  });
+
+  it('screens written in the sheet are kept; the others fill the free ones', () => {
+    const csv = [
+      'Desk,Screen,URL',
+      'A,Left,https://a.example/',
+      'A,,https://b.example/',
+      'A,Auto,https://c.example/',
+    ].join('\n');
+    const desk = planFromRows(product, rowsFromText(csv)).desks[0]!;
+    expect(desk.windows.opened.map((w) => w.screen)).toEqual([
+      'monitor-left',
+      'main-monitor',
+      'monitor-right',
+    ]);
+  });
+
+  it('a desk built from the sheet starts at the default height unless one is written', () => {
+    const csv = ['Desk,URL,Height', 'A,https://a.example/,', 'B,https://b.example/,104'].join('\n');
+    const [a, b] = planFromRows(product, rowsFromText(csv)).desks;
+    expect(a!.motions[motion.id]).toBeUndefined();
+    expect(b!.motions[motion.id]).toBe(104);
   });
 });

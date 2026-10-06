@@ -35,7 +35,9 @@ import {
 } from '@/sheet/sheetEdit';
 import {
   deskGroups,
+  isAutoScreen,
   planFromRows,
+  screensFor,
   themeOf,
   type DeskGroup,
   type SheetProblem,
@@ -685,8 +687,18 @@ function DeskCard({
   const screenLabel = (name: string) =>
     product.screens.find(
       (s) => s.label.toLowerCase() === name.trim().toLowerCase() || s.id === name.trim(),
-    )?.label ?? (name.trim() === '' ? (product.screens[0]?.label ?? '') : name.trim());
-  const screens = [...new Set(sites.map((i) => screenLabel(rows[i]?.screen ?? '')))];
+    )?.label ?? name.trim();
+  // Where each site goes: as chosen, or arranged by how many sites the desk has ("Auto").
+  const withSite = sites.filter((i) => [rows[i]?.url, rows[i]?.site].some((c) => !!c?.trim()));
+  const arranged = new Map(
+    screensFor(
+      product,
+      withSite.map((i) => rows[i]?.screen ?? ''),
+    ).map((id, n) => [withSite[n], product.screens.find((sc) => sc.id === id)?.label]),
+  );
+  const screens = [
+    ...new Set(withSite.map((i) => arranged.get(i)).filter((l): l is string => !!l)),
+  ];
   const errors = problems.filter((p) => p.level === 'error').length;
   // Sites that refuse to be shown inside the page: kept, and marked.
   const blocked = useBlockedSites(sites.map((i) => rows[i]?.url ?? ''));
@@ -816,13 +828,17 @@ function DeskCard({
                     <select
                       className={styles.input}
                       aria-label="Screen"
-                      value={screenLabel(row.screen)}
+                      value={isAutoScreen(row.screen) ? 'Auto' : screenLabel(row.screen)}
                       data-problem={problemAt(index, 'screen')?.level}
                       onChange={(event) => update(index, 'screen', event.target.value)}
                     >
-                      {!product.screens.some((s) => s.label === screenLabel(row.screen)) && (
-                        <option value={row.screen}>{row.screen}</option>
-                      )}
+                      <option value="Auto">
+                        Auto{arranged.get(index) ? ` · ${arranged.get(index)}` : ''}
+                      </option>
+                      {!isAutoScreen(row.screen) &&
+                        !product.screens.some((s) => s.label === screenLabel(row.screen)) && (
+                          <option value={row.screen}>{row.screen}</option>
+                        )}
                       {product.screens.map((s) => (
                         <option key={s.id} value={s.label}>
                           {s.label}
@@ -889,7 +905,7 @@ function DeskCard({
           <button
             type="button"
             className={styles.linkButton}
-            onClick={() => onChange(addSite(rows, desk, product.screens[0]?.label ?? '').rows)}
+            onClick={() => onChange(addSite(rows, desk, 'Auto').rows)}
           >
             <Plus size={14} aria-hidden="true" /> Add site
           </button>

@@ -170,7 +170,8 @@ export function rowsFromAnswer(product: ProductDefinition, answer: string): Shee
         screen,
         site: (links.length === 1 ? title : undefined) ?? known?.title ?? host,
         url,
-        height,
+        // New desks start at the default height; the AI doesn't choose one.
+        height: '',
       });
     });
   }

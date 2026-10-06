@@ -39,11 +39,66 @@ export function mainScreen(product: ProductDefinition): Screen | undefined {
   return product.screens.find((s) => !s.toggle) ?? product.screens[0];
 }
 
+/** A Screen cell that leaves the screen to the arrangement: blank or "Auto". */
+export const isAutoScreen = (name: string) => !name.trim() || same(name, 'auto');
+
 function findScreen(product: ProductDefinition, name: string): Screen | undefined {
-  if (!name.trim()) return mainScreen(product);
   return product.screens.find(
     (s) => same(s.label, name) || same(s.id, name) || same(s.node.replace(/^toggle_/i, ''), name),
   );
+}
+
+/**
+ * Screens for a desk's sites, by how many there are, so the screens in use fit the work:
+ * one site on the main screen; two on the main and desk screens; three with the main screen
+ * shared by two; four, one each on every screen; more share screens, the main one first.
+ * Screens nobody uses are switched off (`withScreens`).
+ */
+export function arrangeScreens(product: ProductDefinition, count: number): string[] {
+  const main = mainScreen(product)?.id;
+  const others = product.screens.filter((s) => s.id !== main);
+  // The screen lying on the desk (the smart desk's own), else the last; the rest are sides.
+  const desk = (others.find((s) => same(s.label, 'desk')) ?? others.at(-1))?.id;
+  const sides = others.filter((s) => s.id !== desk).map((s) => s.id);
+  const pick = (ids: (string | undefined)[]) => ids.filter((id): id is string => !!id);
+  if (count <= 0) return [];
+  if (count === 1) return pick([main]);
+  if (count === 2) return pick([main, desk ?? sides[0]]);
+  if (count === 3) return pick([main, main, desk ?? sides[0]]);
+  const all = pick([main, sides[0], sides[1], desk, ...sides.slice(2)]);
+  const extras = pick([main, desk, ...sides]);
+  const screens = all.slice(0, count);
+  for (let i = 0; screens.length < count && extras.length > 0; i++) {
+    const next = extras[i % extras.length];
+    if (next) screens.push(next);
+  }
+  return screens;
+}
+
+/**
+ * The screen each of a desk's sites goes on: as written, or arranged (`arrangeScreens`) for
+ * those left to it. When some are written, the others fill the screens left free, in the
+ * arrangement's order, then share the main one. Undefined: a screen the product lacks.
+ */
+export function screensFor(
+  product: ProductDefinition,
+  cells: readonly string[],
+): (string | undefined)[] {
+  const written = cells.map((cell) => (isAutoScreen(cell) ? null : findScreen(product, cell)?.id));
+  const auto = written.flatMap((id, i) => (id === null ? [i] : []));
+  if (auto.length === 0) return written.map((id) => id ?? undefined);
+  const result = written.map((id) => id ?? undefined);
+  if (auto.length === cells.length) {
+    const arranged = arrangeScreens(product, cells.length);
+    return cells.map((_, i) => arranged[i]);
+  }
+  const used = new Set(written.filter((id): id is string => !!id));
+  const free = arrangeScreens(product, product.screens.length).filter((id) => !used.has(id));
+  const main = mainScreen(product)?.id;
+  auto.forEach((index, n) => {
+    result[index] = free[n] ?? main;
+  });
+  return result;
 }
 
 function findWorkspace(product: ProductDefinition, name: string): Workspace | undefined {
@@ -221,6 +276,14 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
       }
     }
 
+    // Rows with a site, and the screen each goes on (as written, or arranged by their number).
+    const hasSite = (row: SheetRow | undefined) => !!row && (!!row.url.trim() || !!row.site.trim());
+    const siteRows = desk.rows.filter((i) => hasSite(rows[i]));
+    const screenIds = screensFor(
+      product,
+      siteRows.map((i) => rows[i]?.screen ?? ''),
+    );
+    const screenOf = new Map(siteRows.map((i, n) => [i, screenIds[n]]));
     const sites: WorkspaceWindow[] = [];
     for (const index of desk.rows) {
       const row = rows[index];
@@ -234,7 +297,7 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
         problem(index, 'url', address.error);
         continue;
       }
-      const screen = findScreen(product, row.screen);
+      const screen = product.screens.find((sc) => sc.id === screenOf.get(index));
       if (!screen) {
         problem(
           index,

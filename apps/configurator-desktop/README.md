@@ -21,7 +21,8 @@ web/             the website's build (npm run build:web; not committed)
 ```
 
 The configurator reads `window.virtuosDesktop` (`src/desktop.ts` there): in the app, sites are
-never marked as blocked, links are shown as they are rather than through embed players, the AI
+never marked as blocked, links are shown as they are rather than through embed players (YouTube plays on youtube.com
+itself, with its own player, logins and recommendations), the AI
 may use any site, and shared links point to the public website.
 
 Logins are kept in the app's own browser profile (`%APPDATA%\VIRTUOS Configurator`).

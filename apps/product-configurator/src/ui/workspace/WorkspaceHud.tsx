@@ -216,57 +216,18 @@ export function WorkspaceHud() {
             <span className={styles.name}>{workspace?.label} workspace</span>
           )}
           {(!desksMode || desk) && (
-            <>
-              <div className={styles.tabs} role="radiogroup" aria-label="Camera">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={seated}
-                  className={styles.tab}
-                  onClick={seated && focus ? () => setFocus(null) : sit}
-                >
-                  <span className={styles.long}>
-                    {seated && focus ? 'All screens' : 'Seated view'}
-                  </span>
-                  <span className={styles.short}>{seated && focus ? 'All' : 'Seat'}</span>
-                </button>
-                {/* Orbiting the desk; in the room, the desk the visitor is at. */}
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={!seated && (!desksMode || aroundDesk)}
-                  className={styles.tab}
-                  onClick={() => standUp(desksMode)}
-                >
-                  <span className={styles.long}>Look around</span>
-                  <span className={styles.short}>Orbit</span>
-                </button>
-                {desksMode && (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={!seated && !aroundDesk}
-                    className={styles.tab}
-                    onClick={() => standUp(false)}
-                  >
-                    <span className={styles.long}>All desks</span>
-                    <span className={styles.short}>Desks</span>
-                  </button>
-                )}
-              </div>
-              <button
-                type="button"
-                className={styles.button}
-                onClick={resetWindows}
-                aria-label="Reset windows"
-                title="Reset windows"
-              >
-                <span className={styles.long}>Reset windows</span>
-                <span className={styles.short} aria-hidden="true">
-                  ↺
-                </span>
-              </button>
-            </>
+            <button
+              type="button"
+              className={styles.button}
+              onClick={resetWindows}
+              aria-label="Reset windows"
+              title="Reset windows"
+            >
+              <span className={styles.long}>Reset windows</span>
+              <span className={styles.short} aria-hidden="true">
+                ↺
+              </span>
+            </button>
           )}
           {!desksMode && others.length > 0 && (
             // The way into the room once the demo card has given way to this toolbar (on a
@@ -296,6 +257,48 @@ export function WorkspaceHud() {
             </span>
           </button>
         </div>
+        {/* How the desk is seen, in a row of its own under the toolbar. */}
+        {(!desksMode || desk) && (
+          <div className={styles.views}>
+            <div className={styles.tabs} role="radiogroup" aria-label="Camera">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={seated}
+                className={styles.tab}
+                onClick={seated && focus ? () => setFocus(null) : sit}
+              >
+                <span className={styles.long}>
+                  {seated && focus ? 'All screens' : 'Seated view'}
+                </span>
+                <span className={styles.short}>{seated && focus ? 'All' : 'Seat'}</span>
+              </button>
+              {/* Orbiting the desk; in the room, the desk the visitor is at. */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!seated && (!desksMode || aroundDesk)}
+                className={styles.tab}
+                onClick={() => standUp(desksMode)}
+              >
+                <span className={styles.long}>Look around</span>
+                <span className={styles.short}>Orbit</span>
+              </button>
+              {desksMode && (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!seated && !aroundDesk}
+                  className={styles.tab}
+                  onClick={() => standUp(false)}
+                >
+                  <span className={styles.long}>All desks</span>
+                  <span className={styles.short}>Desks</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       {desksMode && <DeskSwitcher />}
       {desksMode && <DeskArrows />}

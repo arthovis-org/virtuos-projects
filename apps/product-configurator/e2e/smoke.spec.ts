@@ -141,20 +141,24 @@ test('the screens stay on their monitors when a site scrolls itself into view', 
   await page.goto('/');
   await page.getByRole('button', { name: 'Office', exact: true }).first().click();
   await expect(page.locator('iframe').first()).toBeAttached();
-  // Zoomed to one screen, the others reach past the edges of the view: room to scroll.
-  await page
-    .locator('[aria-label="Main screen"] button[aria-label^="Zoom"]')
-    .first()
-    .click({ force: true });
-  await page.waitForTimeout(3000);
-  const room = await page.evaluate(() => {
-    const layer = document.querySelector('[aria-label="Main screen"]')?.parentElement
-      ?.parentElement as HTMLElement | null;
-    return layer
-      ? layer.scrollHeight - layer.clientHeight + layer.scrollWidth - layer.clientWidth
-      : 0;
-  });
-  expect(room).toBeGreaterThan(0);
+  // Zoomed to one screen, the others reach past the edges of the view: room to scroll. (A
+  // click while the screens still fly in can miss the moving button: zoom until it shows.)
+  const room = () =>
+    page.evaluate(() => {
+      const layer = document.querySelector('[aria-label="Main screen"]')?.parentElement
+        ?.parentElement as HTMLElement | null;
+      return layer
+        ? layer.scrollHeight - layer.clientHeight + layer.scrollWidth - layer.clientWidth
+        : 0;
+    });
+  await expect(async () => {
+    await page
+      .locator('[aria-label="Main screen"] button[aria-label^="Zoom"]')
+      .first()
+      .click({ force: true });
+    await page.waitForTimeout(2000);
+    expect(await room()).toBeGreaterThan(0);
+  }).toPass({ timeout: 30_000 });
   // What a site bringing its text box into view does to the page around it (Gemini on
   // Enter): scroll every box around its frame. None of them may move.
   const moved = await page.evaluate(() => {

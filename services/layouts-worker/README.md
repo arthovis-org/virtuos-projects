@@ -32,7 +32,9 @@ POST   /plan   { workflow, product: { name, screens, themes, height, sites }, cu
 ```
 
 The Worker writes the instructions itself from the product's screens, themes and known sites, so
-the route only plans desks; it is no general chatbot. 12 plans per visitor per 10 minutes.
+the route only plans desks; it is no general chatbot. The answer is a `Desk,Theme,Screen,Sites`
+table with screens left blank (the page arranges them by how many sites a desk has) and no
+height (new desks start at the default). 12 plans per visitor per 10 minutes.
 
 It asks **Groq** first (`openai/gpt-oss-120b`, with low reasoning effort; about a second per plan;
 free plan: 1,000 requests a day) when the `GROQ_API_KEY` secret is set, and **Cloudflare Workers

@@ -101,3 +101,18 @@ describe('embeddable versions of links', () => {
     expect(url).toContain('marker=51.5,-0.12');
   });
 });
+
+describe('the sites’ own pages, for the desktop app', () => {
+  it('turn YouTube’s player back into YouTube', async () => {
+    const { nativeVersion } = await import('./embedUrls');
+    expect(nativeVersion('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90')).toBe(
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=90s',
+    );
+    expect(
+      nativeVersion(
+        'https://www.youtube-nocookie.com/embed/videoseries?list=UUWJ2lWNubYk3HR6Zuqos7eQ',
+      ),
+    ).toBe('https://www.youtube.com/playlist?list=UUWJ2lWNubYk3HR6Zuqos7eQ');
+    expect(nativeVersion('https://excalidraw.com/')).toBeNull();
+  });
+});

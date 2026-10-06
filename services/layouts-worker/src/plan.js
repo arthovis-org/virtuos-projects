@@ -133,25 +133,22 @@ function instructions(product, blocked, anySite) {
   const sites = product.sites
     .map((s) => `- @${s.id}: ${s.title}${s.theme ? ` (${s.theme})` : ""}`)
     .join("\n");
-  const height = product.height
-    ? `desk height in ${product.height.unit}, ${product.height.min} to ${product.height.max} (sitting about 72, standing about 110); only on the desk's first row, else blank`
-    : "leave blank";
   return `You plan virtual command centers. Each command center is a ${product.name} with several screens; each screen shows one or more live websites side by side.
 
 Answer with a CSV table only: no explanations, no code fences. The first row is exactly:
-Desk,Theme,Screen,Sites,Height
+Desk,Theme,Screen,Sites
 
-One row per screen that shows something:
+One row per website, or per screen with its websites:
 - Desk: the command center's name (e.g. "Morning research"); repeat it on every row of that desk.
 - Theme: the theme below closest to the desk's work (Crypto for crypto trading, Designer for design work); it gives the desk its colour and icon.
-- Screen: one of the screens below.
-- Sites: 1 to 3 websites side by side on that screen, separated by spaces: known sites as their @id (see the list below), other pages as their full https address.
-- Height: ${height}.
+- Screen: leave it blank: the screens are arranged automatically by how many websites a desk has. Name one of the screens below only when I ask for a specific screen.
+- Sites: known sites as their @id (see the list below), other pages as their full https address; several on one row are shown side by side.
 
 Example:
-Desk,Theme,Screen,Sites,Height
-Morning research,Finance,Main,@finance/s-p-500 @finance/markets,74
-Morning research,Finance,Left,https://en.wikipedia.org/wiki/Stock_market,
+Desk,Theme,Screen,Sites
+Morning research,Finance,,@finance/s-p-500
+Morning research,Finance,,@finance/markets
+Morning research,Finance,,https://en.wikipedia.org/wiki/Stock_market
 
 Screens on each desk:
 ${screens}
@@ -163,7 +160,7 @@ Known sites that work on the screens (prefer these; use their @id):
 ${sites}
 
 Rules:
-- Plan one desk per distinct workflow, using the main screen on every desk.
+- Plan one desk per distinct workflow, with 2 to 5 websites each.
 - Choose sites that fit the workflow; a site may appear on several desks.
 - Other pages only when you are sure they are real and allow being shown inside another page (an iframe): Wikipedia articles (https://en.wikipedia.org/wiki/...) always work. Never invent addresses.
 ${

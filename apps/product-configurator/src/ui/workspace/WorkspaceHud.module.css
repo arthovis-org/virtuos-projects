@@ -90,6 +90,18 @@
   white-space: nowrap;
 }
 
+/* The camera choices, under the toolbar. */
+.views {
+  display: flex;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
 .name {
   margin: 0 4px 0 8px;
   font-weight: 600;

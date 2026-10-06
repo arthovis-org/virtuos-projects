@@ -255,5 +255,34 @@ export function embedVersion(link: string): EmbedVersion | null {
   return null;
 }
 
-/** The address a screen shows for a link: its embeddable version, if it has one. */
-export const screenUrl = (link: string) => embedVersion(link)?.url ?? link;
+/**
+ * The site's own page for an embed link: YouTube's player as the YouTube page (a video, or a
+ * playlist). Null when it is no such link.
+ */
+export function nativeVersion(link: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(link.trim());
+  } catch {
+    return null;
+  }
+  const h = host(url);
+  const p = parts(url);
+  if ((h === 'youtube-nocookie.com' || h === 'youtube.com') && p[0] === 'embed' && p[1]) {
+    const list = url.searchParams.get('list');
+    if (p[1] === 'videoseries') {
+      return list ? `https://www.youtube.com/playlist?list=${list}` : null;
+    }
+    const start = url.searchParams.get('start');
+    return `https://www.youtube.com/watch?v=${p[1]}${list ? `&list=${list}` : ''}${start ? `&t=${start}s` : ''}`;
+  }
+  return null;
+}
+
+/**
+ * The address a screen shows for a link: on the website, its embeddable version if it has
+ * one (sites refuse to be shown otherwise); in the desktop app, which shows every site, the
+ * site's own page (logged in, the whole page): embed links become the real thing.
+ */
+export const screenUrl = (link: string) =>
+  framesAnySite ? (nativeVersion(link) ?? link) : (embedVersion(link)?.url ?? link);
