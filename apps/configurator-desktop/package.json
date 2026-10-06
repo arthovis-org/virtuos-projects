@@ -1,7 +1,7 @@
 {
   "name": "virtuos-configurator-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Smart Desk configurator as a desktop app: the same configurator, with every website allowed on the 3D screens.",
   "author": "VIRTUOS",
   "main": "src/main.js",
