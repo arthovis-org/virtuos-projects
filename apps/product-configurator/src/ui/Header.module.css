@@ -24,9 +24,11 @@
 
 .home {
   align-items: flex-start;
-  max-width: 100%;
-  padding: 2px 6px;
-  margin: -2px -6px;
+  /* The padding gives the hover background room around the text; the negative margins keep
+     the text where the title was. Its width allows for both, so the text never spills out. */
+  max-width: calc(100% + 20px);
+  padding: 6px 10px;
+  margin: -6px -10px;
   border-radius: var(--radius);
   color: inherit;
   text-align: left;
