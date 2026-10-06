@@ -221,17 +221,6 @@
   font-weight: 600;
 }
 
-/* A phone: the button is just its icon. */
-@media (max-width: 640px), (orientation: landscape) and (max-height: 500px) {
-  .trigger {
-    padding: 0.375rem;
-  }
-
-  .triggerLabel {
-    display: none;
-  }
-}
-
 @keyframes fade {
   from {
     opacity: 0;

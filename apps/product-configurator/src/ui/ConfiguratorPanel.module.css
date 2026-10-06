@@ -104,3 +104,15 @@
   display: inline-flex;
   color: var(--desk-accent);
 }
+
+.feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}

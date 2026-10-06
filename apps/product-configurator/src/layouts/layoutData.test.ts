@@ -47,6 +47,25 @@ describe('saved layouts', () => {
     expect(withoutIds(again)).toEqual(withoutIds(setup));
   });
 
+  it('keep the zoom of each window, dropping any that is not one', () => {
+    const setup = setupFromLayout(product, saved);
+    const layout = layoutFromSetup(product, {
+      ...setup,
+      single: {
+        ...setup.single,
+        windows: { ...setup.single.windows, zoom: { a: 'fit', b: 1.5 } },
+      },
+    });
+    expect(setupFromLayout(product, layout).single.windows.zoom).toEqual({ a: 'fit', b: 1.5 });
+    const broken = structuredClone(layout) as unknown as {
+      single: { windows: { zoom: Record<string, unknown> } };
+    };
+    broken.single.windows.zoom = { a: 'huge', b: 0.5 };
+    expect(setupFromLayout(product, broken as unknown as LayoutData).single.windows.zoom).toEqual({
+      b: 0.5,
+    });
+  });
+
   it('drop desks of workspaces the product no longer has, and windows of another workspace', () => {
     const layout: LayoutData = {
       ...saved,

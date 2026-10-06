@@ -5,6 +5,7 @@ import {
   enterRoom,
   enterWorkspace,
   exitRoom,
+  goHome,
   loadSetup,
   removeDesk,
   selectDesk,
@@ -223,5 +224,24 @@ describe('a workspace picked at the single desk', () => {
     enterWorkspace('crypto');
     enterRoom();
     expect(room()).toHaveLength(before);
+  });
+});
+
+describe('home', () => {
+  it('is the overview of every desk in the room, with none chosen', () => {
+    enterRoom();
+    selectDesk(room()[1]!.id, true);
+    goHome();
+    expect(setup().activeDeskId).toBeNull();
+    expect(view().active).toBe(false);
+    expect(setup().mode).toBe('desks');
+  });
+
+  it('is the single desk with its workspace closed', () => {
+    enterWorkspace('finance');
+    goHome();
+    expect(view().active).toBe(false);
+    expect(setup().mode).toBe('single');
+    expect(setup().single.workspaceId).toBe('finance');
   });
 });

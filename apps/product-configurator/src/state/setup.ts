@@ -39,6 +39,52 @@ export interface DeskWindows {
    * while that screen shows exactly the same windows (see `screenWeights`).
    */
   sizes: Readonly<Record<string, ScreenSizes>>;
+  /** Each window's page zoom, by window id; 100% when missing (see `WindowZoom`). */
+  zoom?: Readonly<Record<string, WindowZoom>>;
+}
+
+/**
+ * How large a window shows its site, like a browser's page zoom: a factor (1 is 100%), or
+ * 'fit': the site laid out at a desktop browser's width (`FIT_WIDTH`) and scaled down to the
+ * window, so a narrow screen shows the whole page instead of its edge cut off.
+ */
+export type WindowZoom = number | 'fit';
+
+/** The width, in CSS pixels, a site is laid out at when fitted to its window. */
+export const FIT_WIDTH = 1280;
+
+/** A browser's zoom steps. */
+export const ZOOM_STEPS = [
+  0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3,
+];
+
+/** The next zoom step in or out from a factor (a fitted window's factor, when fitted). */
+export function stepZoom(factor: number, direction: 1 | -1): number {
+  const steps = direction > 0 ? ZOOM_STEPS : [...ZOOM_STEPS].reverse();
+  return (
+    steps.find((s) => (direction > 0 ? s > factor + 0.001 : s < factor - 0.001)) ??
+    steps.at(-1) ??
+    1
+  );
+}
+
+/** A window's zoom set to `zoom`; 100% is no entry. */
+export function setWindowZoom(
+  windows: DeskWindows,
+  windowId: string,
+  zoom: WindowZoom,
+): DeskWindows {
+  const rest = Object.fromEntries(
+    Object.entries(windows.zoom ?? {}).filter(([id]) => id !== windowId),
+  );
+  return { ...windows, zoom: zoom === 1 ? rest : { ...rest, [windowId]: zoom } };
+}
+
+/** A stored zoom, if it is one (loaded layouts): a factor within the steps, or 'fit'. */
+export function validZoom(value: unknown): WindowZoom | null {
+  if (value === 'fit') return 'fit';
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.min(ZOOM_STEPS.at(-1) ?? 3, Math.max(ZOOM_STEPS[0] ?? 0.25, value));
 }
 
 export interface ScreenSizes {

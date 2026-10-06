@@ -11,7 +11,10 @@ import {
   newDesk,
   openWindow,
   screenWeights,
+  setWindowZoom,
   starterRoom,
+  stepZoom,
+  validZoom,
   withWorkspace,
   workspaceById,
 } from './setup';
@@ -128,5 +131,33 @@ describe('desks', () => {
     // Without its workspace, the single desk becomes a finance desk with finance's windows.
     expect(starterRoom(product, single, false)[0]!.workspaceId).toBe('finance');
     expect(starterRoom(product, single, false)[0]!.windows.closed).toEqual([]);
+  });
+});
+
+describe('window zoom', () => {
+  it('steps in and out like a browser, from any factor', () => {
+    expect(stepZoom(1, 1)).toBe(1.1);
+    expect(stepZoom(1, -1)).toBe(0.9);
+    // A fitted window (any factor) goes to the next step either way.
+    expect(stepZoom(0.42, 1)).toBe(0.5);
+    expect(stepZoom(0.42, -1)).toBe(0.33);
+    // At the ends it stays.
+    expect(stepZoom(3, 1)).toBe(3);
+    expect(stepZoom(0.25, -1)).toBe(0.25);
+  });
+
+  it('is kept per window, with 100% as no entry', () => {
+    let windows = setWindowZoom(initialWindows(finance), 'a', 0.5);
+    windows = setWindowZoom(windows, 'b', 'fit');
+    expect(windows.zoom).toEqual({ a: 0.5, b: 'fit' });
+    expect(setWindowZoom(windows, 'a', 1).zoom).toEqual({ b: 'fit' });
+  });
+
+  it('loads only zooms that are zooms', () => {
+    expect(validZoom('fit')).toBe('fit');
+    expect(validZoom(0.75)).toBe(0.75);
+    expect(validZoom(40)).toBe(3);
+    expect(validZoom('big')).toBeNull();
+    expect(validZoom(Number.NaN)).toBeNull();
   });
 });

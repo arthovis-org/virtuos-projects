@@ -85,6 +85,15 @@ use short labels. On touch screens a window's title bar is taller, and its row o
 buttons gives way to one ⋯ button (or a tap on the title bar) that opens a finger-sized menu. On a tall screen the room of desks uses tighter arcs with rows behind, so it
 fills the height (`TALL_ARCS` in `src/viewer/deskLayout.ts`).
 
+The header's title leads home (`goHome` in `src/state/actions.ts`): in the room, the overview of
+every desk with none chosen; at the single desk, the desk with its workspace closed.
+
+Each window has a **page zoom** in its title bar, like a browser's: zoom out or in by a
+browser's steps, **Fit to window** (the site laid out at a 1280 px desktop width and scaled
+into the window, so a narrow side monitor shows the whole page, not its edge cut off), or
+**Actual size**. A zoom never reloads the site, and it is saved with the desk's windows in
+layouts (`zoom` in `DeskWindows`).
+
 Held sideways (a landscape screen under 500 px tall, at any width), a phone gets the desktop layout instead:
 the viewer at full height with the options in a narrow column beside it, a slim header, and the
 same compact toolbars.
@@ -151,7 +160,7 @@ here as usual; `npm run dev` in the desktop folder shows this dev server in the 
 
 ## Feedback
 
-The header's **Feedback** button sends a message (with an optional screenshot) to the feedback
+The **Feedback** button at the foot of the options panel sends a message (with an optional screenshot) to the feedback
 Worker in [`services/feedback-worker`](../../services/feedback-worker), which files it as an issue
 in the private `arthovis-org/virtuos-feedback` repository. Each report carries the exact page
 link, the view the visitor was in, their device and browser, and recent page errors

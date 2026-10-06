@@ -4,6 +4,7 @@ import { selectedOption } from '@/state/derive';
 import { currentDesk, deskName } from '@/state/setup';
 import styles from './ConfiguratorPanel.module.css';
 import { MotionControl } from './controls/MotionControl';
+import { Feedback } from './Feedback';
 import { ModelCheck } from './ModelCheck';
 import { OptionGroupControl } from './OptionGroupControl';
 import { PriceSummary } from './PriceSummary';
@@ -104,6 +105,12 @@ export function ConfiguratorPanel() {
       })}
 
       {!desk && <PriceSummary />}
+
+      {/* Out of the toolbar, which is about the desks: at the end of the options. */}
+      <div className={styles.feedback}>
+        <span>Something not right, or an idea?</span>
+        <Feedback />
+      </div>
     </div>
   );
 }

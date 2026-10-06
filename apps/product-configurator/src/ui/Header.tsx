@@ -2,12 +2,11 @@ import { publicPageUrl } from '@/desktop';
 import { RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { productList } from '@/catalog';
-import { enterRoom, exitRoom } from '@/state/actions';
+import { enterRoom, exitRoom, goHome } from '@/state/actions';
 import { useProduct, useSetupStore } from '@/state/setupStore';
 import { DISPLAY_CURRENCIES, useCurrencyStore } from '@/state/currencyStore';
 import { shareSearch } from '@/state/shareLink';
 import { CommandSheet } from './CommandSheet';
-import { Feedback } from './Feedback';
 import { Layouts } from './Layouts';
 import styles from './Header.module.css';
 
@@ -19,6 +18,7 @@ export function Header() {
   // A room of desks needs workspaces to tell the desks apart.
   const hasWorkspaces = product.workspaces.length > 1;
   const [copied, setCopied] = useState(false);
+  const homeTitle = desksMode ? 'Home: every desk' : 'Home';
   const currency = useCurrencyStore((s) => s.currency);
   const rates = useCurrencyStore((s) => s.rates);
   const setCurrency = useCurrencyStore((s) => s.setCurrency);
@@ -41,9 +41,17 @@ export function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.title}>
-        <span className={styles.eyebrow}>Configurator</span>
-        {productList.length > 1 ? (
+      {productList.length > 1 ? (
+        <div className={styles.title}>
+          {/* The product menu is the name: "Configurator" alone leads home. */}
+          <button
+            type="button"
+            className={`${styles.home} ${styles.eyebrow}`}
+            onClick={goHome}
+            title={homeTitle}
+          >
+            Configurator
+          </button>
           <h1 className={styles.name}>
             <select
               className={styles.productSelect}
@@ -58,14 +66,24 @@ export function Header() {
               ))}
             </select>
           </h1>
-        ) : (
-          <h1 className={styles.name}>{product.name}</h1>
-        )}
-      </div>
+        </div>
+      ) : (
+        <h1 className={styles.heading}>
+          {/* The title leads home, as a site's logo does. */}
+          <button
+            type="button"
+            className={`${styles.title} ${styles.home}`}
+            onClick={goHome}
+            title={homeTitle}
+          >
+            <span className={styles.eyebrow}>Configurator</span>
+            <span className={styles.name}>{product.name}</span>
+          </button>
+        </h1>
+      )}
       <div className={styles.actions}>
         <CommandSheet />
         <Layouts />
-        <Feedback />
         {hasWorkspaces && (
           <div className={styles.modes} role="radiogroup" aria-label="Desks">
             <button

@@ -8,6 +8,7 @@
   /* clip, not hidden: a hidden overflow can still be scrolled by code, and a site bringing
      its text box into view (Gemini, on Enter) scrolled this, sliding the screens off the
      monitors. Nothing can scroll a clipped box. */
+  position: relative;
   overflow: clip;
   border-radius: 10px;
   background: #ffffff;
@@ -116,12 +117,114 @@
   outline-offset: -2px;
 }
 
-.frame {
+/* What the site fills; the page inside may be laid out larger or smaller (zoom). */
+.viewport {
+  position: relative;
   flex: 1;
-  width: 100%;
   min-height: 0;
+  overflow: clip;
+}
+
+.frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   border: 0;
   background: #ffffff;
+  transform-origin: 0 0;
+}
+
+.zoomAnchor {
+  display: flex;
+}
+
+.zoomButton {
+  min-width: 3.6em;
+  padding: 2px 8px;
+  border: 1px solid #d6d6dc;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #333333;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.zoomMenu {
+  /* At the window's top right, under the title bar, and never wider than the window: it is
+     clipped to it, and a side monitor's window is narrow. */
+  position: absolute;
+  top: 64px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(16rem, calc(100cqw - 16px));
+  padding: 8px;
+  border: 1px solid #d6d6dc;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  color: #111111;
+  cursor: default;
+}
+
+.zoomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.zoomRow button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid #d6d6dc;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.zoomRow button:disabled {
+  opacity: 0.4;
+}
+
+.zoomValue {
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.zoomOption {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.zoomOption:hover {
+  background: #f1f1f4;
+}
+
+.zoomOption[aria-pressed='true'] {
+  background: #e9eefc;
+}
+
+.zoomOption small {
+  color: #666666;
+  font-size: 0.8125rem;
+  font-weight: 400;
 }
 
 /* While a window is dragged, iframes must not catch the pointer. */

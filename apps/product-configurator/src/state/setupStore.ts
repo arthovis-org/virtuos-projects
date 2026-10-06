@@ -27,6 +27,7 @@ import {
   newDeskId,
   openWindow,
   roomWithSingle,
+  setWindowZoom,
   starterRoom,
   updateDesk,
   withWorkspace,
@@ -35,6 +36,7 @@ import {
   type DeskWindows,
   type DropPlace,
   type Setup,
+  type WindowZoom,
 } from './setup';
 import { setupFromSearch } from './setupUrl';
 
@@ -61,6 +63,8 @@ interface SetupState extends Setup {
   openWindow: (screenId: string, site: { id?: string; title: string; url: string }) => void;
   /** Stores how a screen's windows (ids in tiling order) share it, as one weight each. */
   resizeWindows: (screenId: string, windows: readonly string[], weights: readonly number[]) => void;
+  /** A window's page zoom on the current desk (1 is 100%). */
+  zoomWindow: (windowId: string, zoom: WindowZoom) => void;
   dropWindow: (windowId: string, fromScreen: string, place: DropPlace) => void;
   /** The current desk's windows back to its workspace's own. */
   resetWindows: () => void;
@@ -141,6 +145,7 @@ export const useSetupStore = create<SetupState>()((set, get) => {
     moveWindow: (windowId, screenId) => changeWindows((w) => moveWindow(w, windowId, screenId)),
     closeWindow: (windowId) => changeWindows((w) => closeWindow(w, windowId)),
     openWindow: (screenId, site) => changeWindows((w) => openWindow(w, screenId, site)),
+    zoomWindow: (windowId, zoom) => changeWindows((w) => setWindowZoom(w, windowId, zoom)),
     resizeWindows: (screenId, windows, weights) =>
       changeWindows((w) => ({ ...w, sizes: { ...w.sizes, [screenId]: { windows, weights } } })),
     dropWindow: (windowId, fromScreen, place) =>

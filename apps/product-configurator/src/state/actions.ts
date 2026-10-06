@@ -78,6 +78,16 @@ export function enterRoom() {
   else view().showSites(false);
 }
 
+/**
+ * Home, from wherever the visitor is: in the room, the overview of every desk with none
+ * chosen (as the room first opens); at the single desk, the desk itself with its workspace
+ * closed (as the page first opens).
+ */
+export function goHome() {
+  if (setup().mode === 'desks') setup().setActiveDesk(null);
+  view().close();
+}
+
 /** Back to the single desk, as the visitor left it: its workspace open again if it was. */
 export function exitRoom() {
   if (setup().mode !== 'desks') return;

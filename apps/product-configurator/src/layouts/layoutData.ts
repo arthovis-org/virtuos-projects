@@ -13,10 +13,12 @@ import {
   initialWindows,
   newDesk,
   SINGLE_DESK,
+  validZoom,
   workspaceById,
   type DeskSetup,
   type DeskWindows,
   type Setup,
+  type WindowZoom,
 } from '@/state/setup';
 
 /** Windows as saved: with the workspace they were arranged for. */
@@ -44,6 +46,16 @@ export interface LayoutData {
     /** Desk the visitor was at, or null for the overview. */
     active: number | null;
   } | null;
+}
+
+/** Zooms as loaded: only valid ones (see `validZoom`). */
+function savedZoom(zoom: Readonly<Record<string, unknown>>): Record<string, WindowZoom> {
+  return Object.fromEntries(
+    Object.entries(zoom).flatMap(([id, value]) => {
+      const valid = validZoom(value);
+      return valid === null ? [] : [[id, valid]];
+    }),
+  );
 }
 
 /** A set-up as a layout. */
@@ -101,6 +113,7 @@ export function setupFromLayout(product: ProductDefinition, layout: LayoutData):
               closed: windows.closed,
               opened: windows.opened,
               sizes: windows.sizes,
+              ...(windows.zoom && { zoom: savedZoom(windows.zoom) }),
             }
           : initialWindows(workspace),
     };
