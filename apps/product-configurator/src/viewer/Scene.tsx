@@ -1,7 +1,7 @@
 import { Bounds, ContactShadows, OrbitControls, useBounds } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { MathUtils, Vector3, type PerspectiveCamera } from 'three';
+import { MathUtils, MOUSE, Vector3, type PerspectiveCamera } from 'three';
 import { useSetupStore } from '@/state/setupStore';
 import { fitDistance } from './fitDistance';
 import { HeightInsetFrame } from './HeightInset';
@@ -14,6 +14,7 @@ import { preloadCurrentProduct } from './models';
 import { ProductModel } from './ProductModel';
 import { CssProjectionDriver } from './workspace/CssProjectionDriver';
 import { ScreenLayer } from './workspace/ScreenLayer';
+import { SmoothZoom } from './SmoothZoom';
 import styles from './Scene.module.css';
 
 // This module is loaded lazily, and this is the earliest point where three is available.
@@ -236,6 +237,9 @@ export function Scene() {
           makeDefault
           {...(orbitSurface && { domElement: orbitSurface })}
           enablePan={false}
+          // Only the left button here (it orbits): the middle one and the wheel zoom smoothly
+          // (SmoothZoom); pinching stays here.
+          mouseButtons={{ LEFT: MOUSE.ROTATE }}
           enableDamping
           dampingFactor={0.08}
           minDistance={1}
@@ -245,6 +249,7 @@ export function Scene() {
           // No fixed target: `Bounds` points the controls at the centre of what it frames,
           // which includes the full height range of a motorised desk.
         />
+        <SmoothZoom />
         <RoomLimits />
         <CssProjectionDriver />
       </Canvas>
