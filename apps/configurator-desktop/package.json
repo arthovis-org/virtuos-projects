@@ -1,0 +1,54 @@
+{
+  "name": "virtuos-configurator-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The Smart Desk configurator as a desktop app: the same configurator, with every website allowed on the 3D screens.",
+  "author": "VIRTUOS",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build:web": "node scripts/build-web.mjs",
+    "start": "npm run build:web && electron .",
+    "dist": "npm run build:web && electron-builder --win --publish never",
+    "release": "npm run build:web && electron-builder --win --publish always",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/frames.js",
+    "test": "playwright test"
+  },
+  "build": {
+    "appId": "com.virtuos.configurator",
+    "productName": "VIRTUOS Configurator",
+    "files": [
+      "src/**",
+      "web/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "artifactName": "VIRTUOS-Configurator-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "arthovis-org",
+      "repo": "virtuos-projects",
+      "releaseType": "release"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  }
+}

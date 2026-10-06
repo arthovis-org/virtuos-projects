@@ -4,7 +4,7 @@
   "description": "Every VIRTUOS project in one repository, published together as one site with a gallery and a hub per project.",
   "type": "module",
   "scripts": {
-    "install:all": "npm ci --prefix apps/product-configurator && npm ci --prefix apps/proto3d",
+    "install:all": "npm ci --prefix apps/product-configurator && npm ci --prefix apps/proto3d && npm ci --prefix apps/configurator-desktop",
     "build": "node scripts/build-site.mjs",
     "serve": "node scripts/serve-site.mjs",
     "check": "npm run lint --prefix apps/product-configurator && npm run format:check --prefix apps/product-configurator && npm test --prefix apps/product-configurator && npm test --prefix apps/proto3d"

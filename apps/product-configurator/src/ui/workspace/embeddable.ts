@@ -4,6 +4,7 @@
  * headers; known sites (every workspace's own and the tools) are taken as they are. Answers
  * are kept for the page and, for a day, in this browser.
  */
+import { framesAnySite } from '@/desktop';
 import { useEffect, useState } from 'react';
 import { getProduct } from '@/catalog';
 import { LAYOUTS_URL } from '@/layouts/layoutsApi';
@@ -47,7 +48,9 @@ function known(url: string): boolean {
 export function checkEmbeddable(link: string): Promise<boolean> {
   // What a screen would show: the link's embeddable version when it has one.
   const url = screenUrl(link);
-  if (!LAYOUTS_URL || known(url) || !url.startsWith('https://')) return Promise.resolve(true);
+  if (framesAnySite || !LAYOUTS_URL || known(url) || !url.startsWith('https://')) {
+    return Promise.resolve(true);
+  }
   const cached = answers.get(url);
   if (cached) return cached;
   const stored = readStored()[url];

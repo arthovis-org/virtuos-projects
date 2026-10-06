@@ -133,6 +133,14 @@ The code is in `src/sheet/`: `sheetTable.ts` (CSV and pasted text), `sheetPlan.t
 and back), `sheetEdit.ts` (desk-by-desk edits), `sheetSources.ts` (Google Sheets, the AI) and
 `sheetStore.ts`.
 
+## Desktop app
+
+[`apps/configurator-desktop`](../configurator-desktop) bundles this configurator in a Windows app
+that can show every website on the screens. The page knows it runs there through
+`window.virtuosDesktop` (`src/desktop.ts`): sites are then never marked as blocked or swapped for
+embed players, the AI may use any site, and shared links point to the public website. Develop
+here as usual; `npm run dev` in the desktop folder shows this dev server in the app.
+
 ## Feedback
 
 The header's **Feedback** button sends a message (with an optional screenshot) to the feedback

@@ -1,3 +1,4 @@
+import { publicPageUrl } from '@/desktop';
 import { RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { productList } from '@/catalog';
@@ -29,7 +30,7 @@ export function Header() {
   }, [copied]);
 
   const copyShareLink = async () => {
-    const url = `${window.location.origin}${window.location.pathname}${shareSearch()}`;
+    const url = `${publicPageUrl()}${shareSearch()}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

@@ -1,3 +1,4 @@
+import { publicPageUrl } from '@/desktop';
 import { MessageSquare, Paperclip, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import { recentErrors } from '@/feedback/errorLog';
@@ -126,7 +127,7 @@ export function Feedback() {
           screenshot: picture,
           website: honeypot.current?.value ?? '',
           context: {
-            url: `${window.location.origin}${window.location.pathname}${shareSearch()}`,
+            url: `${publicPageUrl()}${shareSearch()}`,
             view: describeView(),
             device: describeDevice(),
             userAgent: navigator.userAgent,

@@ -123,7 +123,7 @@ function readProduct(input) {
   };
 }
 
-function instructions(product, blocked) {
+function instructions(product, blocked, anySite) {
   const screens = product.screens
     .map((s) => `- ${s.label}${s.main ? " (the big one in the middle)" : ""}`)
     .join("\n");
@@ -166,8 +166,12 @@ Rules:
 - Plan one desk per distinct workflow, using the main screen on every desk.
 - Choose sites that fit the workflow; a site may appear on several desks.
 - Other pages only when you are sure they are real and allow being shown inside another page (an iframe): Wikipedia articles (https://en.wikipedia.org/wiki/...) always work. Never invent addresses.
-- Links to YouTube videos, playlists and channels (/channel/UC…), Vimeo, Google Docs, Sheets, Slides, Drive files and Maps, Spotify, Figma, X posts, Twitch, Reddit posts, SoundCloud, CodePen, Loom and TradingView symbols are fine: they are shown through those services' own embed players.
-- These sites refuse to be shown inside another page, so prefer others; use one only when I ask for it by name (it is then marked as blocked for me): ${blocked.join(", ")}.
+${
+  anySite
+    ? "- Any website works on the screens (the desktop app shows every site, logged in): use the best page for each task."
+    : `- Links to YouTube videos, playlists and channels (/channel/UC…), Vimeo, Google Docs, Sheets, Slides, Drive files and Maps, Spotify, Figma, X posts, Twitch, Reddit posts, SoundCloud, CodePen, Loom and TradingView symbols are fine: they are shown through those services' own embed players.
+- These sites refuse to be shown inside another page, so prefer others; use one only when I ask for it by name (it is then marked as blocked for me): ${blocked.join(", ")}.`
+}
 - Never put a comma inside a cell.`;
 }
 
@@ -213,7 +217,14 @@ export async function plan(request, env, reply) {
     ? `My current sheet:\n${current}\n\nChange it as I ask, keeping the rest, and answer with the whole updated sheet:\n${workflow}`
     : `My workflows:\n${workflow}`;
   const messages = [
-    { role: "system", content: instructions(product, await blockedHosts(env)) },
+    {
+      role: "system",
+      content: instructions(
+        product,
+        await blockedHosts(env),
+        body.anySite === true,
+      ),
+    },
     { role: "user", content: ask },
   ];
   // Groq first when it is set up; Workers AI when it isn't, or can't answer.

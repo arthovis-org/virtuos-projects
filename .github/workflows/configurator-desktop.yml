@@ -1,0 +1,59 @@
+# The desktop app (apps/configurator-desktop): on every change to it or the configurator,
+# build it and run its smoke test; on a version tag (v0.2.0, matching its package.json),
+# also build the Windows installer and publish it as a GitHub release, where installed
+# copies find their updates.
+name: configurator-desktop
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'apps/configurator-desktop/**'
+      - 'apps/product-configurator/**'
+      - '.github/workflows/configurator-desktop.yml'
+  pull_request:
+    paths:
+      - 'apps/configurator-desktop/**'
+      - '.github/workflows/configurator-desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/configurator-desktop
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            apps/product-configurator/package-lock.json
+            apps/configurator-desktop/package-lock.json
+      - run: npm ci
+        working-directory: apps/product-configurator
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:web
+      - run: npm test
+      - name: The tag matches the app's version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME, but package.json says $version"; exit 1; }
+      - name: Installer (published on a version tag)
+        run: npx electron-builder --win --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: apps/configurator-desktop/release/*.exe
+          retention-days: 14

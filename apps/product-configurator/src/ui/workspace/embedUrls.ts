@@ -4,6 +4,7 @@
  * Google Doc its preview, a Spotify playlist Spotify's player, and so on. Screens show the
  * embed; "open in a new tab" still opens the link as given.
  */
+import { framesAnySite } from '@/desktop';
 
 export interface EmbedVersion {
   /** The address to show on a screen. */
@@ -234,8 +235,12 @@ const RULES: Rule[] = [
   },
 ];
 
-/** The embeddable version of a link, or null when it has none (or already is one). */
+/**
+ * The embeddable version of a link, or null when it has none (or already is one), or when it
+ * isn't needed: the desktop app shows every site as it is (logged in, the whole page).
+ */
 export function embedVersion(link: string): EmbedVersion | null {
+  if (framesAnySite) return null;
   let url: URL;
   try {
     url = new URL(link.trim());

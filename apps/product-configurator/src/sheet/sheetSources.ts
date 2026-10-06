@@ -3,6 +3,7 @@
  * the layouts Worker, as Google's CSV can't be fetched from a page) and an AI assistant,
  * given a prompt that explains the sheet and this product's themes and screens.
  */
+import { framesAnySite } from '@/desktop';
 import type { ProductDefinition } from '@/catalog/schema';
 import { LAYOUTS_URL } from '@/layouts/layoutsApi';
 import type { DeskSetup } from '@/state/setup';
@@ -223,6 +224,8 @@ export async function planWithAI(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       workflow,
+      // In the desktop app every site works on the screens: nothing to avoid.
+      ...(framesAnySite && { anySite: true }),
       ...(currentText && { current: currentText }),
       product: {
         name: product.name,

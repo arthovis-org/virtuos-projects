@@ -35,6 +35,7 @@ gh issue view <number> --repo arthovis-org/virtuos-feedback
    ```
 
    `deploy` prints the Worker's address (`https://virtuos-feedback.<account>.workers.dev`).
+
 3. The site reads that address from `VITE_FEEDBACK_URL` (`apps/product-configurator/.env`);
    without it, the Feedback button is hidden.
 

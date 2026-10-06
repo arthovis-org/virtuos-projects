@@ -1,0 +1,5 @@
+node_modules/
+# The website's build, made by `npm run build:web`.
+web/
+# Installers, made by `npm run dist`.
+release/

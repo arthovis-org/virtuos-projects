@@ -7,6 +7,10 @@ Every VIRTUOS project in one repository, published together as one website:
 | --- | --- | --- |
 | Smart Desk configurator | [`apps/product-configurator`](apps/product-configurator) | [/product-configurator/](https://arthovis-org.github.io/virtuos-projects/product-configurator/) |
 | Proto3D | [`apps/proto3d`](apps/proto3d) | [/proto3d/](https://arthovis-org.github.io/virtuos-projects/proto3d/) |
+| Configurator desktop app | [`apps/configurator-desktop`](apps/configurator-desktop) | Windows installer in [Releases](https://github.com/arthovis-org/virtuos-projects/releases) |
+
+The desktop app is the configurator in a Windows app that can show every website on its screens;
+it bundles the configurator's build, so both are developed in `apps/product-configurator`.
 
 ## Gallery and hubs
 
@@ -25,13 +29,16 @@ is and lists its pages; the build reads them all.
 apps/<project>/          one folder per project, each with its own tools and dependencies
   project.json           name, summary, how it is published, its pages (for the gallery and hub)
   thumbnail.jpg          the gallery picture (optional; 16:9)
+apps/configurator-desktop the configurator's desktop app (Electron; no project.json: it is not
+                         part of the website, it is released as an installer)
 services/feedback-worker the Cloudflare Worker behind the sites' Feedback button (files issues
                          in the private arthovis-org/virtuos-feedback repository)
 services/layouts-worker  the Cloudflare Worker and D1 database that keep the configurator's
                          saved layouts, and read Google Sheets for its command center sheet
 scripts/build-site.mjs   builds every project and generates the gallery and hubs into _site/
 scripts/site-pages.mjs   the gallery and hub page templates
-.github/workflows/       deploy.yml publishes the site; one checks workflow per project
+.github/workflows/       deploy.yml publishes the site; one checks workflow per project;
+                         configurator-desktop.yml builds and releases the desktop app
 ```
 
 Projects keep their own way of working: the configurator is built with Vite, Proto3D is plain

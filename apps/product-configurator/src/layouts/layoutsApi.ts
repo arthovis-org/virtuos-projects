@@ -2,6 +2,7 @@
  * Talks to the layouts Worker (services/layouts-worker), and keeps the list of layouts this
  * browser saved, with their private edit keys, in local storage.
  */
+import { publicPageUrl } from '@/desktop';
 import { isLayoutData, type LayoutData } from './layoutData';
 
 /** The layouts Worker; without it there is no Layouts button. */
@@ -67,8 +68,7 @@ export async function deleteLayout(id: string, key: string) {
 }
 
 /** The link that opens a layout. */
-export const layoutLink = (id: string) =>
-  `${window.location.origin}${window.location.pathname}?layout=${encodeURIComponent(id)}`;
+export const layoutLink = (id: string) => `${publicPageUrl()}?layout=${encodeURIComponent(id)}`;
 
 const STORAGE_KEY = 'virtuos.layouts';
 
