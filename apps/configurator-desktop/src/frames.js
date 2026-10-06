@@ -5,6 +5,7 @@
  * pages inside frames, and only for those, this lifts both: the configurator's own page is
  * served unchanged.
  */
+const { REFERRER, embedFor } = require('./youtube');
 
 /** Whether a request comes from a page inside a frame (not the configurator's own page). */
 function fromFrame(details) {
@@ -45,6 +46,23 @@ function crossSiteCookie(cookie) {
 
 /** Lets every site be shown, and stay logged in, inside the configurator's screens. */
 function allowFraming(session) {
+  // YouTube videos play in its embed player (youtube.js): frames loading a video page go
+  // there, and the player is told which site shows it.
+  session.webRequest.onBeforeRequest(
+    { urls: ['*://*.youtube.com/*', '*://youtu.be/*'] },
+    (details, callback) => {
+      const embed = details.resourceType === 'subFrame' ? embedFor(details.url) : null;
+      callback(embed ? { redirectURL: embed } : {});
+    },
+  );
+  session.webRequest.onBeforeSendHeaders(
+    { urls: ['*://*.youtube.com/embed/*', '*://*.youtube-nocookie.com/embed/*'] },
+    (details, callback) => {
+      const headers = { ...details.requestHeaders };
+      if (fromFrame(details)) headers.Referer = REFERRER;
+      callback({ requestHeaders: headers });
+    },
+  );
   session.webRequest.onHeadersReceived((details, callback) => {
     if (!fromFrame(details)) {
       callback({});

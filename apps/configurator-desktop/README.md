@@ -21,9 +21,15 @@ web/             the website's build (npm run build:web; not committed)
 ```
 
 The configurator reads `window.virtuosDesktop` (`src/desktop.ts` there): in the app, sites are
-never marked as blocked, links are shown as they are rather than through embed players (YouTube plays on youtube.com
-itself, with its own player, logins and recommendations), the AI
-may use any site, and shared links point to the public website.
+never marked as blocked, links are shown as they are rather than through embed players (YouTube is shown as youtube.com
+itself, with its logins and recommendations), the AI may use any site, and shared links point
+to the public website.
+
+**YouTube videos** play in YouTube's embed player (`src/youtube.js`): youtube.com's own video
+page crashes inside a frame in this Electron (the screen turns grey a few seconds in), while the
+embed player, made for frames, plays fine. A click on a video on a screen opens it there, with a
+"← YouTube" button back; frames loading a video page are redirected; and YouTube is told the
+public website shows the player (it refuses with error 153 otherwise).
 
 Logins are kept in the app's own browser profile (`%APPDATA%\VIRTUOS Configurator`).
 

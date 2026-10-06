@@ -10,6 +10,7 @@ const { app, BrowserWindow, net, protocol, session, shell } = require('electron'
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { allowFraming } = require('./frames');
+const { watchVideosEmbedded } = require('./youtube');
 
 /** The bundled configurator is served from here, like a website. */
 const SCHEME = 'app';
@@ -83,6 +84,7 @@ function createWindow() {
     if (/^https?:/.test(url)) void shell.openExternal(url);
   });
 
+  watchVideosEmbedded(window.webContents);
   void window.loadURL(DEV_URL ?? APP_URL);
 }
 

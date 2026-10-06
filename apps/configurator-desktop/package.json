@@ -11,7 +11,7 @@
     "start": "npm run build:web && electron .",
     "dist": "npm run build:web && electron-builder --win --publish never",
     "release": "npm run build:web && electron-builder --win --publish always",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/frames.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/frames.js && node --check src/youtube.js",
     "test": "playwright test"
   },
   "build": {

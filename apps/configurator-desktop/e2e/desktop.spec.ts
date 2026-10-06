@@ -65,3 +65,18 @@ for (const kind of ['x-frame-options', 'frame-ancestors']) {
       .toBe(`Refusing page /${kind}`);
   });
 }
+
+test('plays YouTube videos on the screens in its embed player', () => {
+  // youtube.com's own video page crashes inside a frame; its embed player doesn't (youtube.js).
+  const { embedFor } = require('../src/youtube.js') as { embedFor: (link: string) => string | null };
+  expect(embedFor('https://www.youtube.com/watch?v=EMvk7OC4OeY&list=UUabc&t=42s')).toBe(
+    'https://www.youtube.com/embed/EMvk7OC4OeY?autoplay=1&list=UUabc&start=42',
+  );
+  expect(embedFor('https://youtu.be/EMvk7OC4OeY')).toBe('https://www.youtube.com/embed/EMvk7OC4OeY?autoplay=1');
+  expect(embedFor('https://m.youtube.com/shorts/abcdefghijk')).toBe(
+    'https://www.youtube.com/embed/abcdefghijk?autoplay=1',
+  );
+  expect(embedFor('https://www.youtube.com/playlist?list=UUabc')).toBeNull();
+  expect(embedFor('https://www.youtube.com/@NBA')).toBeNull();
+  expect(embedFor('https://example.com/watch?v=EMvk7OC4OeY')).toBeNull();
+});

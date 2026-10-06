@@ -1,5 +1,6 @@
 import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
+import { framesAnySite } from '@/desktop';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
 import { useEmbeddable } from './embeddable';
@@ -38,10 +39,11 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const pressedAt = useRef<{ x: number; y: number } | null>(null);
   const focused = useViewStore((s) => s.focus === screenId);
   const [iconFailed, setIconFailed] = useState(false);
-  // The page as given (title bar, "open in a new tab") and what the screen shows: its
-  // embeddable version when it has one (a YouTube link as YouTube's player).
-  const url = siteUrl(win.url);
+  // What the screen shows: the embeddable version of the page when it has one (a YouTube link
+  // as YouTube's player), and in the desktop app the site itself (an embed link as the site).
+  // The title bar and "open in a new tab" name the page as given, or in the app what it shows.
   const shownUrl = siteUrl(screenUrl(win.url));
+  const url = framesAnySite ? shownUrl : siteUrl(win.url);
   const host = new URL(url).host;
   const embeddable = useEmbeddable(win.url);
   // A blocked site shown anyway, to see for oneself that it stays blank.
