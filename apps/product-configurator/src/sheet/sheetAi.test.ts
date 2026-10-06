@@ -118,3 +118,33 @@ describe('a desk created with AI from the desk bar', () => {
     expect(useSetupStore.getState().activeDeskId).toBe(second);
   });
 });
+
+describe('sites that refuse to be shown inside the page', () => {
+  it('are left out of the AI’s plan, and named', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify(
+              input.includes('/embed')
+                ? { embeddable: !input.includes('notion') }
+                : {
+                    csv: 'Desk,Theme,Screen,Sites,Height\nWork,Office,Main,https://www.notion.so/ https://ok.example/,\nNotes,Office,Main,https://www.notion.so/x,',
+                  },
+            ),
+          ),
+        ),
+      ),
+    );
+    const message = await sheet().planWithAI('Productivity', { kind: 'replace' });
+    expect(
+      sheet()
+        .rows.filter((r) => r.url)
+        .map((r) => r.url),
+    ).toEqual(['https://ok.example/']);
+    // The desk whose only site was blocked stays, with its theme's own sites.
+    expect(names()).toEqual(['Work', 'Notes']);
+    expect(message).toContain('notion.so');
+  });
+});

@@ -45,6 +45,17 @@ To add Groq: make a free account at https://console.groq.com, create an API key,
 folder run `npx wrangler secret put GROQ_API_KEY` and paste it. Remove it with
 `npx wrangler secret delete GROQ_API_KEY` to go back to Workers AI alone.
 
+And it tells whether a site lets other pages show it in a frame (`src/embed.js`), so the
+configurator can leave such sites out of AI plans and explain them on a screen instead of the
+browser's broken-page icon:
+
+```
+GET    /embed?url=<https address>   -> 200 { embeddable, reason? }
+```
+
+It reads the site's `X-Frame-Options` and CSP `frame-ancestors` headers (cached a day). Sites
+that refuse only from script, or answer servers differently from browsers, can't be told.
+
 The key goes in `Authorization: Bearer <key>`. Only the sites in `ALLOWED_ORIGINS`
 (`wrangler.toml`) may call it. Limits: names up to 80 characters, layouts up to 256 KB, 30 new
 layouts per visitor per 10 minutes.

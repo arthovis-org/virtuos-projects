@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { enterRoom, enterWorkspace, exitRoom, switchWorkspace } from '@/state/actions';
 import { currentDesk, deskName, workspaceById } from '@/state/setup';
 import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
@@ -37,7 +37,8 @@ export function WorkspaceHud() {
   const desks = useSetupStore((s) => s.room);
   const desk = useSetupStore((s) => (s.mode === 'desks' ? currentDesk(s) : undefined));
   const setDeskWorkspace = useSetupStore((s) => s.setDeskWorkspace);
-  const top = useRef<HTMLDivElement>(null);
+  // Whatever is over the top of the viewer: the card, its pill or the toolbar.
+  const [overlay, setOverlay] = useState<HTMLElement | null>(null);
   // On a phone the card would cover the desk: it starts folded into a pill.
   const [cardOpen, setCardOpen] = useState(
     () =>
@@ -45,16 +46,19 @@ export function WorkspaceHud() {
         .matches,
   );
 
-  // The camera keeps the screens below the toolbar, however tall it wraps.
+  // The camera keeps the desks (and, seated, the screens) below whatever is over the top of
+  // the viewer, however tall it wraps.
   useEffect(() => {
-    const element = top.current;
-    if (!(active || desksMode) || !element) return;
-    const measure = () => setHudInset(element.offsetTop + element.offsetHeight + 8);
+    if (!overlay) {
+      setHudInset(0);
+      return;
+    }
+    const measure = () => setHudInset(overlay.offsetTop + overlay.offsetHeight + 8);
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(element);
+    observer.observe(overlay);
     return () => observer.disconnect();
-  }, [active, desksMode, setHudInset]);
+  }, [overlay, setHudInset]);
   if (product.workspaces.length === 0) return null;
 
   const workspace = workspaceById(product, workspaceId);
@@ -66,14 +70,19 @@ export function WorkspaceHud() {
     if (!cameraFree || !first) return null;
     if (!cardOpen) {
       return (
-        <button type="button" className={styles.pill} onClick={() => setCardOpen(true)}>
+        <button
+          ref={setOverlay}
+          type="button"
+          className={styles.pill}
+          onClick={() => setCardOpen(true)}
+        >
           <span className={styles.pillDot} aria-hidden="true" />
           Live demo · try the screens
         </button>
       );
     }
     return (
-      <section className={styles.card} aria-labelledby="workspace-demo">
+      <section ref={setOverlay} className={styles.card} aria-labelledby="workspace-demo">
         <button
           type="button"
           className={styles.hide}
@@ -83,64 +92,71 @@ export function WorkspaceHud() {
         >
           ×
         </button>
-        <span className={styles.eyebrow}>Live demo</span>
-        <h2 id="workspace-demo" className={styles.title}>
-          Work on these screens
-        </h2>
-        {others.length === 0 ? (
-          <>
-            <p className={styles.description}>
-              {first.description ??
-                'Real websites on every monitor. Use them, and drag windows between screens.'}
-            </p>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={`${styles.button} ${styles.primary}`}
-                onClick={() => enterWorkspace(first.id)}
-              >
-                Try the {first.label.toLowerCase()} workspace
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className={styles.description}>
-              Real websites on every monitor. Pick a workspace to sit down at it.
-            </p>
-            <div className={styles.tiles} aria-label="Workspaces">
-              {product.workspaces.map((w) => (
-                <button
-                  key={w.id}
-                  type="button"
-                  className={styles.tile}
-                  style={{ '--desk-accent': w.accent ?? 'var(--border-strong)' } as CSSProperties}
-                  onClick={() => enterWorkspace(w.id)}
-                  title={w.description}
-                >
-                  <span className={styles.tileIcon} aria-hidden="true">
-                    <WorkspaceIcon name={w.icon} size={15} />
-                  </span>
-                  {w.label}
-                </button>
-              ))}
-            </div>
-            <div className={styles.more}>
-              <h3 className={styles.moreTitle}>Unlimited desks</h3>
+        <div className={styles.cardBody}>
+          {others.length === 0 ? (
+            <div className={styles.intro}>
+              <span className={styles.eyebrow}>Live demo</span>
+              <h2 id="workspace-demo" className={styles.title}>
+                Work on these screens
+              </h2>
               <p className={styles.description}>
-                Every workspace on its own desk, side by side around you, each with its own setup.
-                Add as many as you like.
+                {first.description ??
+                  'Real websites on every monitor. Use them, and drag windows between screens.'}
               </p>
-              <button
-                type="button"
-                className={`${styles.button} ${styles.primary}`}
-                onClick={enterRoom}
-              >
-                Try unlimited desks →
-              </button>
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={`${styles.button} ${styles.primary}`}
+                  onClick={() => enterWorkspace(first.id)}
+                >
+                  Try the {first.label.toLowerCase()} workspace
+                </button>
+              </div>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              <div className={styles.intro}>
+                <span className={styles.eyebrow}>Live demo</span>
+                <h2 id="workspace-demo" className={styles.title}>
+                  Work on these screens
+                </h2>
+                <p className={styles.description}>
+                  Real websites on every monitor. Pick a workspace to sit down at it.
+                </p>
+              </div>
+              <div className={styles.tiles} aria-label="Workspaces">
+                {product.workspaces.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    className={styles.tile}
+                    style={{ '--desk-accent': w.accent ?? 'var(--border-strong)' } as CSSProperties}
+                    onClick={() => enterWorkspace(w.id)}
+                    title={w.description}
+                  >
+                    <span className={styles.tileIcon} aria-hidden="true">
+                      <WorkspaceIcon name={w.icon} size={15} />
+                    </span>
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+              <div className={styles.more}>
+                <h3 className={styles.moreTitle}>Unlimited desks</h3>
+                <p className={styles.description}>
+                  Every workspace on its own desk, around you. Add as many as you like.
+                </p>
+                <button
+                  type="button"
+                  className={`${styles.button} ${styles.primary}`}
+                  onClick={enterRoom}
+                >
+                  Try unlimited desks →
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </section>
     );
   }
@@ -165,7 +181,7 @@ export function WorkspaceHud() {
 
   return (
     <>
-      <div ref={top} className={styles.top}>
+      <div ref={setOverlay} className={styles.top}>
         <div className={styles.bar} role="toolbar" aria-label="Workspace">
           {desksMode && !desk ? (
             <span className={`${styles.name} ${styles.prompt}`}>Pick a desk</span>

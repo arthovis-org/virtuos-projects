@@ -83,32 +83,43 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
     const rows = get().rows;
     const desks = deskGroups(rows);
     const count = (n: number) => `${n} ${n === 1 ? 'desk' : 'desks'}`;
+    // Sites the AI suggested that refuse to be shown inside the page are left out; say which.
+    let note = '';
+    const ask = async (current?: readonly SheetRow[]) => {
+      const planned = await planWithAI(product(), workflow, current);
+      const n = planned.blocked.length;
+      if (n > 0) {
+        const sites = n === 1 ? 'a site' : `${n} sites`;
+        note = ` Left out ${sites} that can’t be shown inside the page (${planned.blocked.join(', ')}).`;
+      }
+      return planned.rows;
+    };
     switch (scope.kind) {
       case 'add': {
-        const added = await planWithAI(product(), workflow);
+        const added = await ask();
         get().replaceRows(appendDesks(rows, added));
         const kept = desks.length > 0 ? `; your ${count(desks.length)} stay as they were` : '';
-        return `Added ${count(deskGroups(added).length)}${kept}.`;
+        return `Added ${count(deskGroups(added).length)}${kept}.${note}`;
       }
       case 'desk': {
         const desk = desks.find((d) => d.name.toLowerCase() === scope.desk.toLowerCase());
         if (!desk) throw new Error('That desk is no longer in the sheet');
         const current = desk.rows.flatMap((i) => rows[i] ?? []);
-        const changed = await planWithAI(product(), workflow, current);
+        const changed = await ask(current);
         get().replaceRows(replaceDesk(rows, desk, changed));
-        return `Changed ${desk.name}; the other desks stay as they were.`;
+        return `Changed ${desk.name}; the other desks stay as they were.${note}`;
       }
       case 'all': {
-        const changed = await planWithAI(product(), workflow, rows);
+        const changed = await ask(rows);
         get().replaceRows(keepDeskFields(rows, changed));
-        return `Changed your desks: now ${count(deskGroups(changed).length)}.`;
+        return `Changed your desks: now ${count(deskGroups(changed).length)}.${note}`;
       }
       case 'replace': {
-        const planned = await planWithAI(product(), workflow);
+        const planned = await ask();
         get().replaceRows(planned);
         return desks.length > 0
-          ? `Replaced your ${count(desks.length)} with ${count(deskGroups(planned).length)}.`
-          : `Planned ${count(deskGroups(planned).length)}.`;
+          ? `Replaced your ${count(desks.length)} with ${count(deskGroups(planned).length)}.${note}`
+          : `Planned ${count(deskGroups(planned).length)}.${note}`;
       }
     }
   },

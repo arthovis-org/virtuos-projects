@@ -7,6 +7,7 @@ import type { ProductDefinition } from '@/catalog/schema';
 import { LAYOUTS_URL } from '@/layouts/layoutsApi';
 import type { DeskSetup } from '@/state/setup';
 import { deskGroups, mainScreen, planFromRows } from './sheetPlan';
+import { checkEmbeddable } from '@/ui/workspace/embeddable';
 import { TOOLS } from '@/ui/workspace/siteUrl';
 import { parseDelimited, rowsFromSheet, type SheetRow } from './sheetTable';
 
@@ -209,7 +210,7 @@ export async function planWithAI(
   product: ProductDefinition,
   workflow: string,
   current?: readonly SheetRow[],
-): Promise<SheetRow[]> {
+): Promise<{ rows: SheetRow[]; blocked: string[] }> {
   if (!LAYOUTS_URL) throw new Error('The AI is not set up on this site');
   const main = mainScreen(product);
   const motion = product.motions[0];
@@ -237,7 +238,44 @@ export async function planWithAI(
     throw new Error(body.error ?? 'The AI could not answer; try again');
   const rows = rowsFromAnswer(product, body.csv);
   if (rows.length === 0) throw new Error('The AI’s answer had no desks in it; try again');
-  return rows;
+  return withoutBlockedSites(rows);
+}
+
+/**
+ * The rows without sites that refuse to be shown inside another page (checked for any site
+ * the AI added beyond the known ones), and those sites' hosts. A desk left with no site keeps
+ * a row, so it stays (with its theme's own sites).
+ */
+async function withoutBlockedSites(
+  rows: readonly SheetRow[],
+): Promise<{ rows: SheetRow[]; blocked: string[] }> {
+  const urls = [...new Set(rows.map((r) => r.url.trim()).filter(Boolean))];
+  const verdicts = await Promise.all(urls.map((url) => checkEmbeddable(url)));
+  const blocked = new Set(urls.filter((_, i) => verdicts[i] === false));
+  if (blocked.size === 0) return { rows: [...rows], blocked: [] };
+  const kept: SheetRow[] = [];
+  for (const row of rows) {
+    if (!blocked.has(row.url.trim())) {
+      kept.push(row);
+      continue;
+    }
+    // A desk whose every site was blocked keeps one empty row.
+    const desk = row.desk.trim().toLowerCase();
+    const hasOther = rows.some(
+      (r) => r.desk.trim().toLowerCase() === desk && !blocked.has(r.url.trim()),
+    );
+    if (!hasOther && !kept.some((r) => r.desk.trim().toLowerCase() === desk)) {
+      kept.push({ ...row, screen: '', site: '', url: '' });
+    }
+  }
+  const hosts = [...blocked].map((url) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  });
+  return { rows: kept, blocked: [...new Set(hosts)] };
 }
 
 /**
@@ -248,7 +286,7 @@ export async function planOneDesk(
   product: ProductDefinition,
   description: string,
 ): Promise<DeskSetup> {
-  const rows = await planWithAI(product, `Plan exactly one desk for: ${description.trim()}`);
+  const { rows } = await planWithAI(product, `Plan exactly one desk for: ${description.trim()}`);
   const first = deskGroups(rows)[0];
   const desk =
     first &&

@@ -22,7 +22,12 @@
  * And it plans command centers with Workers AI (see plan.js):
  *
  *   POST   /plan             { workflow, product, current? }       -> 200 { csv }
+ *
+ * And it tells whether a site may be shown in a frame (see embed.js):
+ *
+ *   GET    /embed?url=<https address>                             -> 200 { embeddable }
  */
+import { embed } from "./embed.js";
 import { plan } from "./plan.js";
 
 const MAX_NAME = 80;
@@ -36,7 +41,7 @@ const ID_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789";
 const MAX_SHEET = 512 * 1024;
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin") ?? "";
     const allowed = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
     const cors = allowed.includes(origin)
@@ -57,6 +62,15 @@ export default {
           });
 
     const url = new URL(request.url);
+    if (url.pathname === "/embed") {
+      if (request.method === "OPTIONS")
+        return new Response(null, { status: 204, headers: cors });
+      if (!allowed.includes(origin))
+        return reply(403, { error: "Origin not allowed" });
+      if (request.method !== "GET")
+        return reply(405, { error: "Method not allowed" });
+      return embed(url, env, reply, ctx);
+    }
     if (url.pathname === "/plan" || url.pathname === "/plan/") {
       if (request.method === "OPTIONS")
         return new Response(null, { status: 204, headers: cors });

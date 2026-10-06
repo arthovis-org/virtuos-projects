@@ -2,6 +2,7 @@ import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
+import { useEmbeddable } from './embeddable';
 import { siteUrl } from './siteUrl';
 import styles from './WindowFrame.module.css';
 
@@ -38,6 +39,7 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const [iconFailed, setIconFailed] = useState(false);
   const url = siteUrl(win.url);
   const host = new URL(url).host;
+  const embeddable = useEmbeddable(win.url);
 
   // Only starts the drag; the move and release are followed on the whole window (see
   // WorkspaceLayer), which keeps working even where pointer capture is unavailable.
@@ -129,15 +131,30 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
           </button>
         </div>
       </div>
-      <iframe
-        className={styles.frame}
-        src={url}
-        title={win.title}
-        sandbox={SANDBOX}
-        allow="fullscreen; clipboard-read; clipboard-write"
-        referrerPolicy="strict-origin-when-cross-origin"
-        loading="lazy"
-      />
+      {embeddable ? (
+        <iframe
+          className={styles.frame}
+          src={url}
+          title={win.title}
+          sandbox={SANDBOX}
+          allow="fullscreen; clipboard-read; clipboard-write"
+          referrerPolicy="strict-origin-when-cross-origin"
+          loading="lazy"
+        />
+      ) : (
+        // The site refuses to be shown inside another page: say so, instead of the
+        // browser's broken-page icon.
+        <div className={styles.blocked}>
+          <p className={styles.blockedTitle}>{host} can’t be shown here</p>
+          <p className={styles.blockedText}>
+            This site doesn’t allow other pages to show it. Open it in its own tab, or put another
+            site on this screen.
+          </p>
+          <a className={styles.blockedLink} href={url} target="_blank" rel="noreferrer">
+            Open {host} ↗
+          </a>
+        </div>
+      )}
     </div>
   );
 }

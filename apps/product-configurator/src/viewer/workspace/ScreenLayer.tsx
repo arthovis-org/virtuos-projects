@@ -21,6 +21,7 @@ export function ScreenLayer() {
   const surfaces = useViewStore((s) => s.surfaces);
   const primaryScreen = useViewStore((s) => s.primaryScreen);
   const posters = usePosterStore((s) => s.posters);
+  const seated = useViewStore((s) => s.seated);
   const hasPosters = usePosterStore((s) => Object.keys(s.posters).length > 0);
   // Live sites, or the posters of the room's desks (also with no desk chosen yet).
   const shown = active || hasPosters;
@@ -94,11 +95,11 @@ export function ScreenLayer() {
             closed={closedWindows}
           />
         ))}
-        {Object.values(posters)
-          .flat()
-          .map((poster) => (
-            <PosterSurface key={poster.id} poster={poster} />
-          ))}
+        {/* Seated, the other desks are out of the picture: no posters either. */}
+        {!seated &&
+          Object.values(posters)
+            .flat()
+            .map((poster) => <PosterSurface key={poster.id} poster={poster} />)}
       </div>
     </div>
   );

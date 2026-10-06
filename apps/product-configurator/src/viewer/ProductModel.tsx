@@ -123,6 +123,9 @@ export function ProductModel() {
           position={item.position}
           rotation={item.rotation}
           layoutKey={`${items.length}${tall ? ' tall' : ''}`}
+          // Seated at a desk in the room, the others are out of the picture: their monitors
+          // would stand between the camera and the screens.
+          hidden={desksMode && seated && item !== active}
           reportsMotion={i === 0}
           deskId={item.desk.id}
           desk={
@@ -156,6 +159,8 @@ interface DeskInstanceProps {
   layoutKey: string;
   /** Reports names the loaded model lacks (one desk is enough). */
   reportsMotion: boolean;
+  /** Out of the picture (another desk is the one the visitor sits at). */
+  hidden: boolean;
   /** The desk this is (its height). */
   deskId: string;
   /** In unlimited desks mode: which desk this is. */
@@ -173,6 +178,7 @@ function DeskInstance({
   rotation,
   layoutKey,
   reportsMotion,
+  hidden,
   deskId,
   desk,
 }: DeskInstanceProps) {
@@ -293,7 +299,7 @@ function DeskInstance({
   }, [envelope, motions.length]);
 
   return (
-    <group ref={group}>
+    <group ref={group} visible={!hidden}>
       <group position={offset}>
         <Suspense fallback={null}>
           <Decals
