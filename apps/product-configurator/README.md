@@ -106,8 +106,8 @@ screens they are on); a card opens to edit the desk and its sites, one per scree
 cards it is a plain table, one row per site: **Desk, Theme, Screen, Site, URL, Height**, which is
 what CSV files, Google Sheets and links hold.
 
-- **Plan with AI**: describe what you want and a free AI (Llama 3.3 on Groq, with Cloudflare
-  Workers AI as backup, through the layouts Worker's `/plan` route) plans it. What it may change is chosen first and
+- **Plan with AI**: describe what you want and a free AI (GPT-OSS 120B on Groq, with Llama 3.3
+  on Cloudflare Workers AI as backup, through the layouts Worker's `/plan` route) plans it. What it may change is chosen first and
   said in words: **Add desks** (the default: new desks after yours, nothing else changes),
   **Change one desk** (only that desk; a desk card's **Ask AI** opens this), **Change all desks**,
   or **Start over** (replaces them all). Every change can be undone. It picks from the sites the

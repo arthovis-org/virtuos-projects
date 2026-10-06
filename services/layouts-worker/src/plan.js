@@ -1,10 +1,10 @@
 /**
- * Plans command centers with a free AI: Groq (Llama 3.3 70B, 1,000 requests a day free) when a
- * GROQ_API_KEY secret is set, and Cloudflare Workers AI (the same model, a smaller free daily
+ * Plans command centers with a free AI: Groq (GPT-OSS 120B, 1,000 requests a day free) when a
+ * GROQ_API_KEY secret is set, and Cloudflare Workers AI (Llama 3.3 70B, a smaller free daily
  * allowance) otherwise or once Groq's daily limit is reached. Neither bills on its free plan:
  * past the limits, requests fail until the next day.
  *
- *   POST /plan  { workflow, product, current? }  -> 200 { csv }
+ *   POST /plan  { workflow, product, current? }  -> 200 { csv, via: 'groq' | 'workers-ai' }
  *
  * The instructions are written here, from the product's screens and themes the page sends:
  * the page only says what the visitor does, so this can't be used as a general chatbot.
@@ -13,7 +13,8 @@
 /** The Workers AI model; any Workers AI text model taking chat messages works. */
 const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 /** The Groq model (OpenAI-style chat API). */
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+/** Groq retired Llama from free accounts (August 2026); GPT-OSS 120B is its replacement. */
+const GROQ_MODEL = "openai/gpt-oss-120b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 /** An AI that couldn't answer, and whether it was because of its free limits. */
@@ -35,7 +36,9 @@ async function askGroq(env, messages) {
     body: JSON.stringify({
       model: env.GROQ_MODEL || GROQ_MODEL,
       messages,
-      max_tokens: 2048,
+      // A reasoning model: a little thinking is enough for a table, and keeps it quick.
+      reasoning_effort: "low",
+      max_tokens: 4096,
       temperature: 0.4,
     }),
   });
@@ -215,10 +218,12 @@ export async function plan(request, env, reply) {
     ...(env.AI ? [askWorkersAI] : []),
   ];
   let answer = "";
+  let via = "";
   let limited = true;
   for (const service of services) {
     try {
       answer = await service(env, messages);
+      via = service === askGroq ? "groq" : "workers-ai";
       if (answer.trim()) break;
     } catch (error) {
       console.error(error);
@@ -233,5 +238,6 @@ export async function plan(request, env, reply) {
         })
       : reply(502, { error: "The AI could not answer; try again" });
   }
-  return reply(200, { csv: answer });
+  // Which service answered, for checking the fallback.
+  return reply(200, { csv: answer, via });
 }

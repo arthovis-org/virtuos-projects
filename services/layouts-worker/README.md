@@ -34,11 +34,12 @@ POST   /plan   { workflow, product: { name, screens, themes, height, sites }, cu
 The Worker writes the instructions itself from the product's screens, themes and known sites, so
 the route only plans desks; it is no general chatbot. 12 plans per visitor per 10 minutes.
 
-It asks **Groq** first (`llama-3.3-70b-versatile`; free plan: 1,000 requests a day, 12,000 tokens
-a minute) when the `GROQ_API_KEY` secret is set, and **Cloudflare Workers AI** (the same model,
-`@cf/meta/llama-3.3-70b-instruct-fp8-fast`; 10,000 free neurons a day, a few dozen plans) when it
+It asks **Groq** first (`openai/gpt-oss-120b`, with low reasoning effort; about a second per plan;
+free plan: 1,000 requests a day) when the `GROQ_API_KEY` secret is set, and **Cloudflare Workers
+AI** (Llama 3.3 70B, `@cf/meta/llama-3.3-70b-instruct-fp8-fast`; 10,000 free neurons a day, a few dozen plans) when it
 isn't or once Groq is over its limit. Neither charges on its free plan: past the limits the page
-says the AI is done for the day. `GROQ_MODEL` and `AI_MODEL` vars change the models.
+says the AI is done for the day. `GROQ_MODEL` and `AI_MODEL` vars change the models (Groq retired
+Llama from free accounts in August 2026). The reply's `via` says which service answered.
 
 To add Groq: make a free account at https://console.groq.com, create an API key, then in this
 folder run `npx wrangler secret put GROQ_API_KEY` and paste it. Remove it with
