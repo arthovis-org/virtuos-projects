@@ -88,11 +88,19 @@ fills the height (`TALL_ARCS` in `src/viewer/deskLayout.ts`).
 The header's title leads home (`goHome` in `src/state/actions.ts`): in the room, the overview of
 every desk with none chosen; at the single desk, the desk with its workspace closed.
 
-Each window has a **page zoom** in its title bar, like a browser's: zoom out or in by a
-browser's steps, **Fit to window** (the site laid out at a 1280 px desktop width and scaled
-into the window, so a narrow side monitor shows the whole page, not its edge cut off), or
-**Actual size**. A zoom never reloads the site, and it is saved with the desk's windows in
-layouts (`zoom` in `DeskWindows`).
+Each window's title bar holds its **page zoom** (`ZoomControl`): the percentage the page is
+shown at, and **Fit**, "Fit desktop width" (the site laid out at 1440 px, a desktop browser,
+and scaled to the window's width, so a narrow side monitor shows the whole page). Drag the
+percentage sideways to zoom (a point per pixel, 10–500%), click it to type one, or use the
+arrow keys (Shift for ten points) and Home for 100%. A zoom never reloads the site. It is saved
+with the desk's windows in layouts (`zoom` in `DeskWindows`), and this browser remembers each
+site's last zoom for windows without one of their own (`siteZoomStore.ts`). Windows move
+between screens by dragging their title bar.
+
+Dropping a window near the left or right end of its own place (top or bottom on a portrait
+screen) **splits** it: it takes that half and a blank "New window" the other, with the same
+site picker an empty screen has; picking a site fills it where it is (`splitWindow`,
+`fillBlank` in `src/state/setup.ts`).
 
 Held sideways (a landscape screen under 500 px tall, at any width), a phone gets the desktop layout instead:
 the viewer at full height with the options in a narrow column beside it, a slim header, and the

@@ -185,3 +185,29 @@ test('the screens stay on their monitors when a site scrolls itself into view', 
   expect(moved).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('a window dropped on its own edge splits, with a new window to pick a site for', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Office', exact: true }).first().click();
+  const main = page.locator('[aria-label="Main screen"]');
+  const win = main.locator('[data-window-id]').first();
+  await expect(win.locator('iframe')).toBeAttached();
+  await page.waitForTimeout(3000);
+  const bar = (await win.locator('[title="Drag onto another screen"]').boundingBox())!;
+  const box = (await win.boundingBox())!;
+  await page.mouse.move(bar.x + 40, bar.y + bar.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.15, box.y + box.height / 2, { steps: 10 });
+  await expect(main.getByText(/a new window beside it/)).toBeVisible();
+  await page.mouse.up();
+  await expect(main.locator('[data-window-id]')).toHaveCount(2);
+  await expect(main.getByText('New window').first()).toBeVisible();
+  // Picking a site fills the new window where it is.
+  await main.locator('button[class*="chip"]').first().click({ force: true });
+  await expect(main.locator('iframe')).toHaveCount(2);
+  await expect(main.getByText('New window')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

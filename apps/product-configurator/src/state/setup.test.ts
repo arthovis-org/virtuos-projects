@@ -4,6 +4,8 @@ import {
   closeWindow,
   deskName,
   dropWindow,
+  fillBlank,
+  isBlankWindow,
   initialSetup,
   initialWindows,
   layoutWindows,
@@ -13,7 +15,6 @@ import {
   screenWeights,
   setWindowZoom,
   starterRoom,
-  stepZoom,
   validZoom,
   withWorkspace,
   workspaceById,
@@ -135,17 +136,6 @@ describe('desks', () => {
 });
 
 describe('window zoom', () => {
-  it('steps in and out like a browser, from any factor', () => {
-    expect(stepZoom(1, 1)).toBe(1.1);
-    expect(stepZoom(1, -1)).toBe(0.9);
-    // A fitted window (any factor) goes to the next step either way.
-    expect(stepZoom(0.42, 1)).toBe(0.5);
-    expect(stepZoom(0.42, -1)).toBe(0.33);
-    // At the ends it stays.
-    expect(stepZoom(3, 1)).toBe(3);
-    expect(stepZoom(0.25, -1)).toBe(0.25);
-  });
-
   it('is kept per window, with 100% as no entry', () => {
     let windows = setWindowZoom(initialWindows(finance), 'a', 0.5);
     windows = setWindowZoom(windows, 'b', 'fit');
@@ -156,8 +146,71 @@ describe('window zoom', () => {
   it('loads only zooms that are zooms', () => {
     expect(validZoom('fit')).toBe('fit');
     expect(validZoom(0.75)).toBe(0.75);
-    expect(validZoom(40)).toBe(3);
+    expect(validZoom(40)).toBe(5);
+    expect(validZoom(0.01)).toBe(0.1);
+    expect(validZoom(0.333)).toBe(0.33);
     expect(validZoom('big')).toBeNull();
     expect(validZoom(Number.NaN)).toBeNull();
+  });
+});
+
+describe('splitting a window', () => {
+  const first = ids[0]!;
+  const blankOf = (w: ReturnType<typeof initialWindows>) => w.opened.find(isBlankWindow);
+
+  it('puts a blank window beside it on its screen, on the other side from the drop', () => {
+    const start = initialWindows(finance);
+    const screen = start.placement[first]!;
+    const left = dropWindow(start, first, screen, {
+      screen,
+      action: 'split-before',
+      windowId: first,
+    });
+    const blank = blankOf(left)!;
+    expect(left.placement[blank.id]).toBe(screen);
+    expect(left.order.indexOf(blank.id)).toBe(left.order.indexOf(first) + 1);
+    const right = dropWindow(start, first, screen, {
+      screen,
+      action: 'split-after',
+      windowId: first,
+    });
+    const other = blankOf(right)!;
+    expect(right.order.indexOf(other.id)).toBe(right.order.indexOf(first) - 1);
+  });
+
+  it('turns the blank into the site picked, where it is', () => {
+    const start = initialWindows(finance);
+    const screen = start.placement[first]!;
+    const split = dropWindow(start, first, screen, {
+      screen,
+      action: 'split-before',
+      windowId: first,
+    });
+    const blank = blankOf(split)!;
+    const filled = fillBlank(split, blank.id, { title: 'Example', url: 'https://example.com/' });
+    expect(filled.opened.find((w) => w.id === blank.id)).toMatchObject({
+      title: 'Example',
+      url: 'https://example.com/',
+    });
+    expect(filled.order).toEqual(split.order);
+  });
+
+  it('reopens a closed workspace window where the blank one was', () => {
+    const second = ids[1]!;
+    const start = closeWindow(initialWindows(finance), second);
+    const screen = start.placement[first]!;
+    const split = dropWindow(start, first, screen, {
+      screen,
+      action: 'split-after',
+      windowId: first,
+    });
+    const blank = blankOf(split)!;
+    const at = split.order.indexOf(blank.id);
+    const site = finance.windows.find((w) => w.id === second)!;
+    const filled = fillBlank(split, blank.id, site);
+    expect(filled.closed).not.toContain(second);
+    expect(filled.order.indexOf(second)).toBe(at);
+    expect(filled.placement[second]).toBe(screen);
+    expect(filled.opened.some(isBlankWindow)).toBe(false);
   });
 });

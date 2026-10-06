@@ -1,0 +1,63 @@
+/* Plain like the title bar's other buttons: no pill, a soft background on hover. Sizes follow
+   the title bar's text, which is larger on touch screens. */
+.zoom {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+
+.percent,
+.fit,
+.input {
+  height: 2em;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #55555e;
+  font: inherit;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dragged sideways to zoom: a resize cursor, no text selection or touch scrolling. */
+.percent {
+  min-width: 3.6em;
+  padding: 0 0.4em;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.fit {
+  padding: 0 0.5em;
+  cursor: pointer;
+}
+
+.percent:hover,
+.fit:hover {
+  background: rgb(0 0 0 / 8%);
+  color: #1c1c1f;
+}
+
+.percent:focus-visible,
+.fit:focus-visible {
+  outline: 2px solid #3b6fe0;
+  outline-offset: -2px;
+}
+
+.fit[aria-pressed='true'] {
+  background: rgb(59 111 224 / 14%);
+  color: #2f5fd0;
+}
+
+.input {
+  width: 3.6em;
+  padding: 0 0.3em;
+  background: #ffffff;
+  color: #1c1c1f;
+  text-align: center;
+  outline: 2px solid #3b6fe0;
+  outline-offset: -2px;
+  cursor: text;
+}

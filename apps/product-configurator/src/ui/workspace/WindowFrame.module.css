@@ -66,14 +66,19 @@
   text-overflow: ellipsis;
 }
 
+/* The page zoom, then the buttons, at the right end. */
+.zoom {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .actions {
   display: flex;
   flex-shrink: 0;
   gap: 2px;
-  margin-left: auto;
 }
 
-.move,
 .button {
   height: 40px;
   border: 0;
@@ -84,11 +89,6 @@
   cursor: pointer;
 }
 
-.move {
-  max-width: 120px;
-  padding: 0 6px;
-}
-
 .button {
   display: grid;
   place-items: center;
@@ -97,7 +97,6 @@
   font-size: 22px;
 }
 
-.move:hover,
 .button:hover {
   background: rgb(0 0 0 / 8%);
 }
@@ -111,10 +110,18 @@
   color: #ffffff;
 }
 
-.move:focus-visible,
 .button:focus-visible {
   outline: 2px solid #3b6fe0;
   outline-offset: -2px;
+}
+
+/* A blank window's site picker, on the screen's own colour (it is the empty screen's). */
+.blankBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #1d2433;
 }
 
 /* What the site fills; the page inside may be laid out larger or smaller (zoom). */
@@ -246,22 +253,10 @@
   .button {
     width: 38px;
   }
-
-  .move {
-    max-width: 96px;
-  }
 }
 
 @container (max-width: 360px) {
-  .icon,
-  .external {
-    display: none;
-  }
-}
-
-/* Dragging the title bar still moves the window to another screen. */
-@container (max-width: 270px) {
-  .move {
+  .icon {
     display: none;
   }
 }
@@ -294,7 +289,6 @@
     display: grid;
     width: 112px;
     height: 80px;
-    margin-left: auto;
     border-radius: 16px;
     background: rgb(0 0 0 / 8%);
     font-size: 56px;

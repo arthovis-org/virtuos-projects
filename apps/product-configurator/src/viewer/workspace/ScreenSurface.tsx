@@ -1,5 +1,5 @@
 import { Fragment, useLayoutEffect, useRef } from 'react';
-import type { Screen, WorkspaceWindow } from '@/catalog/schema';
+import type { WorkspaceWindow } from '@/catalog/schema';
 import { currentDesk, screenWeights, SINGLE_DESK } from '@/state/setup';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore, type ScreenSurfaceInfo, type WindowDrag } from '@/state/viewStore';
@@ -13,8 +13,6 @@ import styles from './ScreenSurface.module.css';
 interface ScreenSurfaceProps {
   surface: ScreenSurfaceInfo;
   windows: readonly WorkspaceWindow[];
-  /** Screens a window can be moved to. */
-  targets: readonly Screen[];
   /** Closed workspace windows, which an empty screen offers to reopen. */
   closed: readonly WorkspaceWindow[];
 }
@@ -25,7 +23,7 @@ interface ScreenSurfaceProps {
  * same pixel density, so text is the same physical size everywhere and a portrait screen gets
  * the narrow layout a real one would.
  */
-export function ScreenSurface({ surface, windows, targets, closed }: ScreenSurfaceProps) {
+export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) {
   const { screen, widthPx, heightPx } = surface;
   const ref = useRef<HTMLDivElement>(null);
   const portrait = heightPx > widthPx;
@@ -62,12 +60,7 @@ export function ScreenSurface({ surface, windows, targets, closed }: ScreenSurfa
         windows.map((window, i) => (
           <Fragment key={window.id}>
             {i > 0 && <Divider screenId={screen.id} windows={ids} index={i} stacked={portrait} />}
-            <WindowFrame
-              window={window}
-              screenId={screen.id}
-              screens={targets}
-              grow={weights[i] ?? 1}
-            />
+            <WindowFrame window={window} screenId={screen.id} grow={weights[i] ?? 1} />
           </Fragment>
         ))
       )}
@@ -100,6 +93,9 @@ function dropDescription(drag: WindowDrag, windows: readonly WorkspaceWindow[]) 
     case 'before':
     case 'after':
       return `Next to ${other ?? 'this window'}`;
+    case 'split-before':
+    case 'split-after':
+      return `${drag.title} here, a new window beside it`;
     default:
       return `Move ${drag.title} here`;
   }

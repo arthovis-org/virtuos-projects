@@ -1,19 +1,27 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
-import type { Screen, WorkspaceWindow } from '@/catalog/schema';
+import type { WorkspaceWindow } from '@/catalog/schema';
 import { framesAnySite } from '@/desktop';
-import { currentDesk, FIT_WIDTH, stepZoom, ZOOM_STEPS, type WindowZoom } from '@/state/setup';
+import {
+  currentDesk,
+  FIT_WIDTH,
+  isBlankWindow,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  type WindowZoom,
+} from '@/state/setup';
 import { useSetupStore } from '@/state/setupStore';
+import { useSiteZoomStore } from '@/state/siteZoomStore';
 import { useViewStore } from '@/state/viewStore';
 import { useEmbeddable } from './embeddable';
+import { BlankWindowPicker } from './EmptyScreen';
 import { screenUrl } from './embedUrls';
 import { siteUrl } from './siteUrl';
+import { ZoomControl } from './ZoomControl';
 import styles from './WindowFrame.module.css';
 
 interface WindowFrameProps {
   window: WorkspaceWindow;
   screenId: string;
-  /** Screens the window can move to (the visible ones). */
-  screens: readonly Screen[];
   /** Share of the screen, as a flex weight against the other windows on it. */
   grow: number;
 }
@@ -27,13 +35,12 @@ const SANDBOX =
   'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals';
 
 /**
- * One website on a screen: a title bar to drag it between screens, move it from a menu, zoom
- * the camera to its screen, open the site in a new tab (for sites that refuse to be shown
- * inside another page) or close it, and the site itself in an iframe.
+ * One website on a screen: a title bar to drag it between screens, set its page zoom, zoom the
+ * camera to its screen or close it, and the site itself in an iframe. (On touch screens a
+ * menu also moves it to another screen and opens it in a new tab: see WindowMenu.)
  */
-export function WindowFrame({ window: win, screenId, screens, grow }: WindowFrameProps) {
+export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
   const startDrag = useViewStore((s) => s.startDrag);
-  const moveWindow = useSetupStore((s) => s.moveWindow);
   const setFocus = useViewStore((s) => s.setFocus);
   const closeWindow = useSetupStore((s) => s.closeWindow);
   const setMenu = useViewStore((s) => s.setMenu);
@@ -45,14 +52,23 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   // The title bar and "open in a new tab" name the page as given, or in the app what it shows.
   const shownUrl = siteUrl(screenUrl(win.url));
   const url = framesAnySite ? shownUrl : siteUrl(win.url);
-  const host = new URL(url).host;
+  // A blank window (a split's other half) has no site yet: a picker instead (isBlankWindow).
+  const blank = isBlankWindow(win);
+  const host = blank ? '' : new URL(url).host;
   const embeddable = useEmbeddable(win.url);
   // A blocked site shown anyway, to see for oneself that it stays blank.
   const [tryAnyway, setTryAnyway] = useState(false);
-  const zoom = useSetupStore((s) => (currentDesk(s) ?? s.single).windows.zoom?.[win.id]) ?? 1;
+  // The window's own zoom (saved in layouts), else the zoom this browser remembers for the site.
+  const ownZoom = useSetupStore((s) => (currentDesk(s) ?? s.single).windows.zoom?.[win.id]);
+  const siteZoom = useSiteZoomStore((s) => s.zooms[host]);
+  const zoom = ownZoom ?? siteZoom ?? 1;
+  const zoomWindow = useSetupStore((s) => s.zoomWindow);
+  const rememberZoom = useSiteZoomStore((s) => s.remember);
   const [zoomBox, setZoomBox] = useState<HTMLDivElement | null>(null);
-  const factor = useZoomFactor(zoom, zoomBox);
-  const [zoomOpen, setZoomOpen] = useState(false);
+  // While the percentage is dragged, the page follows it; the zoom is set when the drag ends.
+  const [preview, setPreview] = useState<number | null>(null);
+  const fitted = useZoomFactor(zoom, zoomBox);
+  const factor = preview ?? fitted;
 
   // Only starts the drag; the move and release are followed on the whole window (see
   // WorkspaceLayer), which keeps working even where pointer capture is unavailable.
@@ -79,7 +95,7 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
         onClick={onTitleClick}
         title="Drag onto another screen"
       >
-        {!iconFailed && (
+        {!iconFailed && !blank && (
           <img
             className={styles.icon}
             src={`https://${host}/favicon.ico`}
@@ -92,6 +108,20 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
         )}
         <span className={styles.title}>{win.title}</span>
         <span className={styles.host}>{host}</span>
+        <div className={styles.zoom}>
+          {!blank && (
+            <ZoomControl
+              title={win.title}
+              zoom={zoom}
+              factor={factor}
+              onPreview={setPreview}
+              onZoom={(next) => {
+                zoomWindow(win.id, next);
+                rememberZoom(host, next);
+              }}
+            />
+          )}
+        </div>
         {/* Touch screens: one big button for the window's menu, instead of the row below. */}
         <button
           type="button"
@@ -102,38 +132,6 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
           ⋯
         </button>
         <div className={styles.actions}>
-          <select
-            className={styles.move}
-            aria-label={`Move ${win.title} to another screen`}
-            value={screenId}
-            onChange={(event) => moveWindow(win.id, event.target.value)}
-          >
-            {screens.map((screen) => (
-              <option key={screen.id} value={screen.id}>
-                {screen.label}
-              </option>
-            ))}
-          </select>
-          <div className={styles.zoomAnchor}>
-            <button
-              type="button"
-              className={styles.zoomButton}
-              aria-label={`Zoom of ${win.title}: ${zoomLabel(zoom, factor)}`}
-              aria-expanded={zoomOpen}
-              title="Page zoom"
-              onClick={() => setZoomOpen((open) => !open)}
-            >
-              {zoomLabel(zoom, factor)}
-            </button>
-            {zoomOpen && (
-              <ZoomMenu
-                windowId={win.id}
-                zoom={zoom}
-                factor={factor}
-                onClose={() => setZoomOpen(false)}
-              />
-            )}
-          </div>
           <button
             type="button"
             className={`${styles.button} ${styles.focus}`}
@@ -143,16 +141,6 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
           >
             {focused ? '⤡' : '⤢'}
           </button>
-          <a
-            className={`${styles.button} ${styles.external}`}
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Open ${win.title} in a new tab`}
-            title="Open in a new tab (if the site stays blank here)"
-          >
-            ↗
-          </a>
           <button
             type="button"
             className={`${styles.button} ${styles.close}`}
@@ -164,7 +152,11 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
           </button>
         </div>
       </div>
-      {embeddable || tryAnyway ? (
+      {blank ? (
+        <div className={styles.blankBody}>
+          <BlankWindowPicker screenId={screenId} blankId={win.id} />
+        </div>
+      ) : embeddable || tryAnyway ? (
         <>
           {/* Trying a blocked site anyway: it usually stays blank; say why, and go back. */}
           {!embeddable && (
@@ -221,11 +213,6 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   );
 }
 
-/** A zoom as the title bar shows it. */
-function zoomLabel(zoom: WindowZoom, factor: number): string {
-  return zoom === 'fit' ? 'Fit' : `${Math.round(factor * 100)}%`;
-}
-
 /**
  * The factor a window's page is scaled by: its zoom, or for 'fit' the width of the box the
  * page fills over the desktop width the page is laid out at.
@@ -241,80 +228,4 @@ function useZoomFactor(zoom: WindowZoom, box: HTMLElement | null): number {
   }, [box, zoom]);
   if (zoom !== 'fit') return zoom;
   return width > 0 ? Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, width / FIT_WIDTH)) : 1;
-}
-
-const MIN_ZOOM = ZOOM_STEPS[0] ?? 0.25;
-const MAX_ZOOM = ZOOM_STEPS.at(-1) ?? 3;
-
-/** Zoom out or in a step, fit the page to the window, or back to 100%. */
-function ZoomMenu({
-  windowId,
-  zoom,
-  factor,
-  onClose,
-}: {
-  windowId: string;
-  zoom: WindowZoom;
-  factor: number;
-  onClose: () => void;
-}) {
-  const zoomWindow = useSetupStore((s) => s.zoomWindow);
-  const menu = useRef<HTMLDivElement>(null);
-  // Closes on a press anywhere else on the configurator, or Escape. (A press inside a site
-  // doesn't reach this page; the menu stays open then.)
-  useEffect(() => {
-    const onPress = (event: Event) => {
-      if (!menu.current?.parentElement?.contains(event.target as Node)) onClose();
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('pointerdown', onPress, true);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onPress, true);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [onClose]);
-  return (
-    <div ref={menu} className={styles.zoomMenu} role="group" aria-label="Page zoom">
-      <div className={styles.zoomRow}>
-        <button
-          type="button"
-          aria-label="Zoom out"
-          disabled={factor <= MIN_ZOOM + 0.001}
-          onClick={() => zoomWindow(windowId, stepZoom(factor, -1))}
-        >
-          −
-        </button>
-        <span className={styles.zoomValue}>{Math.round(factor * 100)}%</span>
-        <button
-          type="button"
-          aria-label="Zoom in"
-          disabled={factor >= MAX_ZOOM - 0.001}
-          onClick={() => zoomWindow(windowId, stepZoom(factor, 1))}
-        >
-          +
-        </button>
-      </div>
-      <button
-        type="button"
-        className={styles.zoomOption}
-        aria-pressed={zoom === 'fit'}
-        onClick={() => zoomWindow(windowId, 'fit')}
-      >
-        Fit to window
-        <small>The whole page, as a {FIT_WIDTH}px wide browser shows it</small>
-      </button>
-      <button
-        type="button"
-        className={styles.zoomOption}
-        aria-pressed={zoom === 1}
-        onClick={() => zoomWindow(windowId, 1)}
-      >
-        Actual size
-        <small>100%</small>
-      </button>
-    </div>
-  );
 }

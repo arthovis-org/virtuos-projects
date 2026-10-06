@@ -45,27 +45,22 @@ export interface DeskWindows {
 
 /**
  * How large a window shows its site, like a browser's page zoom: a factor (1 is 100%), or
- * 'fit': the site laid out at a desktop browser's width (`FIT_WIDTH`) and scaled down to the
- * window, so a narrow screen shows the whole page instead of its edge cut off.
+ * 'fit', "Fit desktop width": the site laid out at a desktop browser's width (`FIT_WIDTH`)
+ * and scaled to the window's width, so a narrow screen shows the whole page instead of its
+ * edge cut off.
  */
 export type WindowZoom = number | 'fit';
 
 /** The width, in CSS pixels, a site is laid out at when fitted to its window. */
-export const FIT_WIDTH = 1280;
+export const FIT_WIDTH = 1440;
 
-/** A browser's zoom steps. */
-export const ZOOM_STEPS = [
-  0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3,
-];
+/** The zoom a visitor can set by hand: 10% to 500%. */
+export const MIN_ZOOM = 0.1;
+export const MAX_ZOOM = 5;
 
-/** The next zoom step in or out from a factor (a fitted window's factor, when fitted). */
-export function stepZoom(factor: number, direction: 1 | -1): number {
-  const steps = direction > 0 ? ZOOM_STEPS : [...ZOOM_STEPS].reverse();
-  return (
-    steps.find((s) => (direction > 0 ? s > factor + 0.001 : s < factor - 0.001)) ??
-    steps.at(-1) ??
-    1
-  );
+/** A factor within the hand-set range, to a whole percent. */
+export function clampZoom(factor: number): number {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(factor * 100) / 100));
 }
 
 /** A window's zoom set to `zoom`; 100% is no entry. */
@@ -80,11 +75,11 @@ export function setWindowZoom(
   return { ...windows, zoom: zoom === 1 ? rest : { ...rest, [windowId]: zoom } };
 }
 
-/** A stored zoom, if it is one (loaded layouts): a factor within the steps, or 'fit'. */
+/** A stored zoom, if it is one (loaded layouts, the browser's memory): within range, or 'fit'. */
 export function validZoom(value: unknown): WindowZoom | null {
   if (value === 'fit') return 'fit';
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  return Math.min(ZOOM_STEPS.at(-1) ?? 3, Math.max(ZOOM_STEPS[0] ?? 0.25, value));
+  return clampZoom(value);
 }
 
 export interface ScreenSizes {
@@ -120,8 +115,12 @@ export interface Setup {
   activeDeskId: string | null;
 }
 
-/** What dropping a dragged window does (see `dropWindow`). */
-export type DropAction = 'move' | 'before' | 'after' | 'swap';
+/**
+ * What dropping a dragged window does (see `dropWindow`). 'split-before' and 'split-after':
+ * dropped on its own edge, the window takes that half of its place (before: left, or top on a
+ * portrait screen) and a blank window the other.
+ */
+export type DropAction = 'move' | 'before' | 'after' | 'swap' | 'split-before' | 'split-after';
 
 /** Where a dragged window lands: a screen, or next to (or in place of) a window on it. */
 export interface DropPlace {
@@ -153,6 +152,12 @@ export function initialWindows(workspace: Workspace | undefined): DeskWindows {
   };
 }
 
+/**
+ * A blank window: a window with no site yet, made by splitting a window in two (dropping it on
+ * its own edge). It shows a site picker, and picking turns it into that site where it is.
+ */
+export const isBlankWindow = (w: { url: string }) => w.url === '';
+
 /** The windows on show: the workspace's own that are still open, and the visitor's. */
 export function openWindows(
   workspace: Workspace | undefined,
@@ -162,10 +167,12 @@ export function openWindows(
   return [...(workspace?.windows ?? []).filter((w) => !closed.includes(w.id)), ...opened];
 }
 
-/** A desk's open windows. */
+/** A desk's open windows with a site (not blank ones): for its sheet rows and posters. */
 export function deskWindows(product: ProductDefinition, desk: DeskSetup): WorkspaceWindow[] {
   const workspace = workspaceById(product, desk.workspaceId);
-  return openWindows(workspace, desk.windows.closed, desk.windows.opened);
+  return openWindows(workspace, desk.windows.closed, desk.windows.opened).filter(
+    (w) => !isBlankWindow(w),
+  );
 }
 
 /**
@@ -224,6 +231,9 @@ export function dropWindow(
   place: DropPlace,
 ): DeskWindows {
   const id = windowId;
+  if (place.action === 'split-before' || place.action === 'split-after') {
+    return splitWindow(windows, id, place.screen, place.action === 'split-before');
+  }
   const other = place.windowId;
   const placement = { ...windows.placement, [id]: place.screen };
   if (place.action === 'swap' && other) {
@@ -236,6 +246,63 @@ export function dropWindow(
   if (at < 0) return { ...windows, placement, order: [...rest, id] };
   rest.splice(place.action === 'after' ? at + 1 : at, 0, id);
   return { ...windows, placement, order: rest };
+}
+
+let blankCount = 0;
+
+/**
+ * A window split in two where it is: it keeps one half (the first, left or top, when
+ * `windowFirst`) and a blank window takes the other.
+ */
+export function splitWindow(
+  windows: DeskWindows,
+  windowId: string,
+  screenId: string,
+  windowFirst: boolean,
+): DeskWindows {
+  const blank = `blank-${Date.now().toString(36)}-${++blankCount}`;
+  const order = windows.order.filter((w) => w !== blank);
+  const at = order.indexOf(windowId);
+  order.splice(at < 0 ? order.length : windowFirst ? at + 1 : at, 0, blank);
+  return {
+    ...windows,
+    opened: [...windows.opened, { id: blank, title: 'New window', url: '', screen: screenId }],
+    placement: { ...windows.placement, [windowId]: screenId, [blank]: screenId },
+    order: at < 0 ? [...order.filter((w) => w !== windowId), windowId] : order,
+  };
+}
+
+/**
+ * A blank window turned into a site, where it is. A closed workspace window (with its id)
+ * reopens in its place.
+ */
+export function fillBlank(
+  windows: DeskWindows,
+  blankId: string,
+  site: { id?: string | undefined; title: string; url: string },
+): DeskWindows {
+  const blank = windows.opened.find((w) => w.id === blankId);
+  if (!blank) return windows;
+  if (!site.id) {
+    return {
+      ...windows,
+      opened: windows.opened.map((w) =>
+        w.id === blankId ? { ...w, title: site.title, url: site.url } : w,
+      ),
+    };
+  }
+  const screen = windows.placement[blankId] ?? blank.screen;
+  const reopened = site.id;
+  const placement = Object.fromEntries(
+    Object.entries(windows.placement).filter(([id]) => id !== blankId),
+  );
+  return {
+    ...windows,
+    opened: windows.opened.filter((w) => w.id !== blankId),
+    closed: windows.closed.filter((w) => w !== reopened),
+    placement: { ...placement, [reopened]: screen },
+    order: windows.order.filter((w) => w !== reopened).map((w) => (w === blankId ? reopened : w)),
+  };
 }
 
 export function moveWindow(windows: DeskWindows, windowId: string, screenId: string): DeskWindows {

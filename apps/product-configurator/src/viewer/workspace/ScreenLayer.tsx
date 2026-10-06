@@ -100,7 +100,6 @@ export function ScreenLayer() {
     surfaces.map((s) => s.screen.id),
     primaryScreen,
   );
-  const targets = surfaces.map((s) => s.screen);
 
   return (
     <div ref={layer} className={styles.layer}>
@@ -110,7 +109,6 @@ export function ScreenLayer() {
             key={surface.screen.id}
             surface={surface}
             windows={layout.get(surface.screen.id) ?? []}
-            targets={targets}
             closed={closedWindows}
           />
         ))}

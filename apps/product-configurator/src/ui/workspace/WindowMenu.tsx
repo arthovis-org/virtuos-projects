@@ -1,4 +1,4 @@
-import { layoutWindows } from '@/state/setup';
+import { isBlankWindow, layoutWindows } from '@/state/setup';
 import { useCurrentWindows, useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
 import { siteUrl } from './siteUrl';
@@ -34,6 +34,8 @@ export function WindowMenu() {
   );
   const screenId = [...layout].find(([, list]) => list.some((w) => w.id === win.id))?.[0];
   const url = siteUrl(win.url);
+  // A blank window has no site to name or open yet.
+  const blank = isBlankWindow(win);
   const done = () => setMenu(null);
   const zoomed = focus !== null && focus === screenId;
 
@@ -47,7 +49,7 @@ export function WindowMenu() {
       >
         <div className={styles.header}>
           <span className={styles.title}>{win.title}</span>
-          <span className={styles.host}>{new URL(url).host}</span>
+          {!blank && <span className={styles.host}>{new URL(url).host}</span>}
         </div>
         <div className={styles.actions}>
           {screenId && (
@@ -63,10 +65,12 @@ export function WindowMenu() {
               {zoomed ? 'Show all screens' : 'Zoom to this screen'}
             </button>
           )}
-          <a className={styles.action} href={url} target="_blank" rel="noreferrer" onClick={done}>
-            <span aria-hidden="true">↗</span>
-            Open in a new tab
-          </a>
+          {!blank && (
+            <a className={styles.action} href={url} target="_blank" rel="noreferrer" onClick={done}>
+              <span aria-hidden="true">↗</span>
+              Open in a new tab
+            </a>
+          )}
           <button
             type="button"
             className={`${styles.action} ${styles.danger}`}

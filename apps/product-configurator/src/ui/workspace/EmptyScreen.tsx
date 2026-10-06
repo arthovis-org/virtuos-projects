@@ -10,6 +10,8 @@ interface EmptyScreenProps {
   screen: Screen;
   /** Workspace windows the visitor closed, offered to reopen here. */
   closed: readonly WorkspaceWindow[];
+  /** A blank window this picker is in: picking turns it into the site (else a new window). */
+  blankId?: string | undefined;
 }
 
 interface SiteGroup {
@@ -23,10 +25,15 @@ interface SiteGroup {
  * the sites of every workspace (this one first) and a few tools are one click away, and any
  * https address can be typed.
  */
-export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
+export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
   const product = useProduct();
   const { workspaceId, opened } = useCurrentWindows();
   const openWindow = useSetupStore((s) => s.openWindow);
+  const fillBlank = useSetupStore((s) => s.fillBlank);
+  const open = (site: { id?: string; title: string; url: string }) => {
+    if (blankId) fillBlank(blankId, site);
+    else openWindow(screen.id, site);
+  };
 
   // Every workspace's sites, each once, leaving out this workspace's own (on a screen, or
   // offered to reopen above) and the sites the visitor opened.
@@ -58,13 +65,15 @@ export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
       setError(site.error);
       return;
     }
-    openWindow(screen.id, site);
+    open(site);
   };
 
   return (
     <div className={styles.empty}>
-      <p className={styles.heading}>{screen.label} screen</p>
-      <p className={styles.hint}>Drag a window here, or open a site:</p>
+      <p className={styles.heading}>{blankId ? 'New window' : `${screen.label} screen`}</p>
+      <p className={styles.hint}>
+        {blankId ? 'Open a site in this window:' : 'Drag a window here, or open a site:'}
+      </p>
 
       <form className={styles.form} onSubmit={submit}>
         <input
@@ -94,12 +103,7 @@ export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
           <span className={styles.groupLabel}>Reopen</span>
           <div className={styles.chips}>
             {closed.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                className={styles.chip}
-                onClick={() => openWindow(screen.id, w)}
-              >
+              <button key={w.id} type="button" className={styles.chip} onClick={() => open(w)}>
                 {w.title}
               </button>
             ))}
@@ -121,7 +125,7 @@ export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
                   key={site.url}
                   type="button"
                   className={styles.chip}
-                  onClick={() => openWindow(screen.id, { title: site.title, url: site.url })}
+                  onClick={() => open({ title: site.title, url: site.url })}
                 >
                   {site.title}
                 </button>
@@ -135,4 +139,16 @@ export function EmptyScreen({ screen, closed }: EmptyScreenProps) {
       </p>
     </div>
   );
+}
+
+/** The site picker in a blank window: the empty screen's, for that window. */
+export function BlankWindowPicker({ screenId, blankId }: { screenId: string; blankId: string }) {
+  const product = useProduct();
+  const { workspaceId, closed } = useCurrentWindows();
+  const screen = product.screens.find((s) => s.id === screenId);
+  if (!screen) return null;
+  const closedWindows = (workspaceById(product, workspaceId)?.windows ?? []).filter((w) =>
+    closed.includes(w.id),
+  );
+  return <EmptyScreen screen={screen} closed={closedWindows} blankId={blankId} />;
 }
