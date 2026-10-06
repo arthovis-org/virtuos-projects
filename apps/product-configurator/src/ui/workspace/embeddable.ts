@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { getProduct } from '@/catalog';
 import { LAYOUTS_URL } from '@/layouts/layoutsApi';
+import { screenUrl } from './embedUrls';
 import { TOOLS } from './siteUrl';
 
 const STORAGE_KEY = 'virtuos.embeddable';
@@ -43,7 +44,9 @@ function known(url: string): boolean {
 }
 
 /** Whether the site may be shown in a frame; true when it can't be told (let the browser try). */
-export function checkEmbeddable(url: string): Promise<boolean> {
+export function checkEmbeddable(link: string): Promise<boolean> {
+  // What a screen would show: the link's embeddable version when it has one.
+  const url = screenUrl(link);
   if (!LAYOUTS_URL || known(url) || !url.startsWith('https://')) return Promise.resolve(true);
   const cached = answers.get(url);
   if (cached) return cached;

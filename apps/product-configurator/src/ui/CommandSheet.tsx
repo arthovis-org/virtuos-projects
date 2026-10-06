@@ -1,5 +1,6 @@
 import {
   Ban,
+  Check,
   ChevronDown,
   Copy,
   Download,
@@ -52,6 +53,7 @@ import {
 } from '@/sheet/sheetTable';
 import { useProduct, useSetupStore } from '@/state/setupStore';
 import { useBlockedSites } from '@/ui/workspace/embeddable';
+import { embedVersion } from '@/ui/workspace/embedUrls';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 import styles from './CommandSheet.module.css';
 
@@ -854,6 +856,12 @@ function DeskCard({
                     >
                       <Trash2 size={15} aria-hidden="true" />
                     </button>
+                    {embedVersion(row.url) && !blocked.has(row.url.trim()) && (
+                      <span className={styles.siteEmbed}>
+                        <Check size={12} aria-hidden="true" /> Shown through{' '}
+                        {embedVersion(row.url)?.via}, which works on the screens.
+                      </span>
+                    )}
                     {blocked.has(row.url.trim()) && (
                       <span className={styles.siteBlocked}>
                         <Ban size={12} aria-hidden="true" /> Blocked: this site’s embedding

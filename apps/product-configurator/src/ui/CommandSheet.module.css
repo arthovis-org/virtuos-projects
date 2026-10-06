@@ -427,6 +427,16 @@
   width: 100%;
 }
 
+/* A link shown through its service's embeddable version. */
+.siteEmbed {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--success);
+}
+
 /* A site that refuses to be shown inside the page: kept, and said so. */
 .siteBlocked {
   display: inline-flex;

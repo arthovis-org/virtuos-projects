@@ -166,6 +166,7 @@ Rules:
 - Plan one desk per distinct workflow, using the main screen on every desk.
 - Choose sites that fit the workflow; a site may appear on several desks.
 - Other pages only when you are sure they are real and allow being shown inside another page (an iframe): Wikipedia articles (https://en.wikipedia.org/wiki/...) always work. Never invent addresses.
+- Links to YouTube videos, playlists and channels (/channel/UC…), Vimeo, Google Docs, Sheets, Slides, Drive files and Maps, Spotify, Figma, X posts, Twitch, Reddit posts, SoundCloud, CodePen, Loom and TradingView symbols are fine: they are shown through those services' own embed players.
 - These sites refuse to be shown inside another page, so prefer others; use one only when I ask for it by name (it is then marked as blocked for me): ${blocked.join(", ")}.
 - Never put a comma inside a cell.`;
 }

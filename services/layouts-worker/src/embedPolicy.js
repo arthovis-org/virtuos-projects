@@ -42,6 +42,7 @@ export const BLOCKED_HOSTS = [
   // Work tools and AI assistants
   "notion.so",
   "notion.com",
+  "notion.site",
   "clickup.com",
   "asana.com",
   "monday.com",
@@ -64,19 +65,39 @@ export const BLOCKED_HOSTS = [
   "robinhood.com",
 ];
 
-/** Pages made for embedding, as host (or parent domain) and path prefix. */
+/**
+ * Pages made for embedding: host (or parent domain) and a pattern for the path and query.
+ * The configurator turns ordinary links into these (src/ui/workspace/embedUrls.ts).
+ */
 export const EMBED_PAGES = [
-  { host: "youtube.com", path: "/embed/" },
-  { host: "youtube-nocookie.com", path: "/embed/" },
-  { host: "calendar.google.com", path: "/calendar/embed" },
-  { host: "google.com", path: "/maps/embed" },
-  { host: "docs.google.com", path: "/spreadsheets/d/e/" },
-  { host: "docs.google.com", path: "/document/d/e/" },
-  { host: "docs.google.com", path: "/presentation/d/e/" },
-  { host: "open.spotify.com", path: "/embed/" },
-  { host: "player.vimeo.com", path: "/video/" },
-  { host: "figma.com", path: "/embed" },
-  { host: "platform.twitter.com", path: "/embed/" },
+  { host: "youtube.com", path: /^\/embed\// },
+  { host: "youtube-nocookie.com", path: /^\/embed\// },
+  { host: "player.vimeo.com", path: /^\/video\// },
+  { host: "calendar.google.com", path: /^\/calendar\/embed/ },
+  { host: "google.com", path: /^\/maps\/embed/ },
+  { host: "google.com", path: /^\/maps.*[?&]output=embed/ },
+  { host: "maps.google.com", path: /[?&]output=embed/ },
+  // Docs, Sheets, Slides and Forms: published pages, previews and embeds.
+  {
+    host: "docs.google.com",
+    path: /^\/(document|spreadsheets|presentation|forms)\/d\/e\//,
+  },
+  {
+    host: "docs.google.com",
+    path: /^\/(document|spreadsheets)\/d\/[^/]+\/preview/,
+  },
+  { host: "docs.google.com", path: /^\/presentation\/d\/[^/]+\/embed/ },
+  {
+    host: "docs.google.com",
+    path: /^\/forms\/d\/[^/]+\/viewform.*embedded=true/,
+  },
+  { host: "drive.google.com", path: /^\/file\/d\/[^/]+\/preview/ },
+  { host: "open.spotify.com", path: /^\/embed\// },
+  { host: "figma.com", path: /^\/embed/ },
+  { host: "platform.twitter.com", path: /^\/embed\// },
+  { host: "embed.reddit.com", path: /^\// },
+  { host: "codepen.io", path: /^\/[^/]+\/embed\// },
+  { host: "loom.com", path: /^\/embed\// },
 ];
 
 /** Whether `host` is `domain` or under it. */
@@ -89,9 +110,8 @@ export const hostKey = (host) => host.toLowerCase().replace(/^www\./, "");
 /** Whether an address is a page made for embedding. */
 export function isEmbedPage(address) {
   const host = hostKey(address.hostname);
-  return EMBED_PAGES.some(
-    (p) => onDomain(host, p.host) && address.pathname.startsWith(p.path),
-  );
+  const page = address.pathname + address.search;
+  return EMBED_PAGES.some((p) => onDomain(host, p.host) && p.path.test(page));
 }
 
 /** Every site known to refuse frames: the starting list and those found since. */

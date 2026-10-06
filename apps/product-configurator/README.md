@@ -115,6 +115,12 @@ what CSV files, Google Sheets and links hold.
   addresses. Together the free plans allow about a thousand plans a day; past that the AI
   says so until the next day, and nothing is ever charged.
   **Copy a prompt** gives the same instructions to ChatGPT, Claude or Gemini instead.
+- **Embeddable versions:** links to services that refuse to be shown inside a page but offer an
+  official embed are shown through it (`src/ui/workspace/embedUrls.ts`): YouTube videos,
+  playlists and channels, Vimeo, Google Docs, Sheets, Slides, Drive files and Maps, Spotify,
+  Figma, X posts, Twitch, Reddit posts, SoundCloud, CodePen, Loom, TradingView symbols and
+  OpenStreetMap views. The sheet says so on the site; "open in a new tab" opens the link as
+  given. Sites still refusing are marked as blocked in the sheet and on the screens.
 - Paste a table anywhere in the sheet (from a spreadsheet or an AI's answer; with a header row it
   replaces the sheet), open or download a CSV, or load a Google Sheet shared as "Anyone with the
   link". Whole-sheet changes can be undone.

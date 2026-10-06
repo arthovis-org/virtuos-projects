@@ -3,6 +3,7 @@ import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
 import { useEmbeddable } from './embeddable';
+import { screenUrl } from './embedUrls';
 import { siteUrl } from './siteUrl';
 import styles from './WindowFrame.module.css';
 
@@ -37,7 +38,10 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const pressedAt = useRef<{ x: number; y: number } | null>(null);
   const focused = useViewStore((s) => s.focus === screenId);
   const [iconFailed, setIconFailed] = useState(false);
+  // The page as given (title bar, "open in a new tab") and what the screen shows: its
+  // embeddable version when it has one (a YouTube link as YouTube's player).
   const url = siteUrl(win.url);
+  const shownUrl = siteUrl(screenUrl(win.url));
   const host = new URL(url).host;
   const embeddable = useEmbeddable(win.url);
 
@@ -134,7 +138,7 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
       {embeddable ? (
         <iframe
           className={styles.frame}
-          src={url}
+          src={shownUrl}
           title={win.title}
           sandbox={SANDBOX}
           allow="fullscreen; clipboard-read; clipboard-write"
