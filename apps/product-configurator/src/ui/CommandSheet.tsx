@@ -1,4 +1,5 @@
 import {
+  Ban,
   ChevronDown,
   Copy,
   Download,
@@ -50,6 +51,7 @@ import {
   type SheetRow,
 } from '@/sheet/sheetTable';
 import { useProduct, useSetupStore } from '@/state/setupStore';
+import { useBlockedSites } from '@/ui/workspace/embeddable';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 import styles from './CommandSheet.module.css';
 
@@ -684,6 +686,8 @@ function DeskCard({
     )?.label ?? (name.trim() === '' ? (product.screens[0]?.label ?? '') : name.trim());
   const screens = [...new Set(sites.map((i) => screenLabel(rows[i]?.screen ?? '')))];
   const errors = problems.filter((p) => p.level === 'error').length;
+  // Sites that refuse to be shown inside the page: kept, and marked.
+  const blocked = useBlockedSites(sites.map((i) => rows[i]?.url ?? ''));
   const warnings = problems.length - errors;
   const problemAt = (row: number, column: SheetColumn) =>
     problems.find((p) => p.row === row && p.column === column);
@@ -727,6 +731,14 @@ function DeskCard({
           {errors === 0 && warnings > 0 && (
             <span className={`${styles.chip} ${styles.chipWarning}`}>
               {warnings} {warnings === 1 ? 'note' : 'notes'}
+            </span>
+          )}
+          {blocked.size > 0 && (
+            <span
+              className={`${styles.chip} ${styles.chipBlocked}`}
+              title="Sites that don't allow being shown inside another page"
+            >
+              {blocked.size} blocked
             </span>
           )}
         </span>
@@ -828,7 +840,10 @@ function DeskCard({
                       value={row.url}
                       placeholder="https://…"
                       inputMode="url"
-                      data-problem={problemAt(index, 'url')?.level}
+                      data-problem={
+                        problemAt(index, 'url')?.level ??
+                        (blocked.has(row.url.trim()) ? 'blocked' : undefined)
+                      }
                       onChange={(event) => update(index, 'url', event.target.value)}
                     />
                     <button
@@ -839,6 +854,12 @@ function DeskCard({
                     >
                       <Trash2 size={15} aria-hidden="true" />
                     </button>
+                    {blocked.has(row.url.trim()) && (
+                      <span className={styles.siteBlocked}>
+                        <Ban size={12} aria-hidden="true" /> Blocked: this site’s embedding
+                        restrictions keep it off the screens; it opens in its own tab instead.
+                      </span>
+                    )}
                     {rowProblems.map((p) => (
                       <span key={p.column} className={styles.siteProblem} data-level={p.level}>
                         {p.message}

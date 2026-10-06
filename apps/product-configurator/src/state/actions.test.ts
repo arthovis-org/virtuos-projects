@@ -171,3 +171,37 @@ describe('the set-up as a whole', () => {
     expect(encodeSetupSearch(product, currentSetup())).toMatch(/&desks=.*&desk=2$/);
   });
 });
+
+describe('a workspace picked at the single desk', () => {
+  it('comes along into a new room even with its sites closed', () => {
+    enterWorkspace('office');
+    view().close();
+    enterRoom();
+    expect(room()[0]!.workspaceId).toBe('office');
+    expect(room().map((d) => d.workspaceId)).toContain('finance');
+  });
+
+  it('joins a room that already exists, as the desk the visitor is at', () => {
+    enterRoom();
+    const before = room().length;
+    exitRoom();
+    enterWorkspace('travel');
+    enterRoom();
+    expect(room()).toHaveLength(before + 1);
+    expect(room().at(-1)!.workspaceId).toBe('travel');
+    expect(setup().activeDeskId).toBe(room().at(-1)!.id);
+    // Only once: going back and forth doesn't add it again.
+    exitRoom();
+    enterRoom();
+    expect(room()).toHaveLength(before + 1);
+  });
+
+  it('is not added again when the room has a desk with it', () => {
+    enterRoom();
+    const before = room().length;
+    exitRoom();
+    enterWorkspace('crypto');
+    enterRoom();
+    expect(room()).toHaveLength(before);
+  });
+});

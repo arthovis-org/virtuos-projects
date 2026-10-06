@@ -27,7 +27,7 @@
  *
  *   GET    /embed?url=<https address>                             -> 200 { embeddable }
  */
-import { embed } from "./embed.js";
+import { blockedList, embed } from "./embed.js";
 import { plan } from "./plan.js";
 
 const MAX_NAME = 80;
@@ -62,6 +62,11 @@ export default {
           });
 
     const url = new URL(request.url);
+    if (url.pathname === "/embed/blocked" && request.method === "GET") {
+      if (!allowed.includes(origin))
+        return reply(403, { error: "Origin not allowed" });
+      return blockedList(env, reply);
+    }
     if (url.pathname === "/embed") {
       if (request.method === "OPTIONS")
         return new Response(null, { status: 204, headers: cors });

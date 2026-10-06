@@ -332,6 +332,11 @@
   color: #d93036;
 }
 
+.chipBlocked {
+  background: rgb(120 120 120 / 16%);
+  color: var(--text);
+}
+
 .chipWarning {
   background: rgb(245 166 35 / 16%);
   color: #a86500;
@@ -420,6 +425,22 @@
 .site .input {
   flex: none;
   width: 100%;
+}
+
+/* A site that refuses to be shown inside the page: kept, and said so. */
+.siteBlocked {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.input[data-problem='blocked'] {
+  border-style: dashed;
+  color: var(--text-muted);
 }
 
 .siteProblem {

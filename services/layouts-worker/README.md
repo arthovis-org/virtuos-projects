@@ -53,8 +53,21 @@ browser's broken-page icon:
 GET    /embed?url=<https address>   -> 200 { embeddable, reason? }
 ```
 
-It reads the site's `X-Frame-Options` and CSP `frame-ancestors` headers (cached a day). Sites
-that refuse only from script, or answer servers differently from browsers, can't be told.
+It keeps a **list of sites that refuse frames**: a starting list in `src/embedPolicy.js`
+(Google, social networks, Notion, ChatGPT…) plus every site it finds refusing since, in the
+`blocked_sites` table. Listed sites are answered at once, without asking them; others are asked
+(their `X-Frame-Options` and CSP `frame-ancestors` headers, cached a day) and join the list when
+they refuse. Pages made for embedding on such sites (YouTube's embed player, Google Calendar and
+Maps embeds, Spotify, Figma…) are allowed (`EMBED_PAGES`). The AI planner is given the list too.
+Sites that refuse only from script, or answer servers differently from browsers, can't be told.
+
+```
+GET    /embed/blocked   -> 200 { hosts: [...] }   the whole list
+npx wrangler d1 execute virtuos-layouts --remote --command "SELECT host, reason, datetime(found_at/1000,'unixepoch') FROM blocked_sites ORDER BY found_at DESC"
+```
+
+To take a site off the list (it changed its mind):
+`npx wrangler d1 execute virtuos-layouts --remote --command "DELETE FROM blocked_sites WHERE host='example.com'"`.
 
 The key goes in `Authorization: Bearer <key>`. Only the sites in `ALLOWED_ORIGINS`
 (`wrangler.toml`) may call it. Limits: names up to 80 characters, layouts up to 256 KB, 30 new

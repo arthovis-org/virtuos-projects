@@ -75,17 +75,13 @@ function Refit() {
   const deskCount = useSetupStore((s) => s.room.length);
   // Looking around the desk the visitor is at: the camera is theirs, not the room's.
   const aroundDesk = useViewStore((s) => s.aroundDesk);
-  // Panels over the top and bottom of the viewer (the live demo card, the toolbar, the desk
-  // bar): the view is framed in the space between them, so they never cover the desks.
-  const insetTop = Math.round(useViewStore((s) => s.hudInset));
-  const insetBottom = Math.round(useViewStore((s) => s.hudInsetBottom));
   const wasAround = useRef(false);
   const fitted = useRef<string | null>(null);
   const flight = useRef<Flight | null>(null);
   const wasSeated = useRef(false);
 
   useEffect(() => {
-    const key = `${width}x${height}:${desksMode ? deskCount : 'single'}:${insetTop}/${insetBottom}`;
+    const key = `${width}x${height}:${desksMode ? deskCount : 'single'}`;
     // The camera was just handed back in the room (the visitor stood up): to the overview,
     // never back to wherever the camera was before they sat down.
     const backInRoom =
@@ -108,27 +104,12 @@ function Refit() {
     const aim = desksMode
       ? new Vector3(0, Math.sin(elevation), Math.cos(elevation))
       : camera.position.clone().sub(target).normalize();
-    // Fit into the free band between the panels: a camera seeing only that band (narrower
-    // field of view, wider aspect), then shift the view so the band's middle is on the desks.
-    const perspective = camera as PerspectiveCamera;
-    const free = Math.max(height * 0.45, height - insetTop - insetBottom);
-    const halfFov = MathUtils.degToRad(perspective.fov) / 2;
-    const band = perspective.clone();
-    band.fov = MathUtils.radToDeg(2 * Math.atan((Math.tan(halfFov) * free) / height));
-    band.aspect = width / free;
-    band.updateProjectionMatrix();
-    const distance = fitDistance(box, center, aim, band) * FIT_MARGIN;
-    // Pixels the band's middle sits below the viewer's, as a distance at the desks; moving
-    // camera and target up the screen by it puts the desks in the band.
-    const metresPerPixel = (2 * distance * Math.tan(halfFov)) / height;
-    const screenUp = new Vector3(0, 1, 0).addScaledVector(aim, -aim.y).normalize();
-    const lift = screenUp.multiplyScalar(((insetTop - insetBottom) / 2) * metresPerPixel);
-    const toTarget = center.clone().add(lift);
+    const distance = fitDistance(box, center, aim, camera as PerspectiveCamera) * FIT_MARGIN;
     flight.current = {
       from: camera.position.clone(),
       fromTarget: target.clone(),
-      to: toTarget.clone().addScaledVector(aim, distance),
-      toTarget,
+      to: center.clone().addScaledVector(aim, distance),
+      toTarget: center.clone(),
       // The first framing is there at once; later ones fly.
       t: first ? 1 : 0,
       started: false,
@@ -145,8 +126,6 @@ function Refit() {
     desksMode,
     deskCount,
     aroundDesk,
-    insetTop,
-    insetBottom,
   ]);
 
   // Dragging takes the camera over.

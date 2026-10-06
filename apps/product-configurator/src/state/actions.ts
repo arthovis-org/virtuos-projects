@@ -73,7 +73,7 @@ export function exitRoom() {
 export function enterWorkspace(workspaceId?: string) {
   const desk = currentDesk(setup());
   if (!desk) return;
-  if (workspaceId) setup().setDeskWorkspace(desk.id, workspaceId);
+  if (workspaceId) setup().chooseWorkspace(desk.id, workspaceId);
   view().showSites(true);
 }
 
@@ -81,7 +81,7 @@ export function enterWorkspace(workspaceId?: string) {
 export function switchWorkspace(workspaceId: string) {
   const desk = currentDesk(setup());
   if (!desk) return;
-  setup().setDeskWorkspace(desk.id, workspaceId);
+  setup().chooseWorkspace(desk.id, workspaceId);
   view().setFocus(null);
 }
 

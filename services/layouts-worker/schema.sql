@@ -13,3 +13,13 @@ CREATE TABLE IF NOT EXISTS layouts (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+-- Sites found refusing to be shown inside another page (X-Frame-Options / frame-ancestors),
+-- added by GET /embed as visitors try them; the starting list is in src/embedPolicy.js.
+CREATE TABLE IF NOT EXISTS blocked_sites (
+  -- Lowercase host without "www.", e.g. notion.so; it covers its subdomains.
+  host TEXT PRIMARY KEY,
+  -- x-frame-options or frame-ancestors.
+  reason TEXT NOT NULL,
+  found_at INTEGER NOT NULL
+);

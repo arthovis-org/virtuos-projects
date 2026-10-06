@@ -120,7 +120,7 @@ describe('a desk created with AI from the desk bar', () => {
 });
 
 describe('sites that refuse to be shown inside the page', () => {
-  it('are left out of the AI’s plan, and named', async () => {
+  it('stay in the AI’s plan, and are named', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: string) =>
@@ -138,13 +138,13 @@ describe('sites that refuse to be shown inside the page', () => {
       ),
     );
     const message = await sheet().planWithAI('Productivity', { kind: 'replace' });
-    expect(
-      sheet()
-        .rows.filter((r) => r.url)
-        .map((r) => r.url),
-    ).toEqual(['https://ok.example/']);
-    // The desk whose only site was blocked stays, with its theme's own sites.
+    // Blocked sites stay in the plan (marked in the sheet and on the screens).
+    expect(sheet().rows.map((r) => r.url)).toEqual([
+      'https://www.notion.so/',
+      'https://ok.example/',
+      'https://www.notion.so/x',
+    ]);
     expect(names()).toEqual(['Work', 'Notes']);
-    expect(message).toContain('notion.so');
+    expect(message).toContain('embedding restrictions (notion.so)');
   });
 });

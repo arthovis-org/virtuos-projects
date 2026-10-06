@@ -52,6 +52,11 @@ export interface DeskSetup {
   workspaceId: string;
   /** The visitor's name for the desk; else the workspace's (see `deskName`). */
   name?: string;
+  /**
+   * The visitor picked this desk's workspace (at the single desk): it comes along into the
+   * room, not just the default one every single desk starts with.
+   */
+  workspaceChosen?: boolean;
   selections: Selections;
   /** Where each motion (the desk height) is set, by motion id; unset until known. */
   motions: Readonly<Record<string, number>>;
@@ -277,7 +282,7 @@ export function starterRoom(
   single: DeskSetup,
   bringWorkspace: boolean,
 ): DeskSetup[] {
-  const firstId = bringWorkspace ? single.workspaceId : null;
+  const firstId = bringWorkspace || single.workspaceChosen ? single.workspaceId : null;
   const ids = [firstId, ...STARTER_DESKS.filter((id) => id !== firstId)];
   const known = (id: string | null) => product.workspaces.find((w) => w.id === id);
   let themes = ids.flatMap((id) => known(id) ?? []);
@@ -285,15 +290,31 @@ export function starterRoom(
   const [first, ...others] = themes;
   if (!first) return [];
   const sameWorkspace = first.id === single.workspaceId;
+  const desk: DeskSetup = { ...single };
+  delete desk.workspaceChosen;
   return [
     {
-      ...single,
+      ...desk,
       id: newDeskId(),
       workspaceId: first.id,
       windows: sameWorkspace ? single.windows : initialWindows(first),
     },
     ...others.map((w) => newDesk(product, w.id)),
   ];
+}
+
+/**
+ * The room the visitor comes back to: as they left it, plus the single desk when they picked
+ * a workspace there that no desk in the room has (it joins as a new desk and is the one they
+ * are at). Returns null when nothing changes.
+ */
+export function roomWithSingle(setup: Setup): Pick<Setup, 'room' | 'activeDeskId'> | null {
+  const { single, room } = setup;
+  if (!single.workspaceChosen || room.length >= MAX_DESKS) return null;
+  if (room.some((d) => d.workspaceId === single.workspaceId)) return null;
+  const joined: DeskSetup = { ...single, id: newDeskId() };
+  delete joined.workspaceChosen;
+  return { room: [...room, joined], activeDeskId: joined.id };
 }
 
 /** The desk the panel and the live sites belong to: the single desk, or the active room desk. */

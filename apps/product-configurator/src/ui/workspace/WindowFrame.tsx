@@ -145,10 +145,10 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
         // The site refuses to be shown inside another page: say so, instead of the
         // browser's broken-page icon.
         <div className={styles.blocked}>
-          <p className={styles.blockedTitle}>{host} can’t be shown here</p>
+          <p className={styles.blockedTitle}>{host} is blocked</p>
           <p className={styles.blockedText}>
-            This site doesn’t allow other pages to show it. Open it in its own tab, or put another
-            site on this screen.
+            Its embedding restrictions don’t allow other pages to show it, so it can’t appear on
+            this screen. Open it in its own tab instead.
           </p>
           <a className={styles.blockedLink} href={url} target="_blank" rel="noreferrer">
             Open {host} ↗

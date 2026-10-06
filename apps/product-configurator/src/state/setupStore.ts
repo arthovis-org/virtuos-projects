@@ -26,6 +26,7 @@ import {
   newDesk,
   newDeskId,
   openWindow,
+  roomWithSingle,
   starterRoom,
   updateDesk,
   withWorkspace,
@@ -67,6 +68,8 @@ interface SetupState extends Setup {
   // Desks.
   /** Gives a desk another workspace (and that workspace's windows). */
   setDeskWorkspace: (deskId: string, workspaceId: string) => void;
+  /** The visitor picks a desk's workspace: as `setDeskWorkspace`, and it is remembered as theirs. */
+  chooseWorkspace: (deskId: string, workspaceId: string) => void;
   renameDesk: (deskId: string, name: string) => void;
 
   // The room.
@@ -152,6 +155,13 @@ export const useSetupStore = create<SetupState>()((set, get) => {
       set((setup) =>
         updateDesk(setup, deskId, (desk) => withWorkspace(productOf(setup), desk, workspaceId)),
       ),
+    chooseWorkspace: (deskId, workspaceId) =>
+      set((setup) =>
+        updateDesk(setup, deskId, (desk) => ({
+          ...withWorkspace(productOf(setup), desk, workspaceId),
+          workspaceChosen: true,
+        })),
+      ),
     renameDesk: (deskId, name) =>
       set((setup) =>
         updateDesk(setup, deskId, (desk) => {
@@ -164,12 +174,14 @@ export const useSetupStore = create<SetupState>()((set, get) => {
     enterRoom: (bringWorkspace) => {
       const setup = get();
       if (setup.mode === 'desks') return;
+      // The single desk's picked workspace comes along once; picking again brings it again.
+      const single = { ...setup.single, workspaceChosen: false };
       if (setup.room.length > 0) {
-        set({ mode: 'desks' });
+        set({ mode: 'desks', single, ...roomWithSingle(setup) });
         return;
       }
       const room = starterRoom(productOf(setup), setup.single, bringWorkspace);
-      if (room.length > 0) set({ mode: 'desks', room, activeDeskId: null });
+      if (room.length > 0) set({ mode: 'desks', single, room, activeDeskId: null });
     },
     exitRoom: () => set({ mode: 'single' }),
 

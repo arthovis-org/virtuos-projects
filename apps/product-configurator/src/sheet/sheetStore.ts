@@ -83,14 +83,14 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
     const rows = get().rows;
     const desks = deskGroups(rows);
     const count = (n: number) => `${n} ${n === 1 ? 'desk' : 'desks'}`;
-    // Sites the AI suggested that refuse to be shown inside the page are left out; say which.
+    // Sites in the plan that refuse to be shown inside the page stay, marked; say which.
     let note = '';
     const ask = async (current?: readonly SheetRow[]) => {
       const planned = await planWithAI(product(), workflow, current);
       const n = planned.blocked.length;
       if (n > 0) {
-        const sites = n === 1 ? 'a site' : `${n} sites`;
-        note = ` Left out ${sites} that can’t be shown inside the page (${planned.blocked.join(', ')}).`;
+        const sites = n === 1 ? 'A site' : `${n} sites`;
+        note = ` ${sites} can’t be shown inside the page because of embedding restrictions (${planned.blocked.join(', ')}); marked as blocked.`;
       }
       return planned.rows;
     };

@@ -5,10 +5,20 @@
  *
  *   GET /embed?url=<https address>  -> 200 { embeddable: boolean, reason? }
  *
- * Read from the response headers: `X-Frame-Options` (DENY / SAMEORIGIN) and the
- * Content-Security-Policy `frame-ancestors` directive. Sites that only refuse from script
+ *   GET /embed/blocked              -> 200 { hosts: [...] }   (the list, for a look)
+ *
+ * Pages made for embedding (embedPolicy.js) are fine at once, and sites on the list of those
+ * known to refuse are refused at once, without asking them. Others are asked: their response
+ * headers `X-Frame-Options` (DENY / SAMEORIGIN) and Content-Security-Policy `frame-ancestors`
+ * tell; a site found refusing joins the list for good. Sites that only refuse from script
  * can't be told this way and count as embeddable. Answers are cached for a day.
  */
+import {
+  blockedHosts,
+  isEmbedPage,
+  knownBlocked,
+  rememberBlocked,
+} from "./embedPolicy.js";
 
 const TIMEOUT_MS = 5000;
 const CACHE_SECONDS = 24 * 60 * 60;
@@ -61,6 +71,12 @@ export async function embed(url, env, reply, ctx) {
     return reply(400, { error: "Only https addresses" });
   }
 
+  if (isEmbedPage(address))
+    return reply(200, { embeddable: true, reason: "embed-page" });
+  const listed = await knownBlocked(env, address.hostname);
+  if (listed)
+    return reply(200, { embeddable: false, reason: "listed", host: listed });
+
   const cache = caches.default;
   const key = new Request(
     `https://embed-check.invalid/${encodeURIComponent(address.href)}`,
@@ -80,6 +96,10 @@ export async function embed(url, env, reply, ctx) {
     });
     verdict = frameVerdict(response.headers, origins);
     await response.body?.cancel();
+    // Refusing is a site-wide policy: the site joins the list. (Allowing can differ by page,
+    // so that is only cached for this address.)
+    if (!verdict.embeddable)
+      ctx.waitUntil(rememberBlocked(env, address.hostname, verdict.reason));
   } catch {
     // Unreachable from here: let the browser try.
     return reply(200, { embeddable: true, reason: "unknown" });
@@ -93,4 +113,9 @@ export async function embed(url, env, reply, ctx) {
     ),
   );
   return reply(200, verdict);
+}
+
+/** The list of sites known to refuse frames. */
+export async function blockedList(env, reply) {
+  return reply(200, { hosts: await blockedHosts(env) });
 }

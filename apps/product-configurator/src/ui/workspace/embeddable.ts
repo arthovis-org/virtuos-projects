@@ -81,3 +81,20 @@ export function useEmbeddable(url: string): boolean {
   }, [url]);
   return ok;
 }
+
+/** Which of these sites refuse to be shown inside the page (their addresses), as they come in. */
+export function useBlockedSites(urls: readonly string[]): ReadonlySet<string> {
+  const [blocked, setBlocked] = useState<ReadonlySet<string>>(() => new Set());
+  const key = [...new Set(urls.map((u) => u.trim()).filter(Boolean))].sort().join('\n');
+  useEffect(() => {
+    let live = true;
+    const list = key ? key.split('\n') : [];
+    void Promise.all(list.map((url) => checkEmbeddable(url))).then((answers) => {
+      if (live) setBlocked(new Set(list.filter((_, i) => answers[i] === false)));
+    });
+    return () => {
+      live = false;
+    };
+  }, [key]);
+  return blocked;
+}
