@@ -61,6 +61,25 @@ export function ScreenLayer() {
     return () => window.removeEventListener('wheel', onWheel, { capture: true });
   }, [shown]);
 
+  // The layer and the boxes it lays over the monitors must never scroll: they are clipped
+  // (overflow: clip, which nothing can scroll), and anything that still scrolls one (a site
+  // bringing its text box into view did, sliding every screen off its monitor) is undone.
+  // Scrollable lists inside a screen (overflow auto) scroll as usual.
+  useEffect(() => {
+    const root = layer.current;
+    if (!shown || !root) return;
+    const pin = (event: Event) => {
+      const box = event.target;
+      if (!(box instanceof HTMLElement) || !root.contains(box)) return;
+      const overflow = getComputedStyle(box).overflowY;
+      if (overflow === 'auto' || overflow === 'scroll') return;
+      if (box.scrollTop !== 0) box.scrollTop = 0;
+      if (box.scrollLeft !== 0) box.scrollLeft = 0;
+    };
+    root.addEventListener('scroll', pin, true);
+    return () => root.removeEventListener('scroll', pin, true);
+  }, [shown]);
+
   useLayoutEffect(() => {
     if (!shown) return;
     cssProjection.camera = camera.current;

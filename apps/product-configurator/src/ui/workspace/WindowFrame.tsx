@@ -44,6 +44,8 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
   const shownUrl = siteUrl(screenUrl(win.url));
   const host = new URL(url).host;
   const embeddable = useEmbeddable(win.url);
+  // A blocked site shown anyway, to see for oneself that it stays blank.
+  const [tryAnyway, setTryAnyway] = useState(false);
 
   // Only starts the drag; the move and release are followed on the whole window (see
   // WorkspaceLayer), which keeps working even where pointer capture is unavailable.
@@ -135,16 +137,27 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
           </button>
         </div>
       </div>
-      {embeddable ? (
-        <iframe
-          className={styles.frame}
-          src={shownUrl}
-          title={win.title}
-          sandbox={SANDBOX}
-          allow="fullscreen; clipboard-read; clipboard-write"
-          referrerPolicy="strict-origin-when-cross-origin"
-          loading="lazy"
-        />
+      {embeddable || tryAnyway ? (
+        <>
+          {/* Trying a blocked site anyway: it usually stays blank; say why, and go back. */}
+          {!embeddable && (
+            <div className={styles.tryBar}>
+              <span>Trying {host} anyway: its embedding restrictions usually keep it blank.</span>
+              <button type="button" onClick={() => setTryAnyway(false)}>
+                Back
+              </button>
+            </div>
+          )}
+          <iframe
+            className={styles.frame}
+            src={shownUrl}
+            title={win.title}
+            sandbox={SANDBOX}
+            allow="fullscreen; clipboard-read; clipboard-write"
+            referrerPolicy="strict-origin-when-cross-origin"
+            loading="lazy"
+          />
+        </>
       ) : (
         // The site refuses to be shown inside another page: say so, instead of the
         // browser's broken-page icon.
@@ -154,9 +167,14 @@ export function WindowFrame({ window: win, screenId, screens, grow }: WindowFram
             Its embedding restrictions don’t allow other pages to show it, so it can’t appear on
             this screen. Open it in its own tab instead.
           </p>
-          <a className={styles.blockedLink} href={url} target="_blank" rel="noreferrer">
-            Open {host} ↗
-          </a>
+          <div className={styles.blockedActions}>
+            <a className={styles.blockedLink} href={url} target="_blank" rel="noreferrer">
+              Open {host} ↗
+            </a>
+            <button type="button" className={styles.blockedTry} onClick={() => setTryAnyway(true)}>
+              Try to show it
+            </button>
+          </div>
         </div>
       )}
     </div>

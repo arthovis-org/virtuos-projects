@@ -11,7 +11,10 @@
   box-sizing: border-box;
   padding: 6cqmin;
   border: 0;
-  overflow: hidden;
+  /* clip, not hidden: a hidden overflow can still be scrolled by code, and a site bringing
+     its text box into view (Gemini, on Enter) scrolled this, sliding the screens off the
+     monitors. Nothing can scroll a clipped box. */
+  overflow: clip;
   background:
     radial-gradient(
       120% 90% at 30% 20%,

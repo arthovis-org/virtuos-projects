@@ -86,6 +86,10 @@ function createWindow() {
   void window.loadURL(DEV_URL ?? APP_URL);
 }
 
+// A separate profile (logins, settings) when asked, as the tests do: they then neither touch
+// the visitor's nor run into the one-window lock of an open copy.
+if (process.env.VIRTUOS_USER_DATA) app.setPath('userData', process.env.VIRTUOS_USER_DATA);
+
 // One window: opening the app again brings it forward.
 if (!app.requestSingleInstanceLock()) {
   app.quit();

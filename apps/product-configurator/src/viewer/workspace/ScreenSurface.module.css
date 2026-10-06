@@ -6,7 +6,10 @@
   display: flex;
   box-sizing: border-box;
   padding: 4px;
-  overflow: hidden;
+  /* clip, not hidden: a hidden overflow can still be scrolled by code, and a site bringing
+     its text box into view (Gemini, on Enter) scrolled this, sliding the screens off the
+     monitors. Nothing can scroll a clipped box. */
+  overflow: clip;
   background: #1d2433;
   container-type: inline-size;
   pointer-events: auto;

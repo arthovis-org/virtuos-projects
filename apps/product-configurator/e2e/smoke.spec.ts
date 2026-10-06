@@ -133,3 +133,51 @@ test('a desk dragged to the trash is removed; the trash shows only while draggin
   await expect(page.locator('[data-desk-trash]')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('the screens stay on their monitors when a site scrolls itself into view', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Office', exact: true }).first().click();
+  await expect(page.locator('iframe').first()).toBeAttached();
+  // Zoomed to one screen, the others reach past the edges of the view: room to scroll.
+  await page
+    .locator('[aria-label="Main screen"] button[aria-label^="Zoom"]')
+    .first()
+    .click({ force: true });
+  await page.waitForTimeout(3000);
+  const room = await page.evaluate(() => {
+    const layer = document.querySelector('[aria-label="Main screen"]')?.parentElement
+      ?.parentElement as HTMLElement | null;
+    return layer
+      ? layer.scrollHeight - layer.clientHeight + layer.scrollWidth - layer.clientWidth
+      : 0;
+  });
+  expect(room).toBeGreaterThan(0);
+  // What a site bringing its text box into view does to the page around it (Gemini on
+  // Enter): scroll every box around its frame. None of them may move.
+  const moved = await page.evaluate(() => {
+    const frames = Array.from(document.querySelectorAll('iframe'));
+    const boxes = new Set<Element>();
+    for (const frame of frames) {
+      for (let el = frame.parentElement; el && el !== document.body; el = el.parentElement) {
+        boxes.add(el);
+      }
+    }
+    const scrolled = () =>
+      [...boxes]
+        .filter((box) => box.scrollTop !== 0 || box.scrollLeft !== 0)
+        .map((box) => `${box.className} ${box.scrollTop}/${box.scrollLeft}`);
+    for (const box of boxes) {
+      box.scrollTop = 150;
+      box.scrollLeft = 60;
+    }
+    const bySetting = scrolled();
+    for (const frame of frames) frame.scrollIntoView({ block: 'end', inline: 'end' });
+    return [...bySetting, ...scrolled()];
+  });
+  await page.waitForTimeout(200);
+  expect(moved).toEqual([]);
+  expect(errors).toEqual([]);
+});
