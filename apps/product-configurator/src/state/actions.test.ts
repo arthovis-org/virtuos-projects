@@ -46,7 +46,7 @@ describe('the single desk', () => {
 });
 
 describe('the room', () => {
-  it('opens at the overview with the single desk as its first desk', () => {
+  it('carries on at the single desk’s workspace: its first desk, sites on as they were', () => {
     setup().selectOption('material-desk-mat', 'walnut');
     setup().setMotion(setup().single.id, motion, 100);
     enterWorkspace('soccer');
@@ -54,13 +54,33 @@ describe('the room', () => {
     enterRoom();
 
     expect(setup().mode).toBe('desks');
-    expect(setup().activeDeskId).toBeNull();
-    expect(view().active).toBe(false);
     const first = room()[0]!;
+    expect(setup().activeDeskId).toBe(first.id);
+    expect(view()).toMatchObject({ active: true, seated: true });
     expect(first).toMatchObject({ workspaceId: 'soccer', motions: { [motion.id]: 100 } });
     expect(first.selections['material-desk-mat']).toBe('walnut');
     expect(first.windows.closed).toEqual(['live-scores']);
     expect(room().length).toBeGreaterThan(1);
+  });
+
+  it('opens at the overview when no workspace was open', () => {
+    enterRoom();
+    expect(setup().activeDeskId).toBeNull();
+    expect(view().active).toBe(false);
+  });
+
+  it('back at the single desk, its workspace is open again as it was left', () => {
+    enterWorkspace('developer');
+    view().standUp();
+    enterRoom();
+    exitRoom();
+    expect(setup().single.workspaceId).toBe('developer');
+    expect(view()).toMatchObject({ active: true, seated: false });
+    // Left with the sites off: they stay off.
+    view().close();
+    enterRoom();
+    exitRoom();
+    expect(view().active).toBe(false);
   });
 
   it('gives every desk its own setup, height and windows', () => {

@@ -50,23 +50,40 @@ export function removeDesk(deskId: string) {
 }
 
 /**
- * Opens the room: as the visitor left it (back at their desk, looking around), or the first
- * time from the single desk, at the overview with the sites off.
+ * How the visitor was looking at the single desk when they opened the room: its sites on
+ * (seated or not), or off. Back at the single desk, it is as they left it.
+ */
+let singleView: { seated: boolean } | null = null;
+
+/**
+ * Opens the room. With the single desk's workspace open, the visitor carries on at that desk
+ * in the room (it came along, or joined the room), its sites on as they were. Otherwise: as
+ * they left the room (back at their desk, looking around), or the first time at the overview.
  */
 export function enterRoom() {
   const before = setup();
   if (before.mode === 'desks') return;
-  setup().enterRoom(view().active);
+  const { active, seated } = view();
+  singleView = active ? { seated } : null;
+  const hadRoom = before.room.length > 0;
+  setup().enterRoom(active);
+  const after = setup();
+  // A new room starts with the single desk as its first desk: be at it.
+  const carried = !hadRoom && active ? after.room[0] : undefined;
+  if (carried) setup().setActiveDesk(carried.id);
+  const joined = hadRoom && after.room.length > before.room.length;
   const desk = currentDesk(setup());
-  if (desk) view().showSites(false);
-  else view().close();
+  if (!desk) view().close();
+  else if (active && (carried ?? joined)) view().showSites(seated);
+  else view().showSites(false);
 }
 
-/** Back to the single desk, with the sites off. */
+/** Back to the single desk, as the visitor left it: its workspace open again if it was. */
 export function exitRoom() {
   if (setup().mode !== 'desks') return;
   setup().exitRoom();
-  view().close();
+  if (singleView) view().showSites(singleView.seated);
+  else view().close();
 }
 
 /** Gives the current desk a workspace and sits down in front of it with the sites on. */
@@ -87,6 +104,7 @@ export function switchWorkspace(workspaceId: string) {
 
 /** Brings a whole set-up in (a saved layout, the sheet): back at its desk, or the overview. */
 export function loadSetup(next: Setup) {
+  singleView = null;
   setup().replace(next);
   if (next.mode === 'desks' && currentDesk(next)) view().showSites(false);
   else view().close();
