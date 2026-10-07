@@ -55,7 +55,7 @@ const CHAIR_AWAY = 0.45;
 /** Hands on the surface: apart, in from its front edge, and above it (palms), in metres. */
 const HANDS_APART = 0.17;
 const HANDS_IN = 0.05;
-const HANDS_LIFT = 0.012;
+const HANDS_LIFT = 0.04;
 /** Hands are kept this far in front of the desk's front edge while getting up or down. */
 const CLEARANCE = 0.05;
 
@@ -155,7 +155,22 @@ function Seat({
   const { scene, animations } = useGLTF(character);
   const invalidate = useThree((s) => s.invalidate);
   // Each desk's person is a copy with its own skeleton.
-  const person = useMemo(() => clone(scene), [scene]);
+  const person = useMemo(() => {
+    const copy = clone(scene);
+    // Hair cards: their faint strands drawn partly covering (multisampling) rather than cut
+    // at a threshold, which close up (the texture at full detail) cut most of the hair away.
+    copy.traverse((node) => {
+      if (!isMesh(node)) return;
+      for (const material of [node.material].flat()) {
+        if (material.alphaTest > 0 && !material.alphaToCoverage) {
+          material.alphaToCoverage = true;
+          material.alphaTest = 0.05;
+          material.needsUpdate = true;
+        }
+      }
+    });
+    return copy;
+  }, [scene]);
   const arms = useMemo(() => findArms(person), [person]);
   const mixer = useMemo(() => new AnimationMixer(person), [person]);
   const actions = useMemo(() => {
@@ -265,10 +280,16 @@ function Seat({
     if (chairObject) {
       chairObject.position.z = CHAIR_FORWARD - scoot - chairAway * CHAIR_AWAY;
       chairObject.visible = chairShown > 0.01;
+      const fading = chairShown < 0.99;
       for (const material of chairMaterials.current) {
         material.opacity = chairShown;
-        material.transparent = chairShown < 0.99;
-        material.depthWrite = chairShown >= 0.99;
+        // Switching transparency changes the material's shader: it must be rebuilt, or the
+        // chair kept the see-through one once it was solid again (its fabric looked washed out).
+        if (material.transparent !== fading) {
+          material.transparent = fading;
+          material.depthWrite = !fading;
+          material.needsUpdate = true;
+        }
       }
     }
 

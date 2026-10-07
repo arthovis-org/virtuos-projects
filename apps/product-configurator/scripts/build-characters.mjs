@@ -151,6 +151,10 @@ async function buildCharacter(dir) {
     if (material.getAlphaMode() === 'BLEND') {
       material.setAlphaMode('MASK').setAlphaCutoff(0.25).setDoubleSided(true);
     }
+    // No metal/roughness map (the hair): FBX2glTF's factors made it 40% metal and glossy.
+    if (!material.getMetallicRoughnessTexture()) {
+      material.setMetallicFactor(0).setRoughnessFactor(0.75);
+    }
   }
   const settings = await readJson(join(dir, 'character.json'));
   const clips = [];
