@@ -244,7 +244,16 @@ async function buildProp(dir) {
   if (!file) throw new Error(`${name}: no .glb, .gltf or .fbx in source/`);
   const document = await load(join(sourceDir, file));
   for (const material of document.getRoot().listMaterials()) {
-    if (material.getAlphaMode() === 'BLEND') material.setAlphaMode('OPAQUE');
+    if (material.getAlphaMode() !== 'BLEND') continue;
+    // Solid: and without the texture's own alpha, or a fade (Occupant's chair) multiplied
+    // it in. The chair's mesh backrest was 42% see-through and faded away ahead of the rest.
+    material.setAlphaMode('OPAQUE');
+    const texture = material.getBaseColorTexture();
+    const image = texture?.getImage();
+    if (texture && image) {
+      const solid = await sharp(Buffer.from(image)).removeAlpha().png().toBuffer();
+      texture.setImage(new Uint8Array(solid)).setMimeType('image/png');
+    }
   }
   // In metres, standing on the floor, centred: one wrapper node scales and moves the model.
   // Props are measured by their height in `props/<name>/prop.json` when set, else 1 m tall.
