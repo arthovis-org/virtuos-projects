@@ -106,6 +106,16 @@ function addClip(target, source, name) {
   return channels;
 }
 
+/** An image with its alpha multiplied by `factor` (clamped), as PNG. */
+async function strengthenAlpha(image, factor) {
+  const { data, info } = await sharp(Buffer.from(image))
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  for (let i = 3; i < data.length; i += 4) data[i] = Math.min(255, Math.round(data[i] * factor));
+  return new Uint8Array(await sharp(data, { raw: info }).png().toBuffer());
+}
+
 /** Moves a clip's hips (the root of a Mixamo skeleton) by `[x, y, z]` metres throughout. */
 function shiftHips(document, clip, [x, y, z]) {
   const animation = document
@@ -150,6 +160,12 @@ async function buildCharacter(dir) {
     // enough to keep the fine strands, and seen from both sides.
     if (material.getAlphaMode() === 'BLEND') {
       material.setAlphaMode('MASK').setAlphaCutoff(0.25).setDoubleSided(true);
+      // Fuller hair: its strands are faint (alpha ~40%), and drawn by coverage they let the
+      // scalp show through. Doubling the alpha keeps the soft ends and fills the rest.
+      const texture = material.getBaseColorTexture();
+      const image = texture?.getImage();
+      if (texture && image)
+        texture.setImage(await strengthenAlpha(image, 2)).setMimeType('image/png');
     }
     // No metal/roughness map (the hair): FBX2glTF's factors made it 40% metal and glossy.
     if (!material.getMetallicRoughnessTexture()) {

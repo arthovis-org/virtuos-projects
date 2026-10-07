@@ -13,6 +13,7 @@ import {
   AnimationMixer,
   LoopOnce,
   LoopRepeat,
+  FrontSide,
   MathUtils,
   Matrix4,
   Vector3,
@@ -21,6 +22,7 @@ import {
   type Material,
   type Mesh,
   type Object3D,
+  type Side,
 } from 'three';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { ProductDefinition } from '@/catalog/schema';
@@ -54,8 +56,13 @@ const CHAIR_FORWARD = 0.12;
 const CHAIR_AWAY = 0.45;
 /** Hands on the surface: apart, in from its front edge, and above it (palms), in metres. */
 const HANDS_APART = 0.17;
-const HANDS_IN = 0.05;
+const HANDS_IN = 0.03;
 const HANDS_LIFT = 0.04;
+/**
+ * Sitting up while typing: degrees each spine bone leans back from the typing clip's hunch,
+ * which raises and draws back the shoulders, so the arms reach less far up to the monitor.
+ */
+const SIT_UP = 4;
 /** Hands are kept this far in front of the desk's front edge while getting up or down. */
 const CLEARANCE = 0.05;
 
@@ -161,6 +168,9 @@ function Seat({
     // at a threshold, which close up (the texture at full detail) cut most of the hair away.
     copy.traverse((node) => {
       if (!isMesh(node)) return;
+      // Always drawn: a skinned mesh's bounds are measured once, in whatever pose it was in,
+      // and once she sat the hair's stale bounds left the view up close: it vanished.
+      node.frustumCulled = false;
       for (const material of [node.material].flat()) {
         if (material.alphaTest > 0 && !material.alphaToCoverage) {
           material.alphaToCoverage = true;
@@ -172,6 +182,13 @@ function Seat({
     return copy;
   }, [scene]);
   const arms = useMemo(() => findArms(person), [person]);
+  const spine = useMemo(() => {
+    const bones: Object3D[] = [];
+    person.traverse((node) => {
+      if (/Spine\d?$/.test(node.name)) bones.push(node);
+    });
+    return bones;
+  }, [person]);
   const mixer = useMemo(() => new AnimationMixer(person), [person]);
   const actions = useMemo(() => {
     const byName = new Map(animations.map((clip) => [clip.name, mixer.clipAction(clip)]));
@@ -285,13 +302,19 @@ function Seat({
         material.opacity = chairShown;
         // Switching transparency changes the material's shader: it must be rebuilt, or the
         // chair kept the see-through one once it was solid again (its fabric looked washed out).
+        // While fading: front faces only, still writing depth, so the nearest surface hides
+        // the rest and it fades as one solid. Double-sided and without depth, its inside and
+        // back faces showed through in no particular order.
         if (material.transparent !== fading) {
           material.transparent = fading;
-          material.depthWrite = !fading;
+          material.side = fading ? FrontSide : (material.userData.side as Side);
           material.needsUpdate = true;
         }
       }
     }
+
+    // Sitting up straighter while typing (eased in and out with the hands).
+    for (const bone of spine) bone.rotateX((-SIT_UP * Math.PI * handsOn.current) / 180);
 
     // Hands: on the surface while seated (eased in and out), clear of the desk while getting
     // up or down. Worked out in the desk's space, where its front is +Z.
@@ -356,7 +379,10 @@ function Chair({ src, materials }: { src: string; materials: RefObject<Material[
         ? mesh.material.map((m) => m.clone())
         : mesh.material.clone();
       mesh.material = cloned;
-      own.push(...(Array.isArray(cloned) ? cloned : [cloned]));
+      for (const material of [cloned].flat()) {
+        material.userData.side = material.side;
+        own.push(material);
+      }
     });
     materials.current = own;
     return copy;
