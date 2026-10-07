@@ -14,6 +14,8 @@ import {
   LoopOnce,
   LoopRepeat,
   FrontSide,
+  Mesh as MeshClass,
+  MeshBasicMaterial,
   MathUtils,
   Matrix4,
   Vector3,
@@ -218,7 +220,7 @@ function Seat({
   /** How much the hands are placed on the surface (0 while standing). */
   const handsOn = useRef(initial === 'seated' ? 1 : 0);
   const chairGroup = useRef<Group>(null);
-  const chairMaterials = useRef<Material[]>([]);
+  const chairParts = useRef<ChairParts>({ materials: [], depthOnly: [] });
 
   const play = (action: AnimationAction | undefined, once: boolean) => {
     if (!action) return;
@@ -298,15 +300,19 @@ function Seat({
       chairObject.position.z = CHAIR_FORWARD - scoot - chairAway * CHAIR_AWAY;
       chairObject.visible = chairShown > 0.01;
       const fading = chairShown < 0.99;
-      for (const material of chairMaterials.current) {
+      const { materials, depthOnly } = chairParts.current;
+      // Fading in two passes, so it fades evenly: depth-only twins first record the chair's
+      // nearest surfaces, then its colour is blended once, only there (it writes no depth).
+      // In one pass a near part drawn after a far one behind it blended both: those places
+      // looked more solid than the rest. Front faces only while fading (it is double-sided).
+      for (const twin of depthOnly) twin.visible = fading;
+      for (const material of materials) {
         material.opacity = chairShown;
-        // Switching transparency changes the material's shader: it must be rebuilt, or the
-        // chair kept the see-through one once it was solid again (its fabric looked washed out).
-        // While fading: front faces only, still writing depth, so the nearest surface hides
-        // the rest and it fades as one solid. Double-sided and without depth, its inside and
-        // back faces showed through in no particular order.
+        // Switching transparency changes the shader: it must be rebuilt, or the chair kept
+        // the see-through one once solid again (its fabric looked washed out).
         if (material.transparent !== fading) {
           material.transparent = fading;
+          material.depthWrite = !fading;
           material.side = fading ? FrontSide : (material.userData.side as Side);
           material.needsUpdate = true;
         }
@@ -359,33 +365,52 @@ function Seat({
       <primitive object={person} />
       {chairSrc && (
         <group ref={chairGroup}>
-          <Chair src={chairSrc} materials={chairMaterials} />
+          <Chair src={chairSrc} parts={chairParts} />
         </group>
       )}
     </group>
   );
 }
 
+/** A chair's own materials (to fade) and the depth-only twins of its meshes (see `Seat`). */
+interface ChairParts {
+  materials: Material[];
+  depthOnly: Object3D[];
+}
+
+/** Records depth only: the first of a fading chair's two passes. */
+const depthPass = new MeshBasicMaterial({ colorWrite: false, transparent: true });
+
 /** The chair, with its own materials so it can fade without fading other desks' chairs. */
-function Chair({ src, materials }: { src: string; materials: RefObject<Material[]> }) {
+function Chair({ src, parts }: { src: string; parts: RefObject<ChairParts> }) {
   const { scene } = useGLTF(src);
   const chair = useMemo(() => {
     const copy = scene.clone(true);
-    const own: Material[] = [];
+    const materials: Material[] = [];
+    const depthOnly: Object3D[] = [];
+    const meshes: Mesh[] = [];
     copy.traverse((node) => {
-      if (!isMesh(node)) return;
-      const mesh = node;
+      if (isMesh(node)) meshes.push(node);
+    });
+    for (const mesh of meshes) {
       const cloned = Array.isArray(mesh.material)
         ? mesh.material.map((m) => m.clone())
         : mesh.material.clone();
       mesh.material = cloned;
       for (const material of [cloned].flat()) {
         material.userData.side = material.side;
-        own.push(material);
+        materials.push(material);
       }
-    });
-    materials.current = own;
+      // The same shape, drawn just before it (among see-through things): depth only.
+      const twin = new MeshClass(mesh.geometry, depthPass);
+      twin.renderOrder = 1;
+      twin.visible = false;
+      mesh.renderOrder = 2;
+      mesh.add(twin);
+      depthOnly.push(twin);
+    }
+    parts.current = { materials, depthOnly };
     return copy;
-  }, [scene, materials]);
+  }, [scene, parts]);
   return <primitive object={chair} />;
 }

@@ -106,6 +106,54 @@ function addClip(target, source, name) {
   return channels;
 }
 
+/**
+ * Hair moves with the head only: weight the rig gave hair on other bones goes to the head.
+ * Megan's hair had one vertex on the right arm and shoulder, pulled into a spike whenever her
+ * arm reached for the desk. (Neck and upper spine keep theirs: the hair's ends rest there.)
+ */
+function pinHairToHead(document) {
+  for (const node of document.getRoot().listNodes()) {
+    const mesh = node.getMesh();
+    const skin = node.getSkin();
+    if (!mesh || !skin || !/hair/i.test(mesh.getName())) continue;
+    const joints = skin.listJoints();
+    const head = joints.findIndex((j) => /Head$/.test(j.getName()));
+    if (head < 0) continue;
+    const allowed = new Set(
+      joints.flatMap((j, i) => (/(Head|Neck|Spine2)$/.test(j.getName()) ? [i] : [])),
+    );
+    for (const primitive of mesh.listPrimitives()) {
+      const jointsAttribute = primitive.getAttribute('JOINTS_0');
+      const weightsAttribute = primitive.getAttribute('WEIGHTS_0');
+      if (!jointsAttribute || !weightsAttribute) continue;
+      const J = jointsAttribute.getArray().slice();
+      const W = weightsAttribute.getArray().slice();
+      let moved = 0;
+      for (let v = 0; v < J.length; v += 4) {
+        let stray = 0;
+        let headSlot = -1;
+        for (let k = 0; k < 4; k++) {
+          if (J[v + k] === head && W[v + k] > 0) headSlot = k;
+          if (W[v + k] > 0 && !allowed.has(J[v + k])) {
+            stray += W[v + k];
+            W[v + k] = 0;
+          }
+        }
+        if (stray === 0) continue;
+        moved++;
+        if (headSlot < 0) headSlot = [0, 1, 2, 3].find((k) => W[v + k] === 0) ?? 0;
+        J[v + headSlot] = head;
+        W[v + headSlot] += stray;
+      }
+      if (moved > 0) {
+        jointsAttribute.setArray(J);
+        weightsAttribute.setArray(W);
+        console.log(`  ${mesh.getName()}: ${moved} vertices pinned to the head`);
+      }
+    }
+  }
+}
+
 /** An image with its alpha multiplied by `factor` (clamped), as PNG. */
 async function strengthenAlpha(image, factor) {
   const { data, info } = await sharp(Buffer.from(image))
@@ -172,6 +220,7 @@ async function buildCharacter(dir) {
       material.setMetallicFactor(0).setRoughnessFactor(0.75);
     }
   }
+  pinHairToHead(document);
   const settings = await readJson(join(dir, 'character.json'));
   const clips = [];
   for (const file of files.filter((f) => f !== main)) {
