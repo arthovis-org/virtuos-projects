@@ -13,7 +13,7 @@ import {
   AnimationMixer,
   LoopOnce,
   LoopRepeat,
-  FrontSide,
+  DoubleSide,
   Mesh as MeshClass,
   MeshBasicMaterial,
   MathUtils,
@@ -24,7 +24,6 @@ import {
   type Material,
   type Mesh,
   type Object3D,
-  type Side,
 } from 'three';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { ProductDefinition } from '@/catalog/schema';
@@ -304,7 +303,8 @@ function Seat({
       // Fading in two passes, so it fades evenly: depth-only twins first record the chair's
       // nearest surfaces, then its colour is blended once, only there (it writes no depth).
       // In one pass a near part drawn after a far one behind it blended both: those places
-      // looked more solid than the rest. Front faces only while fading (it is double-sided).
+      // looked more solid than the rest. Both sides stay drawn, as when solid: the backrest is
+      // a single sheet, and drawn from the front only it turned grey seen from behind.
       for (const twin of depthOnly) twin.visible = fading;
       for (const material of materials) {
         material.opacity = chairShown;
@@ -313,7 +313,6 @@ function Seat({
         if (material.transparent !== fading) {
           material.transparent = fading;
           material.depthWrite = !fading;
-          material.side = fading ? FrontSide : (material.userData.side as Side);
           material.needsUpdate = true;
         }
       }
@@ -379,7 +378,11 @@ interface ChairParts {
 }
 
 /** Records depth only: the first of a fading chair's two passes. */
-const depthPass = new MeshBasicMaterial({ colorWrite: false, transparent: true });
+const depthPass = new MeshBasicMaterial({
+  colorWrite: false,
+  transparent: true,
+  side: DoubleSide,
+});
 
 /** The chair, with its own materials so it can fade without fading other desks' chairs. */
 function Chair({ src, parts }: { src: string; parts: RefObject<ChairParts> }) {
@@ -397,10 +400,7 @@ function Chair({ src, parts }: { src: string; parts: RefObject<ChairParts> }) {
         ? mesh.material.map((m) => m.clone())
         : mesh.material.clone();
       mesh.material = cloned;
-      for (const material of [cloned].flat()) {
-        material.userData.side = material.side;
-        materials.push(material);
-      }
+      materials.push(...[cloned].flat());
       // The same shape, drawn just before it (among see-through things): depth only.
       const twin = new MeshClass(mesh.geometry, depthPass);
       twin.renderOrder = 1;
