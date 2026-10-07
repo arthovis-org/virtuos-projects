@@ -1,0 +1,6 @@
+{
+  "shift": {
+    "standingIdle": [0, 0, 0.465],
+    "standToSit": [0, 0, 0.465]
+  }
+}

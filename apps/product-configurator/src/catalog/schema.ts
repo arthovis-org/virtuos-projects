@@ -240,6 +240,19 @@ export const productDefinitionSchema = z
      * 28 cm portrait screen about 330 px wide: the narrowest layout most sites support.
      */
     pixelsPerMetre: z.number().positive().default(1200),
+    /** Someone working at the desk (product.json `occupant`). */
+    occupant: z
+      .object({
+        /** Folder under characters/. */
+        character: z.string().min(1),
+        /** Folder under props/. */
+        chair: z.string().min(1).optional(),
+        /** From the desk's front edge to the seat, in metres. */
+        distance: z.number().positive(),
+        /** Height from which they stand, in the height motion's unit. */
+        standFrom: z.number(),
+      })
+      .optional(),
     /** Degrees the seated workspace view looks down when a screen lies on the desk. */
     screenTilt: z.number().min(0).max(60).default(15),
     /** Position in the product switcher; lower comes first and the first is the default. */

@@ -13,3 +13,8 @@ npm-debug.log*
 # Personal Claude Code settings and dev-server config
 .claude/settings.local.json
 .claude/launch.json
+
+# Source files of characters and props (Mixamo FBX, downloads): only the built GLBs are
+# committed (npm run build:characters). Mixamo's files may be used in a product, not shared.
+characters/*/source/
+props/*/source/

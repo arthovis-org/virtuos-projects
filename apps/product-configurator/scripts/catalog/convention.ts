@@ -249,6 +249,22 @@ const configSchema = z.strictObject({
       presets: z.record(z.string(), z.number()).optional(),
     })
     .optional(),
+  /**
+   * Someone working at the desk: a character (characters/<Name>/) on a chair (props/<name>/),
+   * typing while the desk is low and standing up once it rises past `standFrom`.
+   */
+  occupant: z
+    .strictObject({
+      /** Folder name under characters/, e.g. "Megan". */
+      character: z.string().min(1),
+      /** Folder name under props/, e.g. "office-chair". */
+      chair: z.string().min(1).optional(),
+      /** From the desk's front edge to the seat, in metres (default 0.55). */
+      distance: z.number().positive().optional(),
+      /** Height (in the height's unit) from which they stand; default halfway Sit to Stand. */
+      standFrom: z.number().optional(),
+    })
+    .optional(),
   /** Screens are found by material; these settings adjust how they are used. */
   screens: z
     .strictObject({
@@ -925,7 +941,32 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
         pixelsPerMetre: config.screens.pixelsPerMetre,
       }),
       ...(config.screens?.tilt !== undefined && { screenTilt: config.screens.tilt }),
+      ...(config.occupant && {
+        occupant: {
+          character: config.occupant.character,
+          ...(config.occupant.chair && { chair: config.occupant.chair }),
+          distance: config.occupant.distance ?? 0.55,
+          standFrom: config.occupant.standFrom ?? occupantStandFrom(motions),
+        },
+      }),
     },
     issues,
   };
+}
+
+/** Where someone at the desk stands up: halfway between the Sit and Stand presets, or the range. */
+function occupantStandFrom(
+  motions: readonly {
+    min: number;
+    max: number;
+    presets?: readonly { label: string; value: number }[];
+  }[],
+): number {
+  const motion = motions[0];
+  if (!motion) return 0;
+  const preset = (label: string) =>
+    motion.presets?.find((p) => p.label.toLowerCase() === label)?.value;
+  const sit = preset('sit') ?? motion.min;
+  const stand = preset('stand') ?? motion.max;
+  return (sit + stand) / 2;
 }

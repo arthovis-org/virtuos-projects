@@ -36,6 +36,10 @@
     "max": 113,
     "presets": { "Sit": 72, "Stand": 110 }
   },
+  "occupant": {
+    "character": "Megan",
+    "chair": "office-chair"
+  },
   "materials": {
     "DeskMat": {
       "label": "Desk top",

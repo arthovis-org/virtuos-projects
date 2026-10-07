@@ -16,6 +16,7 @@ import { MaterialAppearance } from './MaterialAppearance';
 import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskModel } from './models';
 import { motionEnvelope, useMotions } from './motion';
 import { modelBounds, ownMeshes } from './nodeUtils';
+import { Occupant } from './people/Occupant';
 import { DeskPosters } from './workspace/DeskPosters';
 import { WorkspaceLayer } from './workspace/WorkspaceLayer';
 
@@ -126,6 +127,7 @@ export function ProductModel() {
           // Seated at a desk in the room, the others are out of the picture: their monitors
           // would stand between the camera and the screens.
           hidden={desksMode && seated && item !== active}
+          inSeat={seated && item === active}
           reportsMotion={i === 0}
           deskId={item.desk.id}
           desk={
@@ -161,6 +163,8 @@ interface DeskInstanceProps {
   reportsMotion: boolean;
   /** Out of the picture (another desk is the one the visitor sits at). */
   hidden: boolean;
+  /** The visitor sits at this desk (the seated view): its occupant would be in the way. */
+  inSeat: boolean;
   /** The desk this is (its height). */
   deskId: string;
   /** In unlimited desks mode: which desk this is. */
@@ -179,6 +183,7 @@ function DeskInstance({
   layoutKey,
   reportsMotion,
   hidden,
+  inSeat,
   deskId,
   desk,
 }: DeskInstanceProps) {
@@ -329,6 +334,15 @@ function DeskInstance({
         </group>
       </group>
       {showsInset && !reach.isEmpty() && <HeightInset desk={group} reach={reach} />}
+      {!bounds.isEmpty() && (
+        <Occupant
+          product={product}
+          deskId={deskId}
+          desk={group}
+          front={bounds.getSize(new Vector3()).z / 2}
+          visible={!hidden && !inSeat}
+        />
+      )}
       {desk && !desk.active && (
         <DeskPosters
           product={product}
