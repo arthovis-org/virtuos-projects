@@ -339,6 +339,7 @@ function DeskInstance({
           product={product}
           deskId={deskId}
           desk={group}
+          index={index}
           front={bounds.getSize(new Vector3()).z / 2}
           visible={!hidden && !inSeat}
         />

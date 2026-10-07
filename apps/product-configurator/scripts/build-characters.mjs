@@ -141,9 +141,16 @@ async function buildCharacter(dir) {
   const document = await load(join(sourceDir, main));
   // The character file's own (empty) takes: only the clips are kept.
   for (const animation of document.getRoot().listAnimations()) animation.dispose();
-  // Hair cards: cut out, not blended, so they draw in order with everything else.
   for (const material of document.getRoot().listMaterials()) {
-    if (material.getAlphaMode() === 'BLEND') material.setAlphaMode('MASK').setAlphaCutoff(0.4);
+    // FBX2glTF carries Mixamo's FBX factors over: colour at 80% (a dull character) and, on
+    // the hair, opacity 0, which multiplied the hair texture's alpha away (a bald Megan).
+    // The textures hold the colour and the alpha.
+    if (material.getBaseColorTexture()) material.setBaseColorFactor([1, 1, 1, 1]);
+    // Hair cards: cut out (not blended, so they draw in order with everything else), low
+    // enough to keep the fine strands, and seen from both sides.
+    if (material.getAlphaMode() === 'BLEND') {
+      material.setAlphaMode('MASK').setAlphaCutoff(0.25).setDoubleSided(true);
+    }
   }
   const settings = await readJson(join(dir, 'character.json'));
   const clips = [];

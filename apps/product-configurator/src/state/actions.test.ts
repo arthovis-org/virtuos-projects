@@ -106,18 +106,30 @@ describe('the room', () => {
     expect(setup().single.selections['material-desk-mat']).toBe('american-oak');
   });
 
-  it('moving to a desk sits down at it; stepping goes round', () => {
+  it('picking a desk in the overview selects it, the camera staying on the room', () => {
     enterRoom();
     selectDesk(room()[1]!.id);
     expect(setup().activeDeskId).toBe(room()[1]!.id);
-    expect(view()).toMatchObject({ active: true, seated: true });
+    expect(view()).toMatchObject({ active: true, seated: false, aroundDesk: false });
     stepDesk(-1);
     expect(setup().activeDeskId).toBe(room()[0]!.id);
     stepDesk(-1);
     expect(setup().activeDeskId).toBe(room().at(-1)!.id);
+    expect(view().seated).toBe(false);
   });
 
-  it('a new desk is sat at; removing the desk one is at moves to its neighbour', () => {
+  it('seated at a desk, moving to another sits at that one', () => {
+    enterRoom();
+    selectDesk(room()[1]!.id, true);
+    expect(view().seated).toBe(true);
+    selectDesk(room()[2]!.id);
+    expect(setup().activeDeskId).toBe(room()[2]!.id);
+    expect(view().seated).toBe(true);
+    stepDesk(1);
+    expect(view().seated).toBe(true);
+  });
+
+  it('a new desk is moved to; removing the desk one is at moves to its neighbour', () => {
     enterRoom();
     const count = room().length;
     addDesk('space');

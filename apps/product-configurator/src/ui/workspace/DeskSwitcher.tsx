@@ -198,7 +198,8 @@ export function DeskSwitcher() {
                   className={styles.deskButton}
                   aria-current={current ? 'true' : undefined}
                   title={`Desk ${i + 1}: ${workspace?.description ?? name}`}
-                  onClick={() => selectDesk(desk.id, current ? !seated : true)}
+                  // Another desk: selected in the same view. The one already selected: sit at it, or stand.
+                  onClick={() => selectDesk(desk.id, current ? !seated : seated)}
                 >
                   <WorkspaceIcon name={workspace?.icon} size={15} />
                   <span className={styles.deskName}>{name}</span>

@@ -10,8 +10,12 @@ import { useViewStore } from './viewStore';
 const setup = () => useSetupStore.getState();
 const view = () => useViewStore.getState();
 
-/** Moves to a desk in the room and turns its sites on, seated or looking around. */
-export function selectDesk(deskId: string, seat = true) {
+/**
+ * Moves to a desk in the room and turns its sites on. The view stays as it was unless asked
+ * (`seat`): picked in the overview, the desk is selected (the panel sets it up, next to the
+ * others) with the camera on the room; picked while seated, the visitor sits at it instead.
+ */
+export function selectDesk(deskId: string, seat = view().seated) {
   const { activeDeskId } = setup();
   const { seated, focus, active } = view();
   if (deskId === activeDeskId && active && seated === seat && !focus) return;
@@ -19,7 +23,7 @@ export function selectDesk(deskId: string, seat = true) {
   if (setup().activeDeskId === deskId) view().showSites(seat);
 }
 
-/** The next or previous desk, seated; from the overview, the first or the last. */
+/** The next or previous desk, in the same view; from no desk, the first or the last. */
 export function stepDesk(step: number) {
   const { room, activeDeskId } = setup();
   const index = room.findIndex((d) => d.id === activeDeskId);
@@ -27,19 +31,19 @@ export function stepDesk(step: number) {
     index < 0
       ? room[step > 0 ? 0 : room.length - 1]
       : room[(index + step + room.length) % room.length];
-  if (next && next.id !== activeDeskId) selectDesk(next.id, true);
+  if (next && next.id !== activeDeskId) selectDesk(next.id);
 }
 
-/** Adds a desk with a workspace and sits down at it. */
+/** Adds a desk with a workspace and moves to it, in the same view. */
 export function addDesk(workspaceId: string) {
   const id = setup().addDesk(workspaceId);
-  if (id) selectDesk(id, true);
+  if (id) selectDesk(id);
 }
 
-/** Adds a ready-made desk (planned by the AI) and sits down at it. */
+/** Adds a ready-made desk (planned by the AI) and moves to it, in the same view. */
 export function addPlannedDesk(desk: DeskSetup) {
   const id = setup().insertDesk(desk);
-  if (id) selectDesk(id, true);
+  if (id) selectDesk(id);
   return id;
 }
 

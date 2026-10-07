@@ -259,7 +259,7 @@ const configSchema = z.strictObject({
       character: z.string().min(1),
       /** Folder name under props/, e.g. "office-chair". */
       chair: z.string().min(1).optional(),
-      /** From the desk's front edge to the seat, in metres (default 0.55). */
+      /** From the desk's front edge to the seat, in metres (default 0.45). */
       distance: z.number().positive().optional(),
       /** Height (in the height's unit) from which they stand; default halfway Sit to Stand. */
       standFrom: z.number().optional(),
@@ -945,7 +945,7 @@ export function deriveProduct(folder: ProductFolder): DerivedProduct {
         occupant: {
           character: config.occupant.character,
           ...(config.occupant.chair && { chair: config.occupant.chair }),
-          distance: config.occupant.distance ?? 0.55,
+          distance: config.occupant.distance ?? 0.45,
           standFrom: config.occupant.standFrom ?? occupantStandFrom(motions),
         },
       }),
