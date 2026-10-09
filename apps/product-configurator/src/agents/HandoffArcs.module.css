@@ -1,0 +1,48 @@
+/* The card riding a hand-off: what is delivered, from whom to whom. */
+.card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid color-mix(in srgb, var(--agent) 55%, white);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--agent) 14%, rgb(255 255 255 / 92%));
+  box-shadow:
+    0 6px 24px color-mix(in srgb, var(--agent) 35%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--agent) 12%, transparent);
+  white-space: nowrap;
+  transform: translateY(0);
+  pointer-events: none;
+  user-select: none;
+  translate: 0 -34px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--agent);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.title {
+  color: #16161a;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.to {
+  color: color-mix(in srgb, var(--agent) 70%, #16161a);
+  font-size: 0.75rem;
+  font-weight: 600;
+}

@@ -74,6 +74,10 @@ export interface Handoff {
   fromDesk: string;
   toDesk: string;
   color: string;
+  /** What is handed over (the finished task), from whom, to whom: shown as it travels. */
+  title: string;
+  fromName: string;
+  toName: string;
   /** When it left (ms, performance clock). */
   at: number;
 }

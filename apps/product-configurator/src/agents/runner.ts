@@ -314,12 +314,25 @@ async function runTask(
 /** A finished task's result flies to each teammate whose task needs it. */
 function handOff(taskId: string, agent: AgentProfile, fromDesk: string) {
   const s = store();
+  // One after another, so their cards don't cover each other.
+  let delay = 0;
   for (const next of s.mission?.tasks ?? []) {
     if (!next.dependsOn.includes(taskId)) continue;
     const toDesk = deskOfAgent(s.agents, next.agentId);
     const to = Object.values(s.agents).find((a) => a.id === next.agentId);
     if (!toDesk || toDesk === fromDesk) continue;
-    s.addHandoff({ fromDesk, toDesk, color: agent.color });
+    s.addHandoff(
+      {
+        fromDesk,
+        toDesk,
+        color: agent.color,
+        title: s.mission?.tasks.find((t) => t.id === taskId)?.title ?? 'Results',
+        fromName: agent.name,
+        toName: to?.name ?? 'a teammate',
+      },
+      delay,
+    );
+    delay += 700;
     s.addLog(agent.id, `Handed the results to ${to?.name ?? 'a teammate'}`);
   }
 }

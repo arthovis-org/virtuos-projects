@@ -11,7 +11,8 @@
  *                                           Sit To Stand ends, a step ahead of the chair
  *   props/<name>/source/<any>.glb|.gltf|.fbx
  *     → props/<name>/model.glb              in metres, standing on the floor, centred
- *   props/<name>/prop.json                  `height` in metres (default 1), `rotation` in
+ *   props/<name>/prop.json                  `height` in metres (default: as modelled, for a model
+ *                                           already in metres), `rotation` in
  *                                           degrees to turn its front to +Z
  *
  * Textures are resized and turned into WebP, so a character weighs a few MB instead of tens.
@@ -256,12 +257,13 @@ async function buildProp(dir) {
     }
   }
   // In metres, standing on the floor, centred: one wrapper node scales and moves the model.
-  // Props are measured by their height in `props/<name>/prop.json` when set, else 1 m tall.
+  // Scaled to the height in `props/<name>/prop.json` when set; else kept as modelled (a model
+  // exported in metres, as from Blender).
   const scene = document.getRoot().getDefaultScene() ?? document.getRoot().listScenes()[0];
   const { min, max } = getBounds(scene);
   const height = max[1] - min[1];
   const settings = await readJson(join(dir, 'prop.json'));
-  const metres = settings?.height ?? 1;
+  const metres = settings?.height ?? height;
   const scale = metres / height;
   // Turned (degrees about the vertical) so its front faces +Z, as the scene expects.
   const turn = ((settings?.rotation ?? 0) * Math.PI) / 180;

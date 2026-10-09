@@ -28,7 +28,8 @@ interface AgentState {
   updateStep: (taskId: string, index: number, change: (step: AgentStep) => AgentStep) => void;
   setMission: (mission: Mission | null) => void;
   addLog: (agentId: string, text: string) => void;
-  addHandoff: (handoff: Omit<Handoff, 'id' | 'at'>) => void;
+  /** A hand-off leaving now, or `delay` ms from now. */
+  addHandoff: (handoff: Omit<Handoff, 'id' | 'at'>, delay?: number) => void;
 }
 
 let handoffCount = 0;
@@ -72,11 +73,11 @@ export const useAgentStore = create<AgentState>()((set) => ({
     ),
   addLog: (agentId, text) =>
     set((state) => ({ log: [...state.log.slice(-199), { at: Date.now(), agentId, text }] })),
-  addHandoff: (handoff) =>
+  addHandoff: (handoff, delay = 0) =>
     set((state) => ({
       handoffs: [
         ...state.handoffs.slice(-19),
-        { ...handoff, id: `handoff-${++handoffCount}`, at: performance.now() },
+        { ...handoff, id: `handoff-${++handoffCount}`, at: performance.now() + delay },
       ],
     })),
 }));

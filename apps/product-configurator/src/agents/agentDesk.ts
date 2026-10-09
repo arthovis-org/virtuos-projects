@@ -87,13 +87,12 @@ export function clearSource(deskId: string) {
 
 /**
  * Brings a team into the room: one desk per agent (named after them, in their workspace's
- * colours, at sitting height, their screens showing their apps), replacing the room's desks.
+ * colours, at the desk's default height, their screens showing their apps), replacing the
+ * room's desks.
  */
 export function createTeam(preset: TeamPreset) {
   const setup = currentSetup();
   const product = getProduct(setup.productId);
-  const motion = product.motions[0];
-  const sit = motion?.presets.find((p) => p.label.toLowerCase() === 'sit')?.value ?? motion?.min;
   const agents: Record<string, AgentProfile> = {};
   const room = preset.members.map(({ workspace, ...agent }) => {
     const desk = newDesk(product, workspace);
@@ -101,7 +100,6 @@ export function createTeam(preset: TeamPreset) {
     return {
       ...desk,
       name: agent.name,
-      ...(motion && sit !== undefined && { motions: { ...desk.motions, [motion.id]: sit } }),
       windows: agentWindows(product, desk.workspaceId),
     };
   });

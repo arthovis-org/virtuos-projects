@@ -58,6 +58,11 @@ const FADE = 0.35;
  * sitting down), in metres: getting up right at the desk put the head and arms through it.
  */
 const SCOOT = 0.4;
+/**
+ * Standing, how far back from the seat's place the person ends up: nearer the desk than right
+ * after getting up (SCOOT, room to lean), close enough to work at it.
+ */
+const STAND_BACK = 0.12;
 /** The chair, this much nearer the desk than the seat: no gap behind the person's back. */
 const CHAIR_FORWARD = 0.12;
 /** How far the chair rolls off as it fades away. */
@@ -228,6 +233,9 @@ function Seat({
   const playing = useRef<AnimationAction | null>(null);
   /** How much the hands are placed on the surface (0 while standing). */
   const handsOn = useRef(initial === 'seated' ? 1 : 0);
+  /** How far back from the seat's place the person is now, and where sitting down began. */
+  const scootNow = useRef(initial === 'standing' ? STAND_BACK : 0);
+  const sitFrom = useRef(STAND_BACK);
   const chairGroup = useRef<Group>(null);
   const chairParts = useRef<ChairParts>({ materials: [], depthOnly: [] });
 
@@ -322,7 +330,8 @@ function Seat({
       case 'seated':
         break;
       case 'standing':
-        scoot = SCOOT;
+        // Up: a step closer to the desk, to work at it.
+        scoot = MathUtils.damp(scootNow.current, STAND_BACK, 2.2, dt);
         chairShown = 0;
         break;
       case 'rising':
@@ -331,11 +340,16 @@ function Seat({
         chairAway = smooth(0.45, 1, progress);
         break;
       case 'sittingDown':
-        scoot = SCOOT * (1 - smooth(0.78, 1, progress));
+        // A step back first (room to sit), then in with the chair once seated.
+        if (progress < 0.02) sitFrom.current = scootNow.current;
+        scoot =
+          MathUtils.lerp(sitFrom.current, SCOOT, smooth(0, 0.25, progress)) *
+          (1 - smooth(0.78, 1, progress));
         chairShown = smooth(0.05, 0.5, progress);
         chairAway = 1 - smooth(0.05, 0.55, progress);
         break;
     }
+    scootNow.current = scoot;
     person.position.z = -scoot;
     const chairObject = chairGroup.current;
     if (chairObject) {
@@ -371,8 +385,11 @@ function Seat({
       person.updateWorldMatrix(true, true);
       toDesk.copy(deskSpace.matrixWorld).invert();
       const surface = deskSurface(product, index, toDesk);
-      // On the desk while typing (an agent writing, or anyone at a desk with no agent).
-      const typing = pose.current === 'seated' && (activity === null || activity === 'typing');
+      // On the desk while typing: seated (an agent writing, or anyone at a desk with no agent),
+      // or standing at a raised desk while an agent writes.
+      const typing =
+        (pose.current === 'seated' && (activity === null || activity === 'typing')) ||
+        (pose.current === 'standing' && activity === 'typing');
       handsOn.current = MathUtils.damp(handsOn.current, typing ? 1 : 0, 6, dt);
       arms.forEach((arm, i) => {
         if (!surface) return;
