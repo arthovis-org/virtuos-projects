@@ -30,11 +30,12 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { ProductDefinition } from '@/catalog/schema';
 import { motionKey, useMotionStore } from '@/state/motionStore';
 import { useSetupStore } from '@/state/setupStore';
-import { alignHand, findArms, reach } from './armIk';
+import { alignHand, findArms, lowestTip, reach } from './armIk';
 import { characterUrl, propUrl } from './assets';
 import { deskSurface } from './deskSurface';
 import { findGaze, lookAt } from './lookAt';
 import { agentScreens } from '@/agents/agentDesk';
+import { occupantObjects } from '@/viewer/deskObjects';
 import { activityOf, taskOf, useAgentStore } from '@/agents/agentStore';
 import type { Activity } from '@/agents/types';
 
@@ -59,10 +60,10 @@ const FADE = 0.35;
  */
 const SCOOT = 0.4;
 /**
- * Standing, how far back from the seat's place the person ends up: nearer the desk than right
- * after getting up (SCOOT, room to lean), close enough to work at it.
+ * Standing, how far back from the seat's place the person is: where getting up left them (no
+ * slide towards the desk afterwards, which looked like gliding and pushed them into it).
  */
-const STAND_BACK = 0.12;
+const STAND_BACK = SCOOT;
 /** Seated, the person this much nearer the desk than the seat (clear of the chair coming in). */
 const PERSON_FORWARD = 0.05;
 /** The chair, this much nearer the desk than the seat: no gap behind the person's back. */
@@ -73,6 +74,8 @@ const CHAIR_AWAY = 0.45;
 const HANDS_APART = 0.17;
 const HANDS_IN = 0.03;
 const HANDS_LIFT = 0.03;
+/** How far above the screen the fingertips rest (m): touching, not through it. */
+const TIP_GAP = 0.004;
 /** Fingers point into the surface this much (degrees): resting on it, not lifted off it. */
 const FINGERS_DOWN = 14;
 /**
@@ -115,7 +118,7 @@ export function Occupant(props: OccupantProps) {
   const chair = occupant.chair ? propUrl(occupant.chair) : undefined;
   return createPortal(
     <Suspense fallback={null}>
-      <Follow desk={props.desk} visible={props.visible}>
+      <Follow desk={props.desk} deskId={props.deskId} visible={props.visible}>
         {(space) => (
           <Seat
             {...props}
@@ -135,14 +138,25 @@ export function Occupant(props: OccupantProps) {
 /** A group that keeps to the desk's place in the world: the desk's own space. */
 function Follow({
   desk,
+  deskId,
   visible,
   children,
 }: {
   desk: RefObject<Group | null>;
+  deskId: string;
   visible: boolean;
   children: (space: RefObject<Group | null>) => ReactNode;
 }) {
   const group = useRef<Group>(null);
+  // Clicking the person or chair picks their desk.
+  useEffect(() => {
+    const own = group.current;
+    if (!own) return;
+    occupantObjects.set(deskId, own);
+    return () => {
+      if (occupantObjects.get(deskId) === own) occupantObjects.delete(deskId);
+    };
+  }, [deskId]);
   useFrame(() => {
     const own = group.current;
     const anchor = desk.current;
@@ -305,6 +319,8 @@ function Seat({
   const target = useMemo(() => new Vector3(), []);
   const hand = useMemo(() => new Vector3(), []);
   const fingerDirection = useMemo(() => new Vector3(), []);
+  const planePoint = useMemo(() => new Vector3(), []);
+  const planeNormal = useMemo(() => new Vector3(), []);
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1);
@@ -335,8 +351,7 @@ function Seat({
       case 'seated':
         break;
       case 'standing':
-        // Up: a step closer to the desk, to work at it.
-        scoot = MathUtils.damp(scootNow.current, STAND_BACK, 2.2, dt);
+        scoot = STAND_BACK;
         chairShown = 0;
         break;
       case 'rising':
@@ -428,6 +443,16 @@ function Seat({
             .addScaledVector(surface.up, -Math.sin(down))
             .transformDirection(deskSpace.matrixWorld);
           alignHand(arm, fingerDirection, handsOn.current);
+          // Fingertips resting on the screen: the hand moves along the surface's normal until
+          // the lowest one just touches it (they went through it, or floated over it).
+          planePoint.copy(surface.front).applyMatrix4(deskSpace.matrixWorld);
+          planeNormal.copy(surface.up).transformDirection(deskSpace.matrixWorld);
+          const gap = lowestTip(arm, planePoint, planeNormal);
+          if (Number.isFinite(gap) && Math.abs(gap - TIP_GAP) > 0.002) {
+            target.addScaledVector(planeNormal, (TIP_GAP - gap) * handsOn.current);
+            reach(arm, target, handsOn.current);
+            alignHand(arm, fingerDirection, handsOn.current);
+          }
         }
         if (pose.current === 'rising' || pose.current === 'sittingDown') {
           // A hand past the desk's front edge and below its top goes back in front of it.

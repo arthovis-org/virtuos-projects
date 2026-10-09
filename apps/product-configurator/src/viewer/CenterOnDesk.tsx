@@ -31,14 +31,22 @@ export function CenterOnDesk() {
   const home = useRef<Vector3 | null>(null);
   const goal = useRef<Vector3 | null>(null);
 
+  // Seated or looking around a desk, the camera is theirs: no glide, and the overview starts
+  // afresh after (it flies back to the whole room by itself; centring then would fight it).
   useEffect(() => {
-    if (!controls) return;
-    // Seated or looking around a desk, the camera is theirs; the overview starts afresh after.
     if (seated || aroundDesk || !cameraFree) {
       home.current = null;
       goal.current = null;
-      return;
     }
+  }, [seated, aroundDesk, cameraFree]);
+
+  // Only a different desk picked (or none) moves the view: not a change of view mode.
+  const picked = useRef(activeDeskId);
+  useEffect(() => {
+    if (picked.current === activeDeskId) return;
+    picked.current = activeDeskId;
+    const view = useViewStore.getState();
+    if (!controls || view.seated || view.aroundDesk || !view.cameraFree) return;
     const desk = activeDeskId ? deskObjects.get(activeDeskId) : undefined;
     if (desk) {
       home.current ??= controls.target.clone();
@@ -49,7 +57,7 @@ export function CenterOnDesk() {
       home.current = null;
     }
     invalidate();
-  }, [activeDeskId, seated, aroundDesk, cameraFree, controls, invalidate]);
+  }, [activeDeskId, controls, invalidate]);
 
   const step = useRef(new Vector3());
   useFrame((_, delta) => {

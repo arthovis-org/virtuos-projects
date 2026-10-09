@@ -5,6 +5,8 @@ export interface Arm {
   upper: Bone;
   fore: Bone;
   hand: Bone;
+  /** The fingertips (Mixamo's last finger bones, "…Index4"), to rest them on a surface. */
+  tips: Bone[];
 }
 
 const isBone = (node: Object3D): node is Bone => 'isBone' in node;
@@ -20,7 +22,10 @@ export function findArms(root: Object3D): Arm[] {
     const upper = find(`${side}Arm`);
     const fore = find(`${side}ForeArm`);
     const hand = find(`${side}Hand`);
-    return upper && fore && hand ? [{ upper, fore, hand }] : [];
+    const tips = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'].flatMap(
+      (finger) => find(`${side}Hand${finger}4`) ?? [],
+    );
+    return upper && fore && hand ? [{ upper, fore, hand, tips }] : [];
   });
 }
 
@@ -132,4 +137,19 @@ export function alignHand(arm: Arm, direction: Vector3, weight: number) {
   turn.setFromUnitVectors(fingers, direction);
   rotateWorld(hand, none.identity().slerp(turn, weight), handWorld);
   hand.updateWorldMatrix(false, true);
+}
+
+const tip = new Vector3();
+
+/**
+ * How far the lowest fingertip is above a plane (world space; negative: through it). A plane,
+ * not a raycast: the surface hands rest on is flat and known, so this is exact and cheap.
+ */
+export function lowestTip(arm: Arm, point: Vector3, normal: Vector3): number {
+  let lowest = Infinity;
+  for (const bone of arm.tips) {
+    bone.getWorldPosition(tip);
+    lowest = Math.min(lowest, tip.sub(point).dot(normal));
+  }
+  return lowest;
 }

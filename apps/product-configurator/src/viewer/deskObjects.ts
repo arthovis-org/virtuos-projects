@@ -5,3 +5,6 @@ import type { Object3D } from 'three';
  * travel between desks (agents' hand-offs) start and land.
  */
 export const deskObjects = new Map<string, Object3D>();
+
+/** The person (and chair) at each desk, by desk id: clicking them picks their desk. */
+export const occupantObjects = new Map<string, Object3D>();
