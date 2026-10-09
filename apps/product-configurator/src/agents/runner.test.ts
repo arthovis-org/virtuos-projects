@@ -8,6 +8,9 @@ import { activityOf, deskOfAgent, taskProgress, useAgentStore } from './agentSto
 import { lastRecordedRun, recordedBackend, startMission, type Backend } from './runner';
 import { TEAMS } from './teams';
 import { PRODUCT_LAUNCH_DEMO } from './scenarios/productLaunch';
+import { planFromRows, rowsFromSetup } from '@/sheet/sheetPlan';
+import { useSheetStore } from '@/sheet/sheetStore';
+import { currentSetup } from '@/state/setupStore';
 
 const product = getProduct('smart-desk');
 const team = TEAMS[0]!;
@@ -143,6 +146,26 @@ describe('an AI team', () => {
       task.steps.forEach((step, i) => {
         expect(step.content).toBe(PRODUCT_LAUNCH_DEMO.steps[`${task.id}/${i}`]!.content);
       });
+    }
+  });
+
+  it('goes through the command center sheet: its apps are valid, the agents keep their desks', async () => {
+    // A source on Ava's screen: the sheet lists the sources app, not the page.
+    await startMission('Launch the desk', backend);
+    const rows = rowsFromSetup(product, currentSetup());
+    expect(planFromRows(product, rows).problems).toEqual([]);
+    expect(rows.some((r) => r.url.includes('wikipedia'))).toBe(false);
+
+    const before = currentSetup().room.map((d) => d.id);
+    useSheetStore.getState().replaceRows(rows);
+    useSheetStore.getState().build();
+    const room = useSetupStore.getState().room;
+    expect(room.map((d) => d.id)).not.toEqual(before);
+    for (const desk of room) {
+      expect(agents().agents[desk.id]?.name).toBe(desk.name);
+      expect(desk.windows.opened.map((w) => w.id)).toEqual(
+        expect.arrayContaining(['agent-doc', 'agent-board', 'agent-source', 'agent-log']),
+      );
     }
   });
 });

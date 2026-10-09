@@ -10,25 +10,12 @@ import { mainScreen } from '@/sheet/sheetPlan';
 import { loadSetup } from '@/state/actions';
 import { newDesk, workspaceById, type DeskWindows } from '@/state/setup';
 import { currentSetup, useSetupStore } from '@/state/setupStore';
+import { AGENT_APP_WINDOWS, AGENT_APPS, type AgentApp } from './agentApps';
 import { useAgentStore } from './agentStore';
 import type { TeamPreset } from './teams';
 import type { AgentProfile, Source } from './types';
 
-/** The agent apps, as window addresses. */
-export const AGENT_APPS = {
-  doc: 'agent:doc',
-  board: 'agent:board',
-  log: 'agent:log',
-  sources: 'agent:sources',
-} as const;
-export type AgentApp = keyof typeof AGENT_APPS;
-
-/** An agent app's window, or none (a site). */
-export function agentAppOf(url: string): AgentApp | null {
-  if (!url.startsWith('agent:')) return null;
-  const app = url.slice('agent:'.length);
-  return app in AGENT_APPS ? (app as AgentApp) : null;
-}
+export { AGENT_APPS, agentAppOf, type AgentApp } from './agentApps';
 
 /** The screens an agent desk uses for what: main, the one lying on the desk, and the sides. */
 export function agentScreens(product: ProductDefinition) {
@@ -42,7 +29,7 @@ export function agentScreens(product: ProductDefinition) {
   return { main, flat, left, right };
 }
 
-const SOURCE_WINDOW = 'agent-source';
+const SOURCE_WINDOW = AGENT_APP_WINDOWS.sources.id;
 
 /** Agent desks' height (cm): seated work, not as low as the Sit preset. */
 export const AGENT_DESK_HEIGHT = 85;
@@ -50,11 +37,16 @@ export const AGENT_DESK_HEIGHT = 85;
 /** An agent desk's windows: its apps on its screens, the workspace's own sites closed. */
 export function agentWindows(product: ProductDefinition, workspaceId: string): DeskWindows {
   const screens = agentScreens(product);
-  const apps: WorkspaceWindow[] = [
-    { id: 'agent-doc', title: 'Work', url: AGENT_APPS.doc, screen: screens.main },
-    { id: 'agent-board', title: 'Plan', url: AGENT_APPS.board, screen: screens.flat },
-    { id: SOURCE_WINDOW, title: 'Sources', url: AGENT_APPS.sources, screen: screens.left },
-    { id: 'agent-log', title: 'Activity', url: AGENT_APPS.log, screen: screens.right },
+  const app = (name: AgentApp, screen: string): WorkspaceWindow => ({
+    ...AGENT_APP_WINDOWS[name],
+    url: AGENT_APPS[name],
+    screen,
+  });
+  const apps = [
+    app('doc', screens.main),
+    app('board', screens.flat),
+    app('sources', screens.left),
+    app('log', screens.right),
   ];
   const workspace = workspaceById(product, workspaceId);
   return {
@@ -83,7 +75,9 @@ export function clearSource(deskId: string) {
   useSetupStore.getState().updateDeskWindows(deskId, (windows) => ({
     ...windows,
     opened: windows.opened.map((w) =>
-      w.id === SOURCE_WINDOW ? { ...w, title: 'Sources', url: AGENT_APPS.sources } : w,
+      w.id === SOURCE_WINDOW
+        ? { ...w, title: AGENT_APP_WINDOWS.sources.title, url: AGENT_APPS.sources }
+        : w,
     ),
   }));
 }
@@ -112,4 +106,26 @@ export function createTeam(preset: TeamPreset) {
   loadSetup({ ...setup, mode: 'desks', room, activeDeskId: null });
   useAgentStore.getState().setAgents(agents);
   useAgentStore.getState().setMission(null);
+}
+
+/**
+ * After the room is rebuilt (from the command center sheet), each agent goes back to the desk
+ * named after them; agents without one leave the room. Desks are new then (new ids), so
+ * without this the agents' screens would show nobody.
+ */
+export function reseatAgents() {
+  const setup = currentSetup();
+  const desks = setup.mode === 'desks' ? setup.room : [setup.single];
+  const byName = new Map(
+    Object.values(useAgentStore.getState().agents).map((a) => [a.name.trim().toLowerCase(), a]),
+  );
+  if (byName.size === 0) return;
+  const agents: Record<string, AgentProfile> = {};
+  for (const desk of desks) {
+    const agent = byName.get((desk.name ?? '').trim().toLowerCase());
+    if (!agent) continue;
+    agents[desk.id] = agent;
+    byName.delete(agent.name.trim().toLowerCase());
+  }
+  useAgentStore.getState().setAgents(agents);
 }

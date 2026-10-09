@@ -13,6 +13,7 @@ import {
   type DeskSetup,
   type Setup,
 } from '@/state/setup';
+import { AGENT_APP_WINDOWS, AGENT_APPS, agentAppOf } from '@/agents/agentApps';
 import { parseAddress } from '@/ui/workspace/siteUrl';
 import { emptyRow, isBlank, type SheetColumn, type SheetRow } from './sheetTable';
 
@@ -166,8 +167,10 @@ export function rowsFromSetup(product: ProductDefinition, setup: Setup): SheetRo
         // The desk's name, theme and height on its first row only, as one would write it.
         ...(i > 0 && { theme: '', height: '' }),
         screen: screen.label,
-        site: w.title,
-        url: w.url,
+        // The agent's sources window as the app it is, not the page it reads at the moment.
+        ...(w.id === AGENT_APP_WINDOWS.sources.id
+          ? { site: AGENT_APP_WINDOWS.sources.title, url: AGENT_APPS.sources }
+          : { site: w.title, url: w.url }),
       }),
     );
   }
@@ -292,7 +295,11 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
         problem(index, 'url', 'Needs a web address');
         continue;
       }
-      const address = parseAddress(row.url.replace(/^http:\/\//i, 'https://'));
+      // An agent app (agent:doc and the like): the agent at this desk's, drawn by the configurator.
+      const app = agentAppOf(row.url);
+      const address = app
+        ? { url: AGENT_APPS[app], title: AGENT_APP_WINDOWS[app].title }
+        : parseAddress(row.url.replace(/^http:\/\//i, 'https://'));
       if ('error' in address) {
         problem(index, 'url', address.error);
         continue;
@@ -306,8 +313,10 @@ export function planFromRows(product: ProductDefinition, rows: readonly SheetRow
         );
         continue;
       }
+      // Agent apps keep their own window ids (the agent finds its sources window by it).
+      const appId = app && AGENT_APP_WINDOWS[app].id;
       sites.push({
-        id: `sheet-${++windowCount}`,
+        id: appId && !sites.some((w) => w.id === appId) ? appId : `sheet-${++windowCount}`,
         title: row.site.trim() || address.title,
         url: address.url,
         screen: screen.id,

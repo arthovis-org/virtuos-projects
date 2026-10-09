@@ -54,6 +54,13 @@ interface Flight {
 /** Space around the product when it is framed. */
 const FIT_MARGIN = 1.1;
 
+/**
+ * How high up the framed product (0 floor, 1 top) the camera orbits and zooms towards: about
+ * the main screen, not the middle of the bounds (the screen lying on the desk), so zooming in
+ * comes to the screen one looks at.
+ */
+const TARGET_HEIGHT = 0.7;
+
 /** How long a refit takes, in seconds. */
 const REFIT_SECONDS = 0.9;
 /** Fast in the middle, soft at both ends. */
@@ -100,7 +107,8 @@ function Refit() {
     if (!first && !backInRoom && fitted.current === key) return;
     fitted.current = key;
     bounds.refresh().clip();
-    const { box, center } = bounds.getSize();
+    const { box, center: middle } = bounds.getSize();
+    const center = middle.clone().setY(MathUtils.lerp(box.min.y, box.max.y, TARGET_HEIGHT));
     const target = controls?.target ?? center;
     // The room from behind the point its desks face, high enough to see over the front row;
     // one desk from the side the visitor looks from now.

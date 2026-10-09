@@ -20,7 +20,9 @@ export function selectDesk(deskId: string, seat = view().seated) {
   const { seated, focus, active } = view();
   if (deskId === activeDeskId && active && seated === seat && !focus) return;
   setup().setActiveDesk(deskId);
-  if (setup().activeDeskId === deskId) view().showSites(seat);
+  // Looking around a desk, the next one picked is looked around too: dropping back to the
+  // room's overview here sent the camera two ways at once (to the room and to the desk).
+  if (setup().activeDeskId === deskId) view().showSites(seat, view().aroundDesk);
 }
 
 /** The next or previous desk, in the same view; from no desk, the first or the last. */

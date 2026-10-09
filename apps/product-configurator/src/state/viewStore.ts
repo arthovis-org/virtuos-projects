@@ -98,7 +98,8 @@ interface ViewState {
   presenting: boolean;
 
   /** Turns the sites on: seated in front of the screens, or looking around. */
-  showSites: (seat: boolean) => void;
+  /** Shows the sites, seated or not; not seated, `around` keeps looking around the desk. */
+  showSites: (seat: boolean, around?: boolean) => void;
   /** Leaves the seat; in the room, to look around this desk (`aroundDesk`) or the whole room. */
   standUp: (aroundDesk?: boolean) => void;
   sit: () => void;
@@ -143,12 +144,12 @@ export const useViewStore = create<ViewState>()((set, get) => ({
   room: { width: 0, depth: 0 },
   presenting: false,
 
-  showSites: (seat) =>
+  showSites: (seat, around = false) =>
     set({
       active: true,
       focus: null,
       drag: null,
-      aroundDesk: false,
+      aroundDesk: !seat && around,
       ...(seat ? { seated: true, cameraFree: false } : { seated: false }),
     }),
   standUp: (aroundDesk = false) => set({ seated: false, aroundDesk, focus: null }),

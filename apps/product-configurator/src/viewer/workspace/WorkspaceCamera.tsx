@@ -47,10 +47,16 @@ const MARGIN = 1.03;
 const WORLD_UP = new Vector3(0, 1, 0);
 /**
  * Looking around a desk in the room: from a three-quarter view (turned this far from the
- * screens' front, and looking down this much), far enough back to see the whole desk, aimed a
- * little below the screens so the legs are in view too.
+ * screens' front, and looking down this much), far enough back to see the whole desk, legs
+ * included; aimed at about the main screen (barely below the screens' middle), so zooming in
+ * comes to the screen one looks at rather than the one lying on the desk.
  */
-const AROUND = { turn: MathUtils.degToRad(35), tilt: MathUtils.degToRad(22), pull: 1.9, drop: 0.3 };
+const AROUND = {
+  turn: MathUtils.degToRad(35),
+  tilt: MathUtils.degToRad(22),
+  pull: 2.2,
+  drop: 0.05,
+};
 
 /** Corners of a screen's display surface in world space. */
 function worldCorners({ frame }: CameraTarget): Vector3[] {
@@ -315,8 +321,9 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   };
 
   // In the room, from the overview to looking around the desk (the camera is already free):
-  // fly there with the orbit controls paused, then orbit it.
+  // fly there with the orbit controls paused, then orbit it; and on to the next desk picked.
   const aroundDesk = useViewStore((s) => s.aroundDesk);
+  const deskId = useSetupStore((s) => s.activeDeskId);
   useEffect(() => {
     if (seated || !aroundDesk || saved.current) return;
     const around = aroundPose();
@@ -327,7 +334,7 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     });
     invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aroundDesk]);
+  }, [aroundDesk, deskId]);
 
   // Leaving: fly back, then hand the camera back to the orbit controls.
   useEffect(() => {

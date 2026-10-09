@@ -42,6 +42,16 @@ export function CenterOnDesk() {
 
   // Only a different desk picked (or none) moves the view: not a change of view mode.
   const picked = useRef(activeDeskId);
+
+  // A new room, or one desk instead of the room: the camera is reframed (Refit), and gliding
+  // back to the old overview on top of that left the desk off centre.
+  const desksMode = useSetupStore((s) => s.mode === 'desks');
+  const deskCount = useSetupStore((s) => s.room.length);
+  useEffect(() => {
+    home.current = null;
+    goal.current = null;
+    picked.current = desksMode ? useSetupStore.getState().activeDeskId : null;
+  }, [desksMode, deskCount]);
   useEffect(() => {
     if (picked.current === activeDeskId) return;
     picked.current = activeDeskId;

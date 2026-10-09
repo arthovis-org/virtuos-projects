@@ -7,7 +7,7 @@ import {
   typedLength,
   useAgentStore,
 } from '../agentStore';
-import type { AgentApp } from '../agentDesk';
+import type { AgentApp } from '../agentApps';
 import type { Activity, AgentProfile, AgentStep, AgentTask } from '../types';
 import { Markdown } from './Markdown';
 import styles from './apps.module.css';

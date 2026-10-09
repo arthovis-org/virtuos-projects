@@ -3,6 +3,7 @@
  * it was loaded from (remembered in this browser), and building the room from it.
  */
 import { create } from 'zustand';
+import { reseatAgents } from '@/agents/agentDesk';
 import { getProduct } from '@/catalog';
 import { loadSetup } from '@/state/actions';
 import { currentSetup } from '@/state/setupStore';
@@ -138,6 +139,8 @@ export const useSheetStore = create<SheetState>()((set, get) => ({
     const plan = planFromRows(product(), get().rows);
     if (plan.desks.length === 0) return 0;
     loadSetup(setupWithPlan(currentSetup(), plan));
+    // The team stays at the desks named after them.
+    reseatAgents();
     return plan.desks.length;
   },
 
