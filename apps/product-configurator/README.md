@@ -157,6 +157,28 @@ The code is in `src/sheet/`: `sheetTable.ts` (CSV and pasted text), `sheetPlan.t
 and back), `sheetEdit.ts` (desk-by-desk edits), `sheetSources.ts` (Google Sheets, the AI) and
 `sheetStore.ts`.
 
+## AI agents
+
+A team of AI agents can work at the room's desks (`src/agents/`). **Bring in the product
+launch team** (the AI team card at the top of the options) gives each agent a desk: Ava
+researches, Mia designs, Sam does the numbers, Leo writes. Give the team a goal and:
+
+- the layouts Worker's `/agents` route plans it, one task per agent, and works each step with
+  the free AI; tasks start once the tasks they need are done, so agents work side by side and
+  hand their results on (`runner.ts`);
+- each agent's screens show its work as **agent apps** (`agent:` windows drawn by the
+  configurator, `apps/`): the work typed out live on the main screen, the plan and the team on
+  the desk screen, the activity log and the sources it reads (real Wikipedia pages) on the
+  sides; desks the visitor isn't at show the same on their posters;
+- the person at the desk acts it out (types while writing, sits back while thinking or
+  waiting, turns their head to what they read), the tag over the desk says what the agent is
+  doing, and finished results fly to the teammates who need them (`HandoffArcs.tsx`).
+
+**Play the demo run** plays a run written ahead (`scenarios/productLaunch.ts`) through the
+same runner: the same every time, no AI service, for demos and videos. A live run can be saved
+and played back exactly. **Present** (or P; Esc to leave) shows the 3D view alone, for
+recording.
+
 ## Desktop app
 
 [`apps/configurator-desktop`](../configurator-desktop) bundles this configurator in a Windows app
@@ -165,6 +187,13 @@ that can show every website on the screens. The page knows it runs there through
 embed players (YouTube embed links are even turned back into youtube.com itself:
 `nativeVersion` in `embedUrls.ts`), the AI may use any site, and shared links point to the public website. Develop
 here as usual; `npm run dev` in the desktop folder shows this dev server in the app.
+
+**Reflow** (experimental, in the desktop app's title bars): a desktop-only site laid out in
+columns is cut off on a narrow side monitor, and zoomed out to fit, too small to read. Reflow
+finds the page's columns as a desktop browser lays them out and offers them as tabs; the one
+picked fills the window at a readable size, the page staying the live site
+(`apps/configurator-desktop/src/reflow.js`, `src/ui/workspace/Reflow.tsx`). Sites with their own
+mobile layout already fit and are left as they are.
 
 ## Feedback
 

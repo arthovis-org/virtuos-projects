@@ -47,6 +47,20 @@ To add Groq: make a free account at https://console.groq.com, create an API key,
 folder run `npx wrangler secret put GROQ_API_KEY` and paste it. Remove it with
 `npx wrangler secret delete GROQ_API_KEY` to go back to Workers AI alone.
 
+It runs the configurator's AI agents too (`src/agents.js`), with the same free AI (`src/ai.js`,
+shared with `/plan`):
+
+```
+POST   /agents  { action: "plan", goal, team: [{ id, name, role }] }       -> 200 { summary, tasks }
+POST   /agents  { action: "step", goal, agent, task, step, done?, context? } -> 200 { note, content, sources }
+```
+
+`plan` splits a goal into one task per agent, side by side where they can work in parallel,
+with dependencies where a task needs another's result. `step` does one step of a task:
+research steps are grounded in real Wikipedia articles (searched by the Worker, kept only when
+their title matches the search), returned as `sources` that the agent opens on its screen. 120
+requests per visitor per 10 minutes.
+
 And it tells whether a site lets other pages show it in a frame (`src/embed.js`), so the
 configurator can leave such sites out of AI plans and explain them on a screen instead of the
 browser's broken-page icon:
