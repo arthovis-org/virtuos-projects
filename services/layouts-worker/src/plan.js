@@ -10,72 +10,11 @@
  * the page only says what the visitor does, so this can't be used as a general chatbot.
  */
 
-/** The Workers AI model; any Workers AI text model taking chat messages works. */
 import { blockedHosts } from "./embedPolicy.js";
+import { ask, hasAi, rateLimiter } from "./ai.js";
 
-const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-/** The Groq model (OpenAI-style chat API). */
-/** Groq retired Llama from free accounts (August 2026); GPT-OSS 120B is its replacement. */
-const GROQ_MODEL = "openai/gpt-oss-120b";
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-/** An AI that couldn't answer, and whether it was because of its free limits. */
-class AiError extends Error {
-  constructor(message, limited) {
-    super(message);
-    this.limited = limited;
-  }
-}
-
-/** Asks Groq; throws AiError (limited on 429: its per-minute or daily cap). */
-async function askGroq(env, messages) {
-  const response = await fetch(GROQ_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: env.GROQ_MODEL || GROQ_MODEL,
-      messages,
-      // A reasoning model: a little thinking is enough for a table, and keeps it quick.
-      reasoning_effort: "low",
-      max_tokens: 4096,
-      temperature: 0.4,
-    }),
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new AiError(
-      `Groq ${response.status}: ${detail.slice(0, 200)}`,
-      response.status === 429,
-    );
-  }
-  const data = await response.json();
-  return data?.choices?.[0]?.message?.content ?? "";
-}
-
-/** Asks Workers AI; throws AiError (limited once the daily allowance is used up). */
-async function askWorkersAI(env, messages) {
-  if (!env.AI) throw new AiError("Workers AI is not bound", false);
-  try {
-    const result = await env.AI.run(env.AI_MODEL || DEFAULT_MODEL, {
-      messages,
-      max_tokens: 2048,
-      temperature: 0.4,
-    });
-    return typeof result?.response === "string" ? result.response : "";
-  } catch (error) {
-    const message = String(error?.message ?? error);
-    throw new AiError(
-      message,
-      /limit|quota|neuron|4006|capacity/i.test(message),
-    );
-  }
-}
 /** Plans a visitor may ask for per window; counts live in this Worker instance only. */
-const RATE = { max: 12, windowMs: 10 * 60 * 1000 };
-const asked = new Map();
+const allowPlan = rateLimiter({ max: 12, windowMs: 10 * 60 * 1000 });
 const MAX_WORKFLOW = 1500;
 const MAX_CURRENT = 12 * 1024;
 
@@ -173,15 +112,10 @@ ${
 }
 
 export async function plan(request, env, reply) {
-  if (!env.AI && !env.GROQ_API_KEY) {
+  if (!hasAi(env)) {
     return reply(503, { error: "The AI is not set up on this site" });
   }
-  const visitor = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  const now = Date.now();
-  const recent = (asked.get(visitor) ?? []).filter(
-    (t) => now - t < RATE.windowMs,
-  );
-  if (recent.length >= RATE.max) {
+  if (!allowPlan(request)) {
     return reply(429, {
       error:
         "That's a lot of plans in a short time; try again in a few minutes",
@@ -207,9 +141,6 @@ export async function plan(request, env, reply) {
     typeof body.current === "string"
       ? body.current.trim().slice(0, MAX_CURRENT)
       : "";
-  recent.push(now);
-  asked.set(visitor, recent);
-
   const ask = current
     ? `My current sheet:\n${current}\n\nChange it as I ask, keeping the rest, and answer with the whole updated sheet:\n${workflow}`
     : `My workflows:\n${workflow}`;
@@ -224,24 +155,7 @@ export async function plan(request, env, reply) {
     },
     { role: "user", content: ask },
   ];
-  // Groq first when it is set up; Workers AI when it isn't, or can't answer.
-  const services = [
-    ...(env.GROQ_API_KEY ? [askGroq] : []),
-    ...(env.AI ? [askWorkersAI] : []),
-  ];
-  let answer = "";
-  let via = "";
-  let limited = true;
-  for (const service of services) {
-    try {
-      answer = await service(env, messages);
-      via = service === askGroq ? "groq" : "workers-ai";
-      if (answer.trim()) break;
-    } catch (error) {
-      console.error(error);
-      limited &&= error instanceof AiError && error.limited;
-    }
-  }
+  const { answer, via, limited } = await ask(env, messages);
   if (!answer.trim()) {
     return limited
       ? reply(429, {

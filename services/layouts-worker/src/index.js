@@ -23,11 +23,16 @@
  *
  *   POST   /plan             { workflow, product, current? }       -> 200 { csv }
  *
+ * And it runs the AI agents working at the desks (see agents.js):
+ *
+ *   POST   /agents           { action: "plan" | "step", ... }      -> 200 { ... }
+ *
  * And it tells whether a site may be shown in a frame (see embed.js):
  *
  *   GET    /embed?url=<https address>                             -> 200 { embeddable }
  */
 import { blockedList, embed } from "./embed.js";
+import { agents } from "./agents.js";
 import { plan } from "./plan.js";
 
 const MAX_NAME = 80;
@@ -85,6 +90,20 @@ export default {
         return reply(405, { error: "Method not allowed" });
       try {
         return await plan(request, env, reply);
+      } catch (error) {
+        console.error(error);
+        return reply(500, { error: "Something went wrong; try again" });
+      }
+    }
+    if (url.pathname === "/agents" || url.pathname === "/agents/") {
+      if (request.method === "OPTIONS")
+        return new Response(null, { status: 204, headers: cors });
+      if (!allowed.includes(origin))
+        return reply(403, { error: "Origin not allowed" });
+      if (request.method !== "POST")
+        return reply(405, { error: "Method not allowed" });
+      try {
+        return await agents(request, env, reply);
       } catch (error) {
         console.error(error);
         return reply(500, { error: "Something went wrong; try again" });
