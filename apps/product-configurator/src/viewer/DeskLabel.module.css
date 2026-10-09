@@ -51,3 +51,10 @@
   outline-offset: 3px;
   transform: scale(1.08);
 }
+
+/* An agent's desk: a taller tag with their status. */
+.label[data-agent] {
+  padding: 5px 14px 5px 5px;
+  border-left-width: 1px;
+  border-radius: 999px;
+}

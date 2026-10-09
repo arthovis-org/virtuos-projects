@@ -16,6 +16,7 @@ import { CssProjectionDriver } from './workspace/CssProjectionDriver';
 import { ScreenLayer } from './workspace/ScreenLayer';
 import { SmoothZoom } from './SmoothZoom';
 import { useOrbitGuard } from './useOrbitGuard';
+import { HandoffArcs } from '@/agents/HandoffArcs';
 import styles from './Scene.module.css';
 
 // This module is loaded lazily, and this is the earliest point where three is available.
@@ -252,6 +253,7 @@ export function Scene() {
           // which includes the full height range of a motorised desk.
         />
         <SmoothZoom />
+        <HandoffArcs />
         <RoomLimits />
         <CssProjectionDriver />
       </Canvas>

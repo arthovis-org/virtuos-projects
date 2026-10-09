@@ -6,6 +6,8 @@ import { useViewStore } from '@/state/viewStore';
 import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import styles from './DeskLabel.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
+import { AgentTag } from '@/agents/AgentTag';
+import { useAgentStore } from '@/agents/agentStore';
 
 interface DeskLabelProps {
   deskId: string;
@@ -24,6 +26,7 @@ interface DeskLabelProps {
 export function DeskLabel({ deskId, name, number, workspace, height, active }: DeskLabelProps) {
   const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
   const dragged = useViewStore((s) => s.deskDrag?.deskId === deskId);
+  const agent = useAgentStore((s) => s.agents[deskId]);
   return (
     // Nearer tags cover farther ones: drei orders them by distance over the camera's whole
     // depth range, so the range must be wide; a narrow one (it was 50 steps) gave desks a few
@@ -37,6 +40,7 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
         data-drop={dropTarget || undefined}
         data-dragged={dragged || undefined}
         data-desk-tag=""
+        data-agent={agent ? '' : undefined}
         {...deskDropAttribute(deskId)}
         style={{ '--desk-accent': workspace?.accent ?? '#888888' } as CSSProperties}
         onPointerDown={(event) => pressDesk(event, deskId, () => selectDesk(deskId))}
@@ -46,10 +50,17 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
         }}
         title={`Sit at desk ${number} (drag onto another desk to swap, or to the trash to remove): ${workspace?.description ?? name}`}
       >
-        <span className={styles.icon} aria-hidden="true">
-          <WorkspaceIcon name={workspace?.icon} size={15} />
-        </span>
-        <span className={styles.name}>{name}</span>
+        {agent ? (
+          // An agent's desk: who works there, and what they are doing now.
+          <AgentTag agent={agent} />
+        ) : (
+          <>
+            <span className={styles.icon} aria-hidden="true">
+              <WorkspaceIcon name={workspace?.icon} size={15} />
+            </span>
+            <span className={styles.name}>{name}</span>
+          </>
+        )}
       </button>
     </Html>
   );

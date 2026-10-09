@@ -17,6 +17,7 @@ import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskMode
 import { motionEnvelope, useMotions } from './motion';
 import { modelBounds, ownMeshes } from './nodeUtils';
 import { Occupant } from './people/Occupant';
+import { deskObjects } from './deskObjects';
 import { DeskPosters } from './workspace/DeskPosters';
 import { WorkspaceLayer } from './workspace/WorkspaceLayer';
 
@@ -221,6 +222,16 @@ function DeskInstance({
     }
     invalidate();
   });
+  // Where this desk is, for what travels between desks.
+  useEffect(() => {
+    const object = group.current;
+    if (!object) return;
+    deskObjects.set(deskId, object);
+    return () => {
+      if (deskObjects.get(deskId) === object) deskObjects.delete(deskId);
+    };
+  }, [deskId]);
+
   // The side view of the height control shows the desk the visitor is at.
   const showsInset = useMotionStore((s) => s.insetOpen) && (!desk || desk.active);
 

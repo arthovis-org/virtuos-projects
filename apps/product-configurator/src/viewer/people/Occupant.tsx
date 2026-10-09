@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   AnimationMixer,
+  Box3,
   LoopOnce,
   LoopRepeat,
   DoubleSide,
@@ -32,11 +33,17 @@ import { useSetupStore } from '@/state/setupStore';
 import { findArms, reach } from './armIk';
 import { characterUrl, propUrl } from './assets';
 import { deskSurface } from './deskSurface';
+import { findGaze, lookAt } from './lookAt';
+import { agentScreens } from '@/agents/agentDesk';
+import { activityOf, taskOf, useAgentStore } from '@/agents/agentStore';
+import type { Activity } from '@/agents/types';
 
 /** Clips by role; characters/<Name>'s clips are named after their Mixamo files. */
 const CLIPS = {
   working: 'typing',
   seated: 'sittingIdle',
+  /** Optional: a seated thinking clip, when the character has one. */
+  thinking: 'thinking',
   standing: 'standingIdle',
   rising: 'sitToStand',
   sittingDown: 'standToSit',
@@ -183,6 +190,7 @@ function Seat({
     return copy;
   }, [scene]);
   const arms = useMemo(() => findArms(person), [person]);
+  const gaze = useMemo(() => findGaze(person), [person]);
   const spine = useMemo(() => {
     const bones: Object3D[] = [];
     person.traverse((node) => {
@@ -196,6 +204,8 @@ function Seat({
     const pick = (name: string) => byName.get(name);
     return {
       working: pick(CLIPS.working) ?? pick(CLIPS.seated),
+      seated: pick(CLIPS.seated) ?? pick(CLIPS.working),
+      thinking: pick(CLIPS.thinking) ?? pick(CLIPS.seated) ?? pick(CLIPS.working),
       standing: pick(CLIPS.standing),
       rising: pick(CLIPS.rising),
       sittingDown: pick(CLIPS.sittingDown),
@@ -221,6 +231,25 @@ function Seat({
   const chairGroup = useRef<Group>(null);
   const chairParts = useRef<ChairParts>({ materials: [], depthOnly: [] });
 
+  /**
+   * What the agent at this desk is doing (null without an agent: then the person just types,
+   * as at a desk with no agent).
+   */
+  const agentActivity = (): Activity | null => {
+    const { agents, mission } = useAgentStore.getState();
+    const agent = agents[deskId];
+    if (!agent) return null;
+    if (mission?.status === 'planning') return 'thinking';
+    return activityOf(taskOf(mission, agent.id));
+  };
+  /** The clip for sitting, by activity: typing while writing, else sitting back. */
+  const seatedAction = () => {
+    const activity = agentActivity();
+    if (activity === null || activity === 'typing') return actions.working;
+    if (activity === 'thinking') return actions.thinking;
+    return actions.seated;
+  };
+
   const play = (action: AnimationAction | undefined, once: boolean) => {
     if (!action) return;
     action.reset();
@@ -234,7 +263,7 @@ function Seat({
   };
 
   useEffect(() => {
-    play(pose.current === 'standing' ? actions.standing : actions.working, false);
+    play(pose.current === 'standing' ? actions.standing : seatedAction(), false);
     // A transition done: settle into what it led to.
     const onFinished = () => {
       if (pose.current === 'rising') {
@@ -242,7 +271,7 @@ function Seat({
         play(actions.standing, false);
       } else if (pose.current === 'sittingDown') {
         pose.current = 'seated';
-        play(actions.working, false);
+        play(seatedAction(), false);
       }
     };
     mixer.addEventListener('finished', onFinished);
@@ -250,8 +279,16 @@ function Seat({
       mixer.removeEventListener('finished', onFinished);
       mixer.stopAllAction();
     };
+    // `play` and `seatedAction` read refs and the stores only: set up once per skeleton.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mixer, actions]);
 
+  // Where the head turns to: the screens by role, followed smoothly.
+  const screens = useMemo(() => agentScreens(product), [product]);
+  const screenNode = (id: string) => product.screens.find((sc) => sc.id === id)?.node ?? '';
+  const lookTarget = useRef(new Vector3());
+  const lookAim = useRef(new Vector3());
+  const looking = useRef(0);
   const toDesk = useMemo(() => new Matrix4(), []);
   const target = useMemo(() => new Vector3(), []);
   const hand = useMemo(() => new Vector3(), []);
@@ -265,6 +302,12 @@ function Seat({
     } else if (pose.current === 'standing' && !stand && actions.sittingDown) {
       pose.current = 'sittingDown';
       play(actions.sittingDown, true);
+    }
+    // Seated: the clip follows what the agent is doing.
+    const activity = agentActivity();
+    if (pose.current === 'seated') {
+      const wanted = seatedAction();
+      if (wanted && wanted !== playing.current) play(wanted, false);
     }
     mixer.update(dt);
 
@@ -328,7 +371,9 @@ function Seat({
       person.updateWorldMatrix(true, true);
       toDesk.copy(deskSpace.matrixWorld).invert();
       const surface = deskSurface(product, index, toDesk);
-      handsOn.current = MathUtils.damp(handsOn.current, pose.current === 'seated' ? 1 : 0, 6, dt);
+      // On the desk while typing (an agent writing, or anyone at a desk with no agent).
+      const typing = pose.current === 'seated' && (activity === null || activity === 'typing');
+      handsOn.current = MathUtils.damp(handsOn.current, typing ? 1 : 0, 6, dt);
       arms.forEach((arm, i) => {
         if (!surface) return;
         // Facing the desk (−Z), the left hand is towards −X.
@@ -355,6 +400,24 @@ function Seat({
         }
       });
     }
+    // An agent looks at what it works on: the source it reads on the side screen, else the
+    // main screen (its work). Eased in and out.
+    if (gaze) {
+      const screen = activity === 'reading' ? screens.left : screens.main;
+      const node = activity !== null ? index.get(screenNode(screen)) : undefined;
+      if (node) {
+        screenCentre(node, lookTarget.current);
+        lookAim.current.lerp(lookTarget.current, 1 - Math.exp(-5 * dt));
+      }
+      looking.current = MathUtils.damp(
+        looking.current,
+        node && pose.current !== 'rising' && pose.current !== 'sittingDown' ? 1 : 0,
+        4,
+        dt,
+      );
+      lookAt(gaze, lookAim.current, looking.current);
+    }
+
     // Always moving (breathing, typing): keep frames coming while it is on show.
     invalidate();
   });
@@ -369,6 +432,12 @@ function Seat({
       )}
     </group>
   );
+}
+
+const centreOf = new Box3();
+/** The middle of a screen, in world space. */
+function screenCentre(node: Object3D, out: Vector3) {
+  return centreOf.setFromObject(node).getCenter(out);
 }
 
 /** A chair's own materials (to fade) and the depth-only twins of its meshes (see `Seat`). */

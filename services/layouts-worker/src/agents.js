@@ -129,10 +129,18 @@ async function wikipedia(search) {
     });
     if (!response.ok) return [];
     const data = await response.json();
+    // Only articles about what was searched: their title shares a word with it (a search for
+    // "smart desk prices" once brought up a fitness band).
+    const words = search.toLowerCase().split(/\W+/).filter((w) => w.length >= 4);
+    const needed = Math.min(2, words.length);
+    const relevant = (title) => {
+      const titleWords = new Set(title.toLowerCase().split(/\W+/).map((w) => w.replace(/s$/, "")));
+      return words.filter((w) => titleWords.has(w.replace(/s$/, ""))).length >= needed;
+    };
     return Object.values(data?.query?.pages ?? {})
       .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
       .map((p) => ({ title: p.title, url: p.fullurl, extract: text(p.extract, 1200) }))
-      .filter((p) => p.title && p.url?.startsWith("https://en.wikipedia.org/"));
+      .filter((p) => p.title && p.url?.startsWith("https://en.wikipedia.org/") && relevant(p.title));
   } catch {
     return [];
   }
