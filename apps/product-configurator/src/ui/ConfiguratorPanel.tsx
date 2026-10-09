@@ -11,6 +11,7 @@ import { OptionGroupControl } from './OptionGroupControl';
 import { PriceSummary } from './PriceSummary';
 import { usePriceFormat } from './formatPrice';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
+import { TeamPanel } from '@/agents/TeamPanel';
 
 /**
  * Lists the product's motions (live demo controls), then every option group, followed by the
@@ -31,6 +32,7 @@ export function ConfiguratorPanel() {
   if (desksMode && !desk) {
     return (
       <div className={styles.panel}>
+        <TeamPanel />
         <section className={styles.pick} aria-label="Desk">
           <h2 className={styles.deskName}>Pick a desk to set it up</h2>
           <p className={styles.deskNote}>
@@ -45,6 +47,7 @@ export function ConfiguratorPanel() {
   return (
     <div className={styles.panel}>
       <ModelCheck />
+      <TeamPanel />
       {desk ? (
         <section
           className={styles.desk}

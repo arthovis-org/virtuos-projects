@@ -14,6 +14,9 @@ import { useSiteZoomStore } from '@/state/siteZoomStore';
 import { useViewStore } from '@/state/viewStore';
 import { useEmbeddable } from './embeddable';
 import { BlankWindowPicker } from './EmptyScreen';
+import { agentAppOf } from '@/agents/agentDesk';
+import { useAgentStore } from '@/agents/agentStore';
+import { AgentAppView } from '@/agents/apps/AgentApps';
 import { screenUrl } from './embedUrls';
 import { siteUrl } from './siteUrl';
 import { ZoomControl } from './ZoomControl';
@@ -54,7 +57,11 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
   const url = framesAnySite ? shownUrl : siteUrl(win.url);
   // A blank window (a split's other half) has no site yet: a picker instead (isBlankWindow).
   const blank = isBlankWindow(win);
-  const host = blank ? '' : new URL(url).host;
+  // An agent app (agent: address): drawn by the configurator, for the agent at this desk.
+  const agentApp = agentAppOf(win.url);
+  const deskId = useSetupStore((s) => (currentDesk(s) ?? s.single).id);
+  const agent = useAgentStore((s) => (agentApp ? s.agents[deskId] : undefined));
+  const host = blank || agentApp ? '' : new URL(url).host;
   const embeddable = useEmbeddable(win.url);
   // A blocked site shown anyway, to see for oneself that it stays blank.
   const [tryAnyway, setTryAnyway] = useState(false);
@@ -95,7 +102,7 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
         onClick={onTitleClick}
         title="Drag onto another screen"
       >
-        {!iconFailed && !blank && (
+        {!iconFailed && !blank && !agentApp && (
           <img
             className={styles.icon}
             src={`https://${host}/favicon.ico`}
@@ -107,9 +114,9 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
           />
         )}
         <span className={styles.title}>{win.title}</span>
-        <span className={styles.host}>{host}</span>
+        <span className={styles.host}>{agent ? `${agent.name} · ${agent.role}` : host}</span>
         <div className={styles.zoom}>
-          {!blank && (
+          {!blank && !agentApp && (
             <ZoomControl
               title={win.title}
               zoom={zoom}
@@ -152,7 +159,11 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
           </button>
         </div>
       </div>
-      {blank ? (
+      {agentApp ? (
+        <div className={styles.viewport}>
+          <AgentAppView app={agentApp} deskId={deskId} />
+        </div>
+      ) : blank ? (
         <div className={styles.blankBody}>
           <BlankWindowPicker screenId={screenId} blankId={win.id} />
         </div>
