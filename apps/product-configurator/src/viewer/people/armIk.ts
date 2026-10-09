@@ -142,12 +142,13 @@ export function alignHand(arm: Arm, direction: Vector3, weight: number) {
 const tip = new Vector3();
 
 /**
- * How far the lowest fingertip is above a plane (world space; negative: through it). A plane,
+ * How far the lowest fingertip (or the wrist) is above a plane (world space; negative: through it). A plane,
  * not a raycast: the surface hands rest on is flat and known, so this is exact and cheap.
  */
 export function lowestTip(arm: Arm, point: Vector3, normal: Vector3): number {
   let lowest = Infinity;
-  for (const bone of arm.tips) {
+  // The wrist too: it rests on the surface as well, never through it.
+  for (const bone of [arm.hand, ...arm.tips]) {
     bone.getWorldPosition(tip);
     lowest = Math.min(lowest, tip.sub(point).dot(normal));
   }

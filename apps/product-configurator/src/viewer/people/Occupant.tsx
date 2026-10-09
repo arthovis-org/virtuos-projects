@@ -77,7 +77,9 @@ const HANDS_LIFT = 0.03;
 /** How far above the screen the fingertips rest (m): touching, not through it. */
 const TIP_GAP = 0.004;
 /** Fingers point into the surface this much (degrees): resting on it, not lifted off it. */
-const FINGERS_DOWN = 14;
+const FINGERS_DOWN = 6;
+/** The most the hand tilts up from the surface (degrees), following a rising forearm. */
+const HAND_RISE = 10;
 /**
  * Sitting up while typing: degrees each spine bone leans back from the typing clip's hunch,
  * which raises and draws back the shoulders, so the arms reach less far up to the monitor.
@@ -319,6 +321,9 @@ function Seat({
   const target = useMemo(() => new Vector3(), []);
   const hand = useMemo(() => new Vector3(), []);
   const fingerDirection = useMemo(() => new Vector3(), []);
+  const wrist = useMemo(() => new Vector3(), []);
+  const elbow = useMemo(() => new Vector3(), []);
+  const forearm = useMemo(() => new Vector3(), []);
   const planePoint = useMemo(() => new Vector3(), []);
   const planeNormal = useMemo(() => new Vector3(), []);
 
@@ -435,13 +440,28 @@ function Seat({
             .addScaledVector(surface.up, HANDS_LIFT)
             .applyMatrix4(deskSpace.matrixWorld);
           reach(arm, target, handsOn.current);
-          // Fingers along the surface, away from the person and a little down onto it.
-          const down = MathUtils.degToRad(FINGERS_DOWN);
+          // The hand follows the forearm's heading across the surface (no sideways bend at the
+          // wrist) and lies almost along the surface: tilted at most a few degrees up from it,
+          // a little down onto it at most. Following the rising forearm fully stood the hands up;
+          // along the surface alone, the wrist bent sharply.
+          planeNormal.copy(surface.up).transformDirection(deskSpace.matrixWorld);
+          arm.hand.getWorldPosition(wrist);
+          arm.fore.getWorldPosition(elbow);
+          forearm.subVectors(wrist, elbow).normalize();
+          const rise = Math.asin(MathUtils.clamp(forearm.dot(planeNormal), -1, 1));
+          const tilt = MathUtils.clamp(
+            rise,
+            -MathUtils.degToRad(FINGERS_DOWN),
+            MathUtils.degToRad(HAND_RISE),
+          );
+          fingerDirection.copy(forearm).addScaledVector(planeNormal, -forearm.dot(planeNormal));
+          if (fingerDirection.lengthSq() < 1e-6) {
+            fingerDirection.copy(surface.inward).transformDirection(deskSpace.matrixWorld);
+          }
           fingerDirection
-            .copy(surface.inward)
-            .multiplyScalar(Math.cos(down))
-            .addScaledVector(surface.up, -Math.sin(down))
-            .transformDirection(deskSpace.matrixWorld);
+            .normalize()
+            .multiplyScalar(Math.cos(tilt))
+            .addScaledVector(planeNormal, Math.sin(tilt));
           alignHand(arm, fingerDirection, handsOn.current);
           // Fingertips resting on the screen: the hand moves along the surface's normal until
           // the lowest one just touches it (they went through it, or floated over it).
