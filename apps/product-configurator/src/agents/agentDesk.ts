@@ -44,6 +44,9 @@ export function agentScreens(product: ProductDefinition) {
 
 const SOURCE_WINDOW = 'agent-source';
 
+/** Agent desks' height (cm): seated work, not as low as the Sit preset. */
+export const AGENT_DESK_HEIGHT = 85;
+
 /** An agent desk's windows: its apps on its screens, the workspace's own sites closed. */
 export function agentWindows(product: ProductDefinition, workspaceId: string): DeskWindows {
   const screens = agentScreens(product);
@@ -87,14 +90,14 @@ export function clearSource(deskId: string) {
 
 /**
  * Brings a team into the room: one desk per agent (named after them, in their workspace's
- * colours, at sitting height, their screens showing their apps), replacing the room's desks.
+ * colours, at AGENT_DESK_HEIGHT, their screens showing their apps), replacing the room's desks.
  */
 export function createTeam(preset: TeamPreset) {
   const setup = currentSetup();
   const product = getProduct(setup.productId);
-  // At sitting height: the agents sit at their desks to work.
+  // A height the agents work at seated (below where they stand up), in the product's range.
   const motion = product.motions[0];
-  const sit = motion?.presets.find((p) => p.label.toLowerCase() === 'sit')?.value ?? motion?.min;
+  const sit = motion && Math.min(motion.max, Math.max(motion.min, AGENT_DESK_HEIGHT));
   const agents: Record<string, AgentProfile> = {};
   const room = preset.members.map(({ workspace, ...agent }) => {
     const desk = newDesk(product, workspace);

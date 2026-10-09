@@ -63,6 +63,8 @@ const SCOOT = 0.4;
  * after getting up (SCOOT, room to lean), close enough to work at it.
  */
 const STAND_BACK = 0.12;
+/** Seated, the person this much nearer the desk than the seat (clear of the chair coming in). */
+const PERSON_FORWARD = 0.05;
 /** The chair, this much nearer the desk than the seat: no gap behind the person's back. */
 const CHAIR_FORWARD = 0.12;
 /** How far the chair rolls off as it fades away. */
@@ -350,19 +352,20 @@ function Seat({
         break;
     }
     scootNow.current = scoot;
-    person.position.z = -scoot;
+    // Snug behind the back only while seated: during the sitting and standing clips (made for a
+    // chair where they expect it) the back would pass through the backrest. As the chair comes
+    // in, the person moves a little towards the desk too, so the two never meet.
+    const snug =
+      pose.current === 'seated'
+        ? 1
+        : pose.current === 'sittingDown'
+          ? smooth(0.8, 1, progress)
+          : pose.current === 'rising'
+            ? 1 - smooth(0, 0.15, progress)
+            : 0;
+    person.position.z = PERSON_FORWARD * snug - scoot;
     const chairObject = chairGroup.current;
     if (chairObject) {
-      // Snug behind the back only while seated: during the sitting and standing clips (made for
-      // a chair where they expect it) the back would pass through the backrest.
-      const snug =
-        pose.current === 'seated'
-          ? 1
-          : pose.current === 'sittingDown'
-            ? smooth(0.8, 1, progress)
-            : pose.current === 'rising'
-              ? 1 - smooth(0, 0.15, progress)
-              : 0;
       chairObject.position.z = CHAIR_FORWARD * snug - scoot - chairAway * CHAIR_AWAY;
       chairObject.visible = chairShown > 0.01;
       const fading = chairShown < 0.99;
