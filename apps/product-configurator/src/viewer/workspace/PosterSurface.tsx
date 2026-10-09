@@ -55,6 +55,7 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
       type="button"
       className={styles.poster}
       data-portrait={heightPx > widthPx || undefined}
+      data-agent={app ? '' : undefined}
       data-drop={dropTarget || undefined}
       {...deskDropAttribute(deskId)}
       style={

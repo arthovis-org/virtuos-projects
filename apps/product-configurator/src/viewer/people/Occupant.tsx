@@ -441,7 +441,12 @@ function Seat({
       }
       looking.current = MathUtils.damp(
         looking.current,
-        node && pose.current !== 'rising' && pose.current !== 'sittingDown' ? 1 : 0,
+        // Fully while reading or writing; a glance otherwise (idle, the head stays easy).
+        node && pose.current !== 'rising' && pose.current !== 'sittingDown'
+          ? activity === 'reading' || activity === 'typing'
+            ? 1
+            : 0.4
+          : 0,
         4,
         dt,
       );

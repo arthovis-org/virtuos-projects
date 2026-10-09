@@ -34,6 +34,13 @@
   backface-visibility: hidden;
 }
 
+/* An agent's desk: its app fills the screen, as on the desk the visitor is at. */
+.poster[data-agent] {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
 .poster:hover {
   filter: brightness(1.15);
 }
