@@ -2,30 +2,27 @@
 .card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 6px;
-  border: 1px solid color-mix(in srgb, var(--agent) 55%, white);
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid color-mix(in srgb, var(--agent) 30%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--agent) 14%, rgb(255 255 255 / 92%));
-  box-shadow:
-    0 6px 24px color-mix(in srgb, var(--agent) 35%, transparent),
-    0 0 0 4px color-mix(in srgb, var(--agent) 12%, transparent);
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
   white-space: nowrap;
-  transform: translateY(0);
   pointer-events: none;
   user-select: none;
-  translate: 0 -34px;
+  translate: 0 -24px;
 }
 
 .avatar {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--agent);
   color: #ffffff;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   font-weight: 700;
 }
 
@@ -37,12 +34,12 @@
 
 .title {
   color: #16161a;
-  font-size: 0.8125rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 650;
 }
 
 .to {
-  color: color-mix(in srgb, var(--agent) 70%, #16161a);
-  font-size: 0.75rem;
-  font-weight: 600;
+  color: #55555e;
+  font-size: 0.6875rem;
+  font-weight: 500;
 }

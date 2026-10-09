@@ -64,13 +64,12 @@ beforeEach(() => {
 });
 
 describe('an AI team', () => {
-  it('gets a desk each, at the default height, its screens showing the agent apps', () => {
+  it('gets a desk each, at sitting height, its screens showing the agent apps', () => {
     const room = useSetupStore.getState().room;
     expect(room.map((d) => d.name)).toEqual(team.members.map((m) => m.name));
     const motion = product.motions[0]!;
     for (const desk of room) {
-      // As any new desk: the product's own starting height.
-      expect(desk.motions[motion.id]).toBe(motion.initial);
+      expect(desk.motions[motion.id]).toBe(72);
       expect(desk.windows.opened.map((w) => agentAppOf(w.url))).toEqual([
         'doc',
         'board',

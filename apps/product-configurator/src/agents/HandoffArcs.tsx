@@ -23,7 +23,7 @@ const FLIGHT = 2.4;
 const LINGER = 0.9;
 /** Height it leaves and lands at (over the monitors), and how high its arc rises above. */
 const LIFT = 1.55;
-const ARC = 1.7;
+const ARC = 1.5;
 /** Seconds a ring ripples out on the floor. */
 const RIPPLE = 1.1;
 
@@ -105,7 +105,6 @@ function Delivery({ handoff }: { handoff: Handoff }) {
   const card = useRef<HTMLDivElement>(null);
   const leaveRing = useRef<Mesh>(null);
   const landRing = useRef<Mesh>(null);
-  const landRing2 = useRef<Mesh>(null);
 
   // The arc between the two desks, as they stand when the work leaves.
   const path = useMemo(() => {
@@ -128,7 +127,7 @@ function Delivery({ handoff }: { handoff: Handoff }) {
       uColor: { value: colour },
       uHead: { value: 0 },
       uFade: { value: 1 },
-      uStrength: { value: 1 },
+      uStrength: { value: 0.55 },
     }),
     [colour],
   );
@@ -137,7 +136,7 @@ function Delivery({ handoff }: { handoff: Handoff }) {
       uColor: { value: colour },
       uHead: { value: 0 },
       uFade: { value: 1 },
-      uStrength: { value: 0.22 },
+      uStrength: { value: 0.1 },
     }),
     [colour],
   );
@@ -182,8 +181,8 @@ function Delivery({ handoff }: { handoff: Handoff }) {
     if (halo.current) {
       halo.current.quaternion.copy(camera.quaternion);
       const material = halo.current.material as MeshBasicMaterial;
-      material.opacity = flying ? Math.min(1, age * 3) : fade;
-      halo.current.scale.setScalar(1 + 0.12 * Math.sin(age * 9));
+      material.opacity = (flying ? Math.min(1, age * 3) : fade) * 0.6;
+      halo.current.scale.setScalar(1 + 0.06 * Math.sin(age * 6));
     }
     if (sparkle.current) sparkle.current.visible = flying;
     if (card.current) {
@@ -194,7 +193,6 @@ function Delivery({ handoff }: { handoff: Handoff }) {
     // Ripples on the floor: one as it leaves, two as it lands.
     ripple(leaveRing.current, age);
     ripple(landRing.current, age - flight);
-    ripple(landRing2.current, age - flight - 0.22);
     invalidate();
   });
 
@@ -202,7 +200,7 @@ function Delivery({ handoff }: { handoff: Handoff }) {
   return (
     <group ref={root}>
       <mesh ref={trail} renderOrder={5}>
-        <tubeGeometry args={[path.curve, 120, 0.016, 8, false]} />
+        <tubeGeometry args={[path.curve, 120, 0.008, 6, false]} />
         <shaderMaterial
           uniforms={trailUniforms}
           vertexShader={TRAIL_VERTEX}
@@ -215,7 +213,7 @@ function Delivery({ handoff }: { handoff: Handoff }) {
         />
       </mesh>
       <mesh name="trail-glow" renderOrder={4}>
-        <tubeGeometry args={[path.curve, 120, 0.07, 10, false]} />
+        <tubeGeometry args={[path.curve, 120, 0.04, 8, false]} />
         <shaderMaterial
           uniforms={glowUniforms}
           vertexShader={TRAIL_VERTEX}
@@ -229,7 +227,7 @@ function Delivery({ handoff }: { handoff: Handoff }) {
       </mesh>
       <group ref={head}>
         <mesh ref={halo} renderOrder={6}>
-          <planeGeometry args={[0.9, 0.9]} />
+          <planeGeometry args={[0.42, 0.42]} />
           <meshBasicMaterial
             color={colour}
             map={glow()}
@@ -240,7 +238,7 @@ function Delivery({ handoff }: { handoff: Handoff }) {
           />
         </mesh>
         <mesh ref={sparkle} renderOrder={7}>
-          <sphereGeometry args={[0.035, 16, 12]} />
+          <sphereGeometry args={[0.018, 12, 8]} />
           <meshBasicMaterial color="#ffffff" toneMapped={false} />
         </mesh>
         <Html center zIndexRange={[16777270, 0]} style={{ pointerEvents: 'none' }}>
@@ -257,7 +255,6 @@ function Delivery({ handoff }: { handoff: Handoff }) {
       </group>
       <Ring ref={leaveRing} at={path.start} colour={colour} />
       <Ring ref={landRing} at={path.end} colour={colour} />
-      <Ring ref={landRing2} at={path.end} colour={colour} />
     </group>
   );
 }
@@ -269,13 +266,13 @@ function ripple(ring: Mesh | null, age: number) {
   ring.visible = t > 0 && t < 1;
   if (!ring.visible) return;
   ring.scale.setScalar(0.55 + 0.75 * (1 - Math.pow(1 - t, 3)));
-  (ring.material as MeshBasicMaterial).opacity = 0.75 * (1 - t);
+  (ring.material as MeshBasicMaterial).opacity = 0.3 * (1 - t);
 }
 
 function Ring({ ref, at, colour }: { ref: React.Ref<Mesh>; at: Vector3; colour: Color }) {
   return (
     <mesh ref={ref} position={[at.x, 0.02, at.z]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
-      <ringGeometry args={[0.92, 1, 72]} />
+      <ringGeometry args={[0.96, 1, 72]} />
       <meshBasicMaterial
         color={colour}
         transparent

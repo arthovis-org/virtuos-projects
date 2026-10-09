@@ -58,3 +58,14 @@
   border-left-width: 1px;
   border-radius: 999px;
 }
+
+/* Selected, it stays white (its status text is in the agent's colour): an outline and a glow
+   in that colour mark it instead of a fill, which made the text unreadable. */
+.label[data-agent][data-active] {
+  border-color: var(--desk-accent);
+  background: var(--surface);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--desk-accent) 35%, transparent),
+    var(--shadow-soft);
+  color: var(--text);
+}

@@ -353,7 +353,17 @@ function Seat({
     person.position.z = -scoot;
     const chairObject = chairGroup.current;
     if (chairObject) {
-      chairObject.position.z = CHAIR_FORWARD - scoot - chairAway * CHAIR_AWAY;
+      // Snug behind the back only while seated: during the sitting and standing clips (made for
+      // a chair where they expect it) the back would pass through the backrest.
+      const snug =
+        pose.current === 'seated'
+          ? 1
+          : pose.current === 'sittingDown'
+            ? smooth(0.8, 1, progress)
+            : pose.current === 'rising'
+              ? 1 - smooth(0, 0.15, progress)
+              : 0;
+      chairObject.position.z = CHAIR_FORWARD * snug - scoot - chairAway * CHAIR_AWAY;
       chairObject.visible = chairShown > 0.01;
       const fading = chairShown < 0.99;
       const { materials, depthOnly } = chairParts.current;
