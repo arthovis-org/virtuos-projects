@@ -91,3 +91,16 @@
     display: block;
   }
 }
+
+/* Presentation mode: the 3D view alone, the whole window (for recording). */
+.app[data-presenting] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: 'viewer';
+  --side-panel: 0px;
+}
+
+.app[data-presenting] > header,
+.app[data-presenting] > .panel {
+  display: none;
+}

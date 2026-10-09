@@ -290,6 +290,39 @@
 }
 
 .resultText {
+  /* The screens' markdown, at reading size. */
+  --markdown-heading: 1.0625rem;
+  --markdown-table: 0.875rem;
+
   font-size: 0.9375rem;
   line-height: 1.5;
+}
+
+.runs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.link {
+  position: relative;
+  padding: 0;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration-color: currentcolor;
+}
+
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }

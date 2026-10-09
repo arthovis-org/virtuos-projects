@@ -37,6 +37,8 @@ export function WorkspaceHud() {
   const desks = useSetupStore((s) => s.room);
   const desk = useSetupStore((s) => (s.mode === 'desks' ? currentDesk(s) : undefined));
   const setDeskWorkspace = useSetupStore((s) => s.setDeskWorkspace);
+  // Presentation mode shows the 3D view only.
+  const presenting = useViewStore((s) => s.presenting);
   // Whatever is over the top of the viewer: the card, its pill or the toolbar.
   const [overlay, setOverlay] = useState<HTMLElement | null>(null);
   // On a phone the card would cover the desk: it starts folded into a pill.
@@ -59,7 +61,7 @@ export function WorkspaceHud() {
     observer.observe(overlay);
     return () => observer.disconnect();
   }, [overlay, setHudInset]);
-  if (product.workspaces.length === 0) return null;
+  if (product.workspaces.length === 0 || presenting) return null;
 
   const workspace = workspaceById(product, workspaceId);
   const [first, ...others] = product.workspaces;

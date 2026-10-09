@@ -92,8 +92,11 @@ export function taskOf(mission: Mission | null, agentId: string | undefined) {
 }
 
 /** The step a task is on: the first not done (or the last). */
-export function currentStep(task: AgentTask | undefined): { step?: AgentStep; index: number } {
-  if (!task) return { index: -1 };
+export function currentStep(task: AgentTask | undefined): {
+  step: AgentStep | undefined;
+  index: number;
+} {
+  if (!task) return { step: undefined, index: -1 };
   const index = task.steps.findIndex((s) => s.phase !== 'done');
   const at = index < 0 ? task.steps.length - 1 : index;
   return { step: task.steps[at], index: at };

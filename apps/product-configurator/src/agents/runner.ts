@@ -44,11 +44,11 @@ export const liveBackend: Backend = {
 export function recordedBackend(run: RecordedRun): Backend {
   return {
     plan: async (_goal, _agents, signal) => {
-      await pause(1200, signal);
+      await pause(1200 / speedOf(), signal);
       return { summary: run.summary, tasks: run.tasks };
     },
     step: async ({ taskId, index }, signal) => {
-      await pause(900 + Math.random() * 900, signal);
+      await pause((900 + Math.random() * 900) / speedOf(), signal);
       const result = run.steps[`${taskId}/${index}`];
       if (!result) throw new Error(`The recording has no step ${index + 1} of task ${taskId}`);
       return result;
@@ -64,6 +64,22 @@ const MAX_CALLS = 2;
 
 let controller: AbortController | null = null;
 let lastRun: RecordedRun | null = null;
+
+/** A run read from a file, if it is one (its plan and step results). */
+export function readRecordedRun(value: unknown): RecordedRun | null {
+  const run = value as Partial<RecordedRun> | null;
+  if (
+    !run ||
+    typeof run.goal !== 'string' ||
+    typeof run.summary !== 'string' ||
+    !Array.isArray(run.tasks) ||
+    !run.steps ||
+    typeof run.steps !== 'object'
+  ) {
+    return null;
+  }
+  return run as RecordedRun;
+}
 
 /** The last run that finished, to save and play back. */
 export const lastRecordedRun = () => lastRun;

@@ -6,7 +6,15 @@ import { createTeam } from './agentDesk';
 import { activityOf, taskOf, taskProgress, useAgentStore } from './agentStore';
 import { Avatar } from './apps/AgentApps';
 import { Markdown } from './apps/Markdown';
-import { startMission, stopMission } from './runner';
+import {
+  lastRecordedRun,
+  readRecordedRun,
+  recordedBackend,
+  startMission,
+  stopMission,
+  type RecordedRun,
+} from './runner';
+import { PRODUCT_LAUNCH_DEMO } from './scenarios/productLaunch';
 import { TEAMS } from './teams';
 import type { Activity, Mission } from './types';
 import styles from './TeamPanel.module.css';
@@ -74,6 +82,12 @@ function Team({
   const activeDeskId = useSetupStore((s) => s.activeDeskId);
   const [goal, setGoal] = useState(() => mission?.goal ?? TEAMS[0]?.exampleGoal ?? '');
   const [results, setResults] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
+  const play = (run: RecordedRun) => {
+    setRunError(null);
+    setGoal(run.goal);
+    void startMission(run.goal, recordedBackend(run));
+  };
   const working = mission?.status === 'planning' || mission?.status === 'running';
   const now = useTicker(working);
 
@@ -139,6 +153,38 @@ function Team({
         </div>
       </form>
 
+      {/* Runs played back: the demo (the same every time, for videos) or a saved one. */}
+      {!working && (
+        <div className={styles.runs}>
+          <button type="button" className={styles.link} onClick={() => play(PRODUCT_LAUNCH_DEMO)}>
+            ▶ Play the demo run
+          </button>
+          <label className={styles.link}>
+            Play a saved run…
+            <input
+              type="file"
+              accept="application/json,.json"
+              className={styles.file}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                if (file) void openRun(file, setRunError, play);
+              }}
+            />
+          </label>
+          {mission?.status === 'done' && lastRecordedRun() && (
+            <button type="button" className={styles.link} onClick={saveRun}>
+              Save this run
+            </button>
+          )}
+        </div>
+      )}
+      {runError && (
+        <p className={styles.error} role="alert">
+          {runError}
+        </p>
+      )}
+
       <MissionStatus mission={mission} />
 
       <ul className={styles.members}>
@@ -178,6 +224,37 @@ function Team({
       {results && mission && <Results mission={mission} onClose={() => setResults(false)} />}
     </section>
   );
+}
+
+/** Downloads the last finished run, to play back later exactly as it went. */
+function saveRun() {
+  const run = lastRecordedRun();
+  if (!run) return;
+  const blob = new Blob([JSON.stringify(run, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${
+    run.goal
+      .replace(/[^\w-]+/g, '-')
+      .slice(0, 50)
+      .toLowerCase() || 'run'
+  }.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+async function openRun(
+  file: File,
+  setError: (error: string | null) => void,
+  play: (run: RecordedRun) => void,
+) {
+  try {
+    const run = readRecordedRun(JSON.parse(await file.text()));
+    if (!run) throw new Error('not a run');
+    play(run);
+  } catch {
+    setError('That file is not a saved run of the team.');
+  }
 }
 
 function MissionStatus({ mission }: { mission: Mission | null }) {

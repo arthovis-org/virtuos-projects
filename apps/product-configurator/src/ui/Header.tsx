@@ -1,8 +1,9 @@
 import { publicPageUrl } from '@/desktop';
-import { RotateCcw } from 'lucide-react';
+import { Presentation, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { productList } from '@/catalog';
 import { enterRoom, exitRoom, goHome } from '@/state/actions';
+import { useViewStore } from '@/state/viewStore';
 import { useProduct, useSetupStore } from '@/state/setupStore';
 import { DISPLAY_CURRENCIES, useCurrencyStore } from '@/state/currencyStore';
 import { shareSearch } from '@/state/shareLink';
@@ -83,6 +84,16 @@ export function Header() {
       )}
       <div className={styles.actions}>
         <CommandSheet />
+        <button
+          type="button"
+          className={styles.button}
+          onClick={() => useViewStore.getState().setPresenting(true)}
+          title="Presentation mode: only the 3D view, for recording (P; Esc to leave)"
+          aria-label="Presentation mode"
+        >
+          <Presentation size={14} aria-hidden="true" />
+          <span className={styles.long}>Present</span>
+        </button>
         <Layouts />
         {hasWorkspaces && (
           <div className={styles.modes} role="radiogroup" aria-label="Desks">

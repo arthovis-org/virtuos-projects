@@ -94,6 +94,8 @@ interface ViewState {
   /** Height at the bottom of the viewer covered by the desk switcher, in CSS pixels. */
   hudInsetBottom: number;
   room: Room;
+  /** Presentation mode: only the 3D view, for recording (see `PresentationMode`). */
+  presenting: boolean;
 
   /** Turns the sites on: seated in front of the screens, or looking around. */
   showSites: (seat: boolean) => void;
@@ -111,6 +113,7 @@ interface ViewState {
   setHudInset: (inset: number) => void;
   setHudInsetBottom: (inset: number) => void;
   setRoom: (room: Room) => void;
+  setPresenting: (presenting: boolean) => void;
   setDeskDrag: (drag: DeskDrag | null) => void;
   startDrag: (window: WorkspaceWindow, fromScreen: string, x: number, y: number) => void;
   updateDrag: (x: number, y: number) => void;
@@ -138,6 +141,7 @@ export const useViewStore = create<ViewState>()((set, get) => ({
   hudInset: 0,
   hudInsetBottom: 0,
   room: { width: 0, depth: 0 },
+  presenting: false,
 
   showSites: (seat) =>
     set({
@@ -160,6 +164,7 @@ export const useViewStore = create<ViewState>()((set, get) => ({
   setSurfaces: (surfaces, primaryScreen) => set({ surfaces, primaryScreen }),
   setHudInset: (hudInset) => set({ hudInset }),
   setHudInsetBottom: (hudInsetBottom) => set({ hudInsetBottom }),
+  setPresenting: (presenting) => set({ presenting }),
   setRoom: (room) => {
     const current = get().room;
     if (current.width !== room.width || current.depth !== room.depth) set({ room });

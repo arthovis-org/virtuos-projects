@@ -7,6 +7,7 @@ import { AGENT_APPS, agentAppOf, createTeam } from './agentDesk';
 import { activityOf, deskOfAgent, taskProgress, useAgentStore } from './agentStore';
 import { lastRecordedRun, recordedBackend, startMission, type Backend } from './runner';
 import { TEAMS } from './teams';
+import { PRODUCT_LAUNCH_DEMO } from './scenarios/productLaunch';
 
 const product = getProduct('smart-desk');
 const team = TEAMS[0]!;
@@ -128,5 +129,20 @@ describe('an AI team', () => {
     expect(agentAppOf(AGENT_APPS.doc)).toBe('doc');
     expect(agentAppOf('https://example.com')).toBeNull();
     expect(agentAppOf('agent:nope')).toBeNull();
+  });
+
+  it('plays the demo run through, every step as written', async () => {
+    await startMission(PRODUCT_LAUNCH_DEMO.goal, recordedBackend(PRODUCT_LAUNCH_DEMO));
+    const mission = agents().mission!;
+    expect(mission.status).toBe('done');
+    // Every agent of the team has a task, and every step shows what the demo wrote.
+    expect(new Set(mission.tasks.map((t) => t.agentId))).toEqual(
+      new Set(team.members.map((m) => m.id)),
+    );
+    for (const task of mission.tasks) {
+      task.steps.forEach((step, i) => {
+        expect(step.content).toBe(PRODUCT_LAUNCH_DEMO.steps[`${task.id}/${i}`]!.content);
+      });
+    }
   });
 });

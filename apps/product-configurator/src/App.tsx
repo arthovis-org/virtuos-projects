@@ -6,6 +6,8 @@ import { ConfiguratorPanel } from '@/ui/ConfiguratorPanel';
 import { Header } from '@/ui/Header';
 import { SheetBar } from '@/ui/SheetBar';
 import { UpdateNotice } from '@/ui/UpdateNotice';
+import { PresentationMode } from '@/ui/PresentationMode';
+import { useViewStore } from '@/state/viewStore';
 import styles from './App.module.css';
 
 // Three.js is most of the bundle; loading the viewer lazily lets the panel render first.
@@ -39,9 +41,10 @@ export function App() {
   }, []);
   // On a phone the panel is a bottom sheet, closed at first so the desk has the screen.
   const [sheetOpen, setSheetOpen] = useState(false);
+  const presenting = useViewStore((s) => s.presenting);
 
   return (
-    <div className={styles.app}>
+    <div className={styles.app} data-presenting={presenting || undefined}>
       <Header />
       <main className={styles.viewer}>
         <Suspense fallback={null}>
@@ -55,6 +58,7 @@ export function App() {
         </div>
       </aside>
       <UpdateNotice />
+      <PresentationMode />
     </div>
   );
 }

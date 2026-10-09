@@ -1,0 +1,33 @@
+.hint {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 950;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: rgb(0 0 0 / 70%);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  opacity: 0;
+  transform: translateX(-50%);
+  animation: hint 3.2s var(--ease);
+  pointer-events: none;
+}
+
+@keyframes hint {
+  0%,
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.hint kbd {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 20%);
+  font: inherit;
+}
