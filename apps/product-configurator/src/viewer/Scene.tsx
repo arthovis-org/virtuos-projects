@@ -17,6 +17,7 @@ import { ScreenLayer } from './workspace/ScreenLayer';
 import { SmoothZoom } from './SmoothZoom';
 import { useOrbitGuard } from './useOrbitGuard';
 import { HandoffArcs } from '@/agents/HandoffArcs';
+import { CenterOnDesk } from './CenterOnDesk';
 import styles from './Scene.module.css';
 
 // This module is loaded lazily, and this is the earliest point where three is available.
@@ -254,6 +255,7 @@ export function Scene() {
         />
         <SmoothZoom />
         <HandoffArcs />
+        <CenterOnDesk />
         <RoomLimits />
         <CssProjectionDriver />
       </Canvas>

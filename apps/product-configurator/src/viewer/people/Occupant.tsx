@@ -30,7 +30,7 @@ import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { ProductDefinition } from '@/catalog/schema';
 import { motionKey, useMotionStore } from '@/state/motionStore';
 import { useSetupStore } from '@/state/setupStore';
-import { findArms, reach } from './armIk';
+import { alignHand, findArms, reach } from './armIk';
 import { characterUrl, propUrl } from './assets';
 import { deskSurface } from './deskSurface';
 import { findGaze, lookAt } from './lookAt';
@@ -72,7 +72,9 @@ const CHAIR_AWAY = 0.45;
 /** Hands on the surface: apart, in from its front edge, and above it (palms), in metres. */
 const HANDS_APART = 0.17;
 const HANDS_IN = 0.03;
-const HANDS_LIFT = 0.04;
+const HANDS_LIFT = 0.03;
+/** Fingers point into the surface this much (degrees): resting on it, not lifted off it. */
+const FINGERS_DOWN = 14;
 /**
  * Sitting up while typing: degrees each spine bone leans back from the typing clip's hunch,
  * which raises and draws back the shoulders, so the arms reach less far up to the monitor.
@@ -302,6 +304,7 @@ function Seat({
   const toDesk = useMemo(() => new Matrix4(), []);
   const target = useMemo(() => new Vector3(), []);
   const hand = useMemo(() => new Vector3(), []);
+  const fingerDirection = useMemo(() => new Vector3(), []);
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1);
@@ -417,6 +420,14 @@ function Seat({
             .addScaledVector(surface.up, HANDS_LIFT)
             .applyMatrix4(deskSpace.matrixWorld);
           reach(arm, target, handsOn.current);
+          // Fingers along the surface, away from the person and a little down onto it.
+          const down = MathUtils.degToRad(FINGERS_DOWN);
+          fingerDirection
+            .copy(surface.inward)
+            .multiplyScalar(Math.cos(down))
+            .addScaledVector(surface.up, -Math.sin(down))
+            .transformDirection(deskSpace.matrixWorld);
+          alignHand(arm, fingerDirection, handsOn.current);
         }
         if (pose.current === 'rising' || pose.current === 'sittingDown') {
           // A hand past the desk's front edge and below its top goes back in front of it.

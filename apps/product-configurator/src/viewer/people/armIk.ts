@@ -110,3 +110,26 @@ export function reach(arm: Arm, target: Vector3, weight: number) {
   }
   upper.updateWorldMatrix(false, true);
 }
+
+/** A Mixamo hand's fingers run along its local +Y. */
+const FINGERS = new Vector3(0, 1, 0);
+const handWorld = new Quaternion();
+const fingers = new Vector3();
+const turn = new Quaternion();
+const none = new Quaternion();
+
+/**
+ * Turns the wrist so the fingers point along `direction` (world space): laid on a surface
+ * instead of keeping the animation's angle, which on a reaching arm pointed them up off it.
+ * `weight` blends from the animation's hand (0) to the aligned one (1).
+ */
+export function alignHand(arm: Arm, direction: Vector3, weight: number) {
+  if (weight <= 0) return;
+  const { hand } = arm;
+  hand.updateWorldMatrix(true, false);
+  hand.getWorldQuaternion(handWorld);
+  fingers.copy(FINGERS).applyQuaternion(handWorld).normalize();
+  turn.setFromUnitVectors(fingers, direction);
+  rotateWorld(hand, none.identity().slerp(turn, weight), handWorld);
+  hand.updateWorldMatrix(false, true);
+}

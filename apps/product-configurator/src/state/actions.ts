@@ -11,20 +11,16 @@ const setup = () => useSetupStore.getState();
 const view = () => useViewStore.getState();
 
 /**
- * Moves to a desk in the room and turns its sites on. Picked from the room, the camera comes
- * round to that desk, centred, looking around it (the panel sets it up); picked while seated
- * (`seat`), the visitor sits at it instead.
+ * Moves to a desk in the room and turns its sites on. Picked from the room, the view stays the
+ * room's, centred on that desk (CenterOnDesk); picked while seated (`seat`), the visitor sits
+ * at it instead.
  */
 export function selectDesk(deskId: string, seat = view().seated) {
   const { activeDeskId } = setup();
-  const { seated, focus, active, aroundDesk } = view();
-  if (deskId === activeDeskId && active && seated === seat && (seat || aroundDesk) && !focus) {
-    return;
-  }
+  const { seated, focus, active } = view();
+  if (deskId === activeDeskId && active && seated === seat && !focus) return;
   setup().setActiveDesk(deskId);
-  if (setup().activeDeskId !== deskId) return;
-  view().showSites(seat);
-  if (!seat) view().standUp(true);
+  if (setup().activeDeskId === deskId) view().showSites(seat);
 }
 
 /** The next or previous desk, in the same view; from no desk, the first or the last. */
