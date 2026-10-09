@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld('virtuosDesktop', {
   platform: process.platform,
   /** The app's version, e.g. 0.1.2. */
   version,
+  /**
+   * Reflow (reflow.js): lists the columns of the page in the frame named `frame`, or shows one
+   * of them across the window ({ action: 'analyse' | 'show' | 'reset', index? }).
+   */
+  reflow: (frame, command) => ipcRenderer.invoke('virtuos:reflow', { frame, command }),
   /** A downloaded update, waiting for a restart (updates.js). */
   updates: {
     /** The version waiting, or null. */

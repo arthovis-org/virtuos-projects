@@ -93,6 +93,9 @@
 }
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 0.5rem 0.875rem;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-strong);
