@@ -1,7 +1,7 @@
 import { isBlankWindow, layoutWindows } from '@/state/setup';
 import { useCurrentWindows, useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
-import { siteUrl } from './siteUrl';
+import { siteUrl, windowTitle } from './siteUrl';
 import styles from './WindowMenu.module.css';
 
 /**
@@ -34,6 +34,7 @@ export function WindowMenu() {
   );
   const screenId = [...layout].find(([, list]) => list.some((w) => w.id === win.id))?.[0];
   const url = siteUrl(win.url);
+  const title = windowTitle(win.title, win.url);
   // A blank window has no site to name or open yet.
   const blank = isBlankWindow(win);
   const done = () => setMenu(null);
@@ -44,11 +45,11 @@ export function WindowMenu() {
       <div
         className={styles.menu}
         role="dialog"
-        aria-label={`${win.title} window`}
+        aria-label={`${title} window`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className={styles.header}>
-          <span className={styles.title}>{win.title}</span>
+          <span className={styles.title}>{title}</span>
           {!blank && <span className={styles.host}>{new URL(url).host}</span>}
         </div>
         <div className={styles.actions}>

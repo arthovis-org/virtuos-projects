@@ -18,7 +18,7 @@ import { agentAppOf } from '@/agents/agentDesk';
 import { useAgentStore } from '@/agents/agentStore';
 import { AgentAppView } from '@/agents/apps/AgentApps';
 import { screenUrl } from './embedUrls';
-import { siteUrl } from './siteUrl';
+import { siteUrl, windowTitle } from './siteUrl';
 import { ZoomControl } from './ZoomControl';
 import styles from './WindowFrame.module.css';
 
@@ -57,6 +57,7 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
   const url = framesAnySite ? shownUrl : siteUrl(win.url);
   // A blank window (a split's other half) has no site yet: a picker instead (isBlankWindow).
   const blank = isBlankWindow(win);
+  const title = windowTitle(win.title, win.url);
   // An agent app (agent: address): drawn by the configurator, for the agent at this desk.
   const agentApp = agentAppOf(win.url);
   const deskId = useSetupStore((s) => (currentDesk(s) ?? s.single).id);
@@ -113,12 +114,12 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
             onError={() => setIconFailed(true)}
           />
         )}
-        <span className={styles.title}>{win.title}</span>
+        <span className={styles.title}>{title}</span>
         <span className={styles.host}>{agent ? `${agent.name} · ${agent.role}` : host}</span>
         <div className={styles.zoom}>
           {!blank && !agentApp && (
             <ZoomControl
-              title={win.title}
+              title={title}
               zoom={zoom}
               factor={factor}
               onPreview={setPreview}
@@ -133,7 +134,7 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
         <button
           type="button"
           className={`${styles.button} ${styles.more}`}
-          aria-label={`${win.title}: window menu`}
+          aria-label={`${title}: window menu`}
           onClick={() => setMenu(win.id)}
         >
           ⋯
@@ -142,7 +143,7 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
           <button
             type="button"
             className={`${styles.button} ${styles.focus}`}
-            aria-label={focused ? 'Show all screens' : `Zoom to the ${win.title} screen`}
+            aria-label={focused ? 'Show all screens' : `Zoom to the ${title} screen`}
             title={focused ? 'Show all screens' : 'Zoom to this screen'}
             onClick={() => setFocus(focused ? null : screenId)}
           >
@@ -151,7 +152,7 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
           <button
             type="button"
             className={`${styles.button} ${styles.close}`}
-            aria-label={`Close ${win.title}`}
+            aria-label={`Close ${title}`}
             title="Close"
             onClick={() => closeWindow(win.id)}
           >
@@ -184,7 +185,7 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
             <iframe
               className={styles.frame}
               src={shownUrl}
-              title={win.title}
+              title={title}
               sandbox={SANDBOX}
               allow="fullscreen; clipboard-read; clipboard-write"
               referrerPolicy="strict-origin-when-cross-origin"

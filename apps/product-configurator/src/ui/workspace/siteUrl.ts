@@ -6,6 +6,28 @@ export function siteUrl(url: string): string {
   return url.replace(/\{host\}|%7Bhost%7D/gi, window.location.hostname || 'localhost');
 }
 
+/** Sites whose name isn't their host's spelling, by host (without www.). */
+const SITE_NAMES: Record<string, string> = { 'tinygnomes.com': 'TinyGnomes' };
+
+const siteName = (hostname: string) => SITE_NAMES[hostname.replace(/^www\./, '')];
+
+/**
+ * A window's title as shown: the site's own name in place of its host or a lowercase spelling
+ * of it (windows opened before the name was known keep their saved title).
+ */
+export function windowTitle(title: string, url: string): string {
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    return title;
+  }
+  const name = siteName(hostname);
+  if (!name) return title;
+  const plain = title.toLowerCase();
+  return plain === name.toLowerCase() || plain === hostname.replace(/^www\./, '') ? name : title;
+}
+
 /** Reads a typed address as an https link, or explains why it can't be used. */
 export function parseAddress(value: string): { url: string; title: string } | { error: string } {
   const text = value.trim();
@@ -17,7 +39,7 @@ export function parseAddress(value: string): { url: string; title: string } | { 
     return { error: 'That is not a web address' };
   }
   if (url.protocol !== 'https:') return { error: 'Only https:// addresses can be shown' };
-  return { url: url.href, title: url.hostname.replace(/^www\./, '') };
+  return { url: url.href, title: siteName(url.hostname) ?? url.hostname.replace(/^www\./, '') };
 }
 
 /**
@@ -25,7 +47,7 @@ export function parseAddress(value: string): { url: string; title: string } | { 
  * another page (unlike TOOLS): the desktop app shows them anyway.
  */
 export const PROJECT_MANAGEMENT = [
-  { title: 'tinygnomes', url: 'https://www.tinygnomes.com/quilt.fcgi#dashboard' },
+  { title: 'TinyGnomes', url: 'https://www.tinygnomes.com/quilt.fcgi#dashboard' },
 ] as const;
 
 /**
