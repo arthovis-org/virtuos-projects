@@ -112,9 +112,10 @@ const SITE_STYLES = [
         padding: 0 2px !important;
       }
 
-      /* The project picker in the top bar, beside the menu strip. */
+      /* The project picker in the top bar from the left edge: its Home button (tinygnomes'
+         logo) over the menu strip, then the picker. */
       .global-projectpicker {
-        left: 44px !important;
+        left: 4px !important;
         right: 4px !important;
         width: auto !important;
       }
@@ -138,11 +139,18 @@ const SITE_STYLES = [
        * them here: under them instead, in a row (where they come in the list, so nothing moves
        * as it opens).
        */
-      .widget-projectpicker.ui-menu {
+      .widget-projectpicker.ui-menu:not([style*="display: none"]) {
+        display: flex !important;
+        flex-direction: column;
         height: auto !important;
       }
       .widget-projectpicker.ui-menu > .ui-menu-column {
         float: none !important;
+      }
+      /* Each project's link is placed absolutely in its row (the site's own rule): across it. */
+      .widget-projectpicker.ui-menu .project-sec a {
+        left: 0;
+        right: 0;
       }
       .widget-projectpicker.ui-menu > .ui-menu-actions {
         float: none !important;
@@ -173,9 +181,6 @@ const SITE_STYLES = [
       }
       .global-projectpicker {
         right: 44px !important;
-      }
-      .global-projectpicker td > div {
-        padding-left: 0 !important;
       }
       .pwidget-large-pp {
         width: auto !important;
@@ -288,8 +293,11 @@ const SITE_STYLES = [
       }
       /* The tables around it don't grow with it: on a side monitor its filters sized them past
          the screen's edge, cutting off the tasks and the filters with them. */
-      table:has(.tasks-panel) {
+      [id^="card-QuickCard-"] table:has(.tasks-panel) {
         table-layout: fixed !important;
+        width: 100% !important;
+      }
+      [id^="card-QuickCard-"] td:has(.tasks-panel) {
         width: 100% !important;
       }
       [id^="contentbag-"]:has(.tasks-panel),
