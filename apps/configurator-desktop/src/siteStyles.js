@@ -381,6 +381,33 @@ const SITE_STYLES = [
         border-top: 1px solid #eee;
         padding-top: 8px !important;
       }
+      /* Its people (Doer, Lead, Watcher, each a heading row then a row per person) in columns,
+         each heading starting the next one. */
+      [id^="card-TaskNew-dialog"] table:has(> tbody[id$="-actors_table_tablebody0"]) {
+        display: block !important;
+        width: 100% !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] {
+        display: block !important;
+        columns: 3;
+        column-gap: 10px;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] > tr {
+        display: block !important;
+        break-inside: avoid;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] > tr > td {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        padding: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] > tr[id*="-rowheader_"] {
+        display: none !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] > tr[id*="-rowtr_"]:has(td[style*="font-weight: bold"]) ~ tr:has(td[style*="font-weight: bold"]) {
+        break-before: column;
+      }
       /* Its header: no big tick (the title has one); the Lead and Doer cards side by side. */
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr > td:first-child {
         display: none !important;
