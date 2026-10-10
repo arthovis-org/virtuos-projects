@@ -1,8 +1,11 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
-import { MathUtils, type PerspectiveCamera, Spherical, Vector3 } from 'three';
+import { type Box3, MathUtils, type PerspectiveCamera, Spherical, Vector3 } from 'three';
+import { SINGLE_DESK } from '@/state/setup';
 import { useSetupStore } from '@/state/setupStore';
 import { useViewStore } from '@/state/viewStore';
+import { deskBoxes } from '../deskObjects';
+import { followDesk } from '../followDesk';
 import type { ScreenFrame } from './screenFrame';
 
 export interface CameraTarget {
@@ -227,7 +230,14 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
   const focus = useViewStore((s) => s.focus);
   const setCameraFree = useViewStore((s) => s.setCameraFree);
 
-  const saved = useRef<(Pose & { limits: Partial<Controls> }) | null>(null);
+  const saved = useRef<
+    | (Pose & {
+        limits: Partial<Controls>;
+        /** The single desk as it stood then: raised or lowered since, the pose follows it. */
+        desk: Box3 | undefined;
+      })
+    | null
+  >(null);
   // Unmounted just as the visitor stood up (the room opened with no desk chosen, so the move
   // back never ran): hand the camera back. Only then: while still seated this is a remount
   // (React's development check mounts twice), and the seat must stay as it is.
@@ -264,6 +274,7 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
         minPolarAngle: controls.minPolarAngle,
         maxPolarAngle: controls.maxPolarAngle,
       },
+      desk: deskBoxes.get(SINGLE_DESK)?.clone(),
     };
     Object.assign(controls, {
       enabled: false,
@@ -359,6 +370,8 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
       setCameraFree(true);
       return;
     }
+    const desk = deskBoxes.get(SINGLE_DESK);
+    if (back.desk && desk) followDesk(back.position, back.target, back.desk, desk, camera);
     move.current = planMove(current(), back, () => {
       if (controls) Object.assign(controls, { ...back.limits, enabled: true });
       saved.current = null;

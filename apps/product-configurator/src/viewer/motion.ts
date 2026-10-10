@@ -148,6 +148,27 @@ export function motionEnvelope(box: Box3, motions: readonly ResolvedMotion[], mo
   return envelope;
 }
 
+/**
+ * `box` (the model's authored bounds) as the desk stands now: its top moved by as much as the
+ * motions have moved it from the height the model was exported at (into `target`).
+ */
+export function motionBox(
+  box: Box3,
+  motions: readonly ResolvedMotion[],
+  modelScale: number,
+  deskId: string,
+  target: Box3,
+) {
+  target.copy(box);
+  const { current } = useMotionStore.getState();
+  for (const { motion, modelledValue, nodes } of motions) {
+    const factor = Math.max(0, ...nodes.map((n) => n.factor));
+    const value = current[motionKey(deskId, motion.id)] ?? modelledValue;
+    target.max[motion.axis] += (value - modelledValue) * motion.metresPerUnit * modelScale * factor;
+  }
+  return target;
+}
+
 const parentBasis = new Matrix3();
 const localDirection = new Vector3();
 
