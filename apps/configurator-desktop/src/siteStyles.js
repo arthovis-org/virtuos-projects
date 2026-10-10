@@ -351,6 +351,106 @@ const SITE_STYLES = [
         font-size: 12px;
         color: #777;
       }
+
+      /*
+       * Calendar, month: seven equal columns across the screen (the app sizes each day for a
+       * desktop window), weekdays by their first letter, events as small chips.
+       */
+      table.c-month {
+        table-layout: fixed;
+        width: 100% !important;
+      }
+      table.c-month td.first,
+      table.c-month tr > td:first-child:not(.border) {
+        display: none !important;
+      }
+      table.c-month th,
+      table.c-month td.border {
+        width: auto !important;
+        padding: 1px !important;
+        overflow: hidden;
+      }
+      table.c-month th {
+        font-size: 0 !important;
+      }
+      table.c-month th::first-letter {
+        font-size: 12px;
+      }
+      table.c-month td.border {
+        height: 56px !important;
+        vertical-align: top;
+      }
+      /* Its title bar (month, today, back and forth, the view) on two lines. */
+      .calendar-titlebar {
+        width: auto !important;
+      }
+      .calendar-titlebar > table,
+      .calendar-titlebar > table > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      .calendar-titlebar > table > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .calendar-titlebar > table > tbody > tr > td:first-child {
+        flex-basis: 100%;
+      }
+      .calendar-titlebar > table > tbody > tr > td[width="100%"] {
+        flex: 1 1 0;
+      }
+      /* The Welcome page (shown while the app loads): its 650 px card at the screen's width. */
+      #quilt_loader > table,
+      #quilt_loader > table > tbody,
+      #quilt_loader > table > tbody > tr,
+      #quilt_loader > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+      }
+      #quilt_loader [style*="width"] {
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+      #quilt_loader center > table,
+      #quilt_loader center > table > tbody,
+      #quilt_loader center > table > tbody > tr,
+      #quilt_loader center > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        text-align: center;
+      }
+      #quilt_loader_welcome,
+      #optionsrow td {
+        height: auto !important;
+        white-space: normal !important;
+      }
+      #quilt_loader img {
+        max-width: 100%;
+        height: auto;
+      }
+      /* In a day this small, an event's title rather than its time. */
+      table.c-month .c-event .ce-time {
+        display: none !important;
+      }
+      table.c-month .c-event .ce-top {
+        border-left-width: 3px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      table.c-month .c-event {
+        width: auto !important;
+        max-width: 100%;
+        margin: 1px 0 !important;
+        padding: 0 2px !important;
+        font-size: 10px;
+        line-height: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
     `,
     // The project list picks as many projects as its columns of them fit the window (its
     // _updateMenu: `(window width - 160) / 240`, up to 3): on a side monitor none. While it builds
