@@ -298,9 +298,39 @@ const SITE_STYLES = [
         flex-wrap: wrap;
         align-items: center;
       }
+      /* The actions on one line when they fit (the usual four do): the bar takes the window's
+         margins too, and the links their padding. */
+      [id^="card-TaskNew-dialog"] .dialog-bar table.bar-table,
+      [id^="card-TaskNew-dialog"] .dialog-bar table.bar-table > tbody {
+        display: block !important;
+        width: 100% !important;
+      }
+      [id^="card-TaskNew-dialog"] .dialog-bar :is([id$="-dialogbar_left"], [id$="-dialogbar_mid"]) {
+        padding: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] {
+        flex: 1 1 0;
+        padding-right: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] > div {
+        margin: 0 -10px !important;
+      }
+      [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] > div > table,
+      [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] > div > table > tbody {
+        display: block !important;
+        width: 100% !important;
+      }
       [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] {
-        justify-content: center;
-        gap: 4px 6px;
+        justify-content: space-evenly;
+        gap: 4px 2px;
+        font-size: 11.5px;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] > td {
+        padding: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] > td > div {
+        padding-right: 2px !important;
+        padding-left: 2px !important;
       }
       /* The actions the site hides for this task stay hidden; no "|" between wrapped rows. */
       [id^="card-TaskNew-dialog"] .dialog-bar [id$="-rbar_tr"] > td:is([style*="display: none"], :has(> .v-bar)) {
@@ -426,6 +456,19 @@ const SITE_STYLES = [
       }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr > td:empty {
         display: none !important;
+      }
+      /* The dates with the calendar icon just before them. */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr[id$="-rowdates"] {
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr[id$="-rowdates"] > td {
+        height: auto !important;
+        padding: 0 0 8px !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr[id$="-rowdates"] > td > img {
+        display: block;
       }
       /* Estimated beside Actual, Priority beside Milestone (each row holds both pairs). */
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"]) {
