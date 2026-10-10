@@ -839,6 +839,21 @@ const SITE_STYLES = [
       for (const type of ["focusin", "pointerdown"]) {
         document.addEventListener(type, patch, true);
       }
+
+      // After any scroll of the menu strip the site snaps it to whole icons, assuming its own
+      // icon height and a tall strip. On a side monitor the strip is short and the snap moved
+      // it up, then back down, as the pointer moved over it. The strip keeps the plain scroll:
+      // the event is stopped on its way down, before it reaches the site's handler.
+      window.addEventListener(
+        "scroll",
+        (event) => {
+          if (window.innerWidth > maxWidth) return;
+          if (event.target?.classList?.contains("servicebar-scrollarea")) {
+            event.stopImmediatePropagation();
+          }
+        },
+        true,
+      );
     },
   },
 ];

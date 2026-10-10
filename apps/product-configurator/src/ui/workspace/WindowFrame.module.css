@@ -21,17 +21,16 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   min-width: 0;
-  /* Tall enough to grab: the overview shows every monitor at once, which shrinks a desktop to
-     a third of its size, and the title bar is the drag handle. Narrow windows (a side monitor,
-     or a window sharing one) have a slimmer one, below. */
-  height: 48px;
-  padding: 0 6px 0 14px;
+  /* Slim, and the same on every monitor: a side monitor is about 330 px wide, where a taller
+     bar took a sixth of the height, and the main monitors match it. */
+  height: 34px;
+  padding: 0 4px 0 10px;
   background: #ececef;
   color: #1c1c1f;
   font:
-    500 18px/1 'Inter Variable',
+    500 14px/1 'Inter Variable',
     system-ui,
     sans-serif;
   cursor: grab;
@@ -45,6 +44,8 @@
 
 .icon {
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
   border-radius: 3px;
 }
 
@@ -81,9 +82,9 @@
 }
 
 .button {
-  height: 36px;
+  height: 28px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -93,9 +94,9 @@
 .button {
   display: grid;
   place-items: center;
-  width: 40px;
+  width: 28px;
   text-decoration: none;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .button:hover {
@@ -103,7 +104,7 @@
 }
 
 .close {
-  font-size: 26px;
+  font-size: 20px;
 }
 
 .close:hover {
@@ -164,7 +165,7 @@
   /* At the window's top right, under the title bar, and never wider than the window: it is
      clipped to it, and a side monitor's window is narrow. */
   position: absolute;
-  top: 64px;
+  top: 40px;
   right: 8px;
   z-index: 5;
   display: flex;
@@ -241,34 +242,10 @@
   pointer-events: none;
 }
 
-/* Narrow windows keep what matters most, smaller: the title, the zoom and the buttons. A side
-   monitor is about 330 px wide, where the full title bar took a sixth of the height. */
+/* Narrow windows keep what matters most: the title, the zoom and the buttons. */
 @container (max-width: 460px) {
   .host {
     display: none;
-  }
-
-  .titleBar {
-    gap: 6px;
-    height: 34px;
-    padding: 0 4px 0 10px;
-    font-size: 14px;
-  }
-
-  .icon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .button {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    font-size: 16px;
-  }
-
-  .close {
-    font-size: 20px;
   }
 }
 
