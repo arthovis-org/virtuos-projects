@@ -58,6 +58,15 @@ const SITE_STYLES = [
       .servicebar-controls table {
         width: 40px !important;
       }
+      /* In a short window the strip scrolls: without a scroll bar, which covered half the
+         icons (the wheel still scrolls it). */
+      .servicebar-scrollarea {
+        overflow-x: hidden !important;
+        scrollbar-width: none;
+      }
+      .servicebar-scrollarea::-webkit-scrollbar {
+        display: none;
+      }
       .link-vservbar table {
         width: 36px !important;
       }
@@ -396,6 +405,65 @@ const SITE_STYLES = [
       }
       .calendar-titlebar > table > tbody > tr > td:first-child {
         flex-basis: 100%;
+        white-space: normal !important;
+      }
+      /* Day (and the days of a week): the day's column across the screen, not 1543 px. */
+      table.c-day {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      /* A week's columns: a 1 px divider (spanning every row), then a day, seven times; laid out
+         from its cells (a fixed layout ignores widths here), the days in equal shares. */
+      table.c-day:has(td.header ~ td.header) {
+        table-layout: auto;
+      }
+      table.c-day > tbody > tr:first-child > td[style*="width:1px"] {
+        width: 1px !important;
+      }
+      table.c-day:has(td.header ~ td.header)
+        > tbody
+        > tr:first-child
+        > td:not(.hour-small-spacer):not(.am-spacer):not([style*="width:1px"]) {
+        width: 12.5% !important;
+      }
+      /* The row's last cell is an extra after the seventh day. */
+      table.c-day:has(td.header ~ td.header)
+        > tbody
+        > tr:first-child
+        > td:not(.hour-small-spacer):not(.am-spacer):not([style*="width:1px"]):last-child {
+        width: 0 !important;
+      }
+      table.c-day td.hour-small-spacer {
+        width: 20px !important;
+      }
+      table.c-day td.am-spacer {
+        width: 13px !important;
+      }
+      table.c-day td:not(.hour-small-spacer):not(.am-spacer):not([style*="width:1px"])[style*="width"],
+      table.c-day td:not(.hour-small-spacer):not(.am-spacer):not([width="1"])[width],
+      table.c-day div[style*="width"] {
+        width: auto !important;
+      }
+      .q-calendar .timeline {
+        width: calc(100% - 40px) !important;
+        max-width: none !important;
+      }
+      /* A week's days: by their first letter (the dates are in the title), and no "now" line,
+         which the app places by an offset for desktop-wide columns. */
+      table.c-day td[class*="header"] a.text {
+        display: block;
+        font-size: 0 !important;
+      }
+      table.c-day td[class*="header"] a.text::first-letter {
+        font-size: 12px;
+      }
+      .q-calendar:has(td.header ~ td.header) .timeline {
+        display: none !important;
+      }
+      table.c-day .c-event {
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
       }
       .calendar-titlebar > table > tbody > tr > td[width="100%"] {
         flex: 1 1 0;
@@ -429,6 +497,24 @@ const SITE_STYLES = [
       #quilt_loader img {
         max-width: 100%;
         height: auto;
+      }
+      /* Year: its months (six a row) as many a row as fit, in order. */
+      table.c-year,
+      table.c-year > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      table.c-year > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
+      table.c-year > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+        margin-bottom: 8px;
+        /* Two months side by side (each is 156 px). */
+        zoom: 0.85;
       }
       /* In a day this small, an event's title rather than its time. */
       table.c-month .c-event .ce-time {

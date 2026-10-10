@@ -23,14 +23,15 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  /* Tall on purpose: the overview shows every monitor at once, which shrinks a desktop to a
-     third of its size, and the title bar is the drag handle. */
-  height: 56px;
-  padding: 0 8px 0 16px;
+  /* Tall enough to grab: the overview shows every monitor at once, which shrinks a desktop to
+     a third of its size, and the title bar is the drag handle. Narrow windows (a side monitor,
+     or a window sharing one) have a slimmer one, below. */
+  height: 48px;
+  padding: 0 6px 0 14px;
   background: #ececef;
   color: #1c1c1f;
   font:
-    500 20px/1 'Inter Variable',
+    500 18px/1 'Inter Variable',
     system-ui,
     sans-serif;
   cursor: grab;
@@ -80,7 +81,7 @@
 }
 
 .button {
-  height: 40px;
+  height: 36px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -92,9 +93,9 @@
 .button {
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 40px;
   text-decoration: none;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .button:hover {
@@ -102,7 +103,7 @@
 }
 
 .close {
-  font-size: 30px;
+  font-size: 26px;
 }
 
 .close:hover {
@@ -240,19 +241,34 @@
   pointer-events: none;
 }
 
-/* Narrow windows keep what matters most: the title, the screen menu and Close. */
+/* Narrow windows keep what matters most, smaller: the title, the zoom and the buttons. A side
+   monitor is about 330 px wide, where the full title bar took a sixth of the height. */
 @container (max-width: 460px) {
   .host {
     display: none;
   }
 
   .titleBar {
-    gap: 8px;
-    padding-left: 12px;
+    gap: 6px;
+    height: 34px;
+    padding: 0 4px 0 10px;
+    font-size: 14px;
+  }
+
+  .icon {
+    width: 18px;
+    height: 18px;
   }
 
   .button {
-    width: 38px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 16px;
+  }
+
+  .close {
+    font-size: 20px;
   }
 }
 
