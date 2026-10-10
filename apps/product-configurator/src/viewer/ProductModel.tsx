@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
-import { Box3, Vector3, type Group, type Object3D } from 'three';
+import { Vector3, type Group, type Object3D } from 'three';
 import type { ProductDefinition } from '@/catalog/schema';
 import { resolveConfiguration, type Selections } from '@/state/derive';
 import { useModelIssuesStore } from '@/state/modelIssuesStore';
@@ -14,10 +14,10 @@ import { HeightInset } from './HeightInset';
 import { deskArcs, TALL_ARCS, WIDE_ARCS } from './deskLayout';
 import { MaterialAppearance } from './MaterialAppearance';
 import { deskModel, releaseDeskModels, rememberPristine, useModel, type DeskModel } from './models';
-import { motionBox, motionEnvelope, useMotions } from './motion';
+import { defaultMotionBox, motionEnvelope, useMotions } from './motion';
 import { modelBounds, ownMeshes } from './nodeUtils';
 import { Occupant } from './people/Occupant';
-import { deskBoxes, deskObjects } from './deskObjects';
+import { deskObjects } from './deskObjects';
 import { DeskPosters } from './workspace/DeskPosters';
 import { WorkspaceLayer } from './workspace/WorkspaceLayer';
 
@@ -295,8 +295,8 @@ function DeskInstance({
 
   // In the room, an invisible box covering everything the motions can reach. `Bounds` frames
   // it, so a desk raised to full height stays in view; the camera never has to refit
-  // mid-motion. The single desk is framed as it stands now instead (an empty band over a
-  // lowered desk pushed it down the view), and the camera follows its height (`Refit`).
+  // mid-motion. The single desk is framed at its default height instead: the envelope's empty
+  // band above it pushed the desk down the view.
   const envelope = useMemo(
     () =>
       motions.length === 0 || bounds.isEmpty()
@@ -309,22 +309,13 @@ function DeskInstance({
     [envelope, offset],
   );
   const framing = useMemo(() => {
-    if (!desk || motions.length === 0 || envelope.isEmpty()) return null;
+    if (motions.length === 0 || envelope.isEmpty()) return null;
+    const box = desk ? envelope : defaultMotionBox(bounds, motions, product.model.scale);
     return {
-      position: envelope.getCenter(new Vector3()).toArray(),
-      size: envelope.getSize(new Vector3()).toArray(),
+      position: box.getCenter(new Vector3()).toArray(),
+      size: box.getSize(new Vector3()).toArray(),
     };
-  }, [desk, envelope, motions.length]);
-
-  // The single desk as it stands now, where the camera can find it (in the group's space,
-  // which for the single desk is the world's).
-  useFrame(() => {
-    if (desk || bounds.isEmpty()) return;
-    const now = deskBoxes.get(deskId) ?? new Box3();
-    motionBox(bounds, motions, product.model.scale, deskId, now).translate(new Vector3(...offset));
-    deskBoxes.set(deskId, now);
-  }, -1);
-  useEffect(() => () => void deskBoxes.delete(deskId), [deskId]);
+  }, [desk, envelope, bounds, motions, product.model.scale]);
 
   return (
     <group ref={group} visible={!hidden}>

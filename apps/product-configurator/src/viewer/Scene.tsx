@@ -1,12 +1,9 @@
 import { Bounds, ContactShadows, OrbitControls, useBounds } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { type Box3, MathUtils, MOUSE, Vector3, type PerspectiveCamera } from 'three';
-import { SINGLE_DESK } from '@/state/setup';
+import { MathUtils, MOUSE, Vector3, type PerspectiveCamera } from 'three';
 import { useSetupStore } from '@/state/setupStore';
-import { deskBoxes } from './deskObjects';
 import { fitDistance } from './fitDistance';
-import { followDesk, TARGET_HEIGHT } from './followDesk';
 import { HeightInsetFrame } from './HeightInset';
 import { LoadingIndicator } from './LoadingIndicator';
 import { StudioEnvironment } from './StudioEnvironment';
@@ -57,6 +54,13 @@ interface Flight {
 /** Space around the product when it is framed. */
 const FIT_MARGIN = 1.1;
 
+/**
+ * How high up the framed product (0 floor, 1 top) the camera orbits and zooms towards: about
+ * the main screen, not the middle of the bounds (the screen lying on the desk), so zooming in
+ * comes to the screen one looks at.
+ */
+const TARGET_HEIGHT = 0.7;
+
 /** How long a refit takes, in seconds. */
 const REFIT_SECONDS = 0.9;
 /** Fast in the middle, soft at both ends. */
@@ -87,8 +91,6 @@ function Refit() {
   const fitted = useRef<string | null>(null);
   const flight = useRef<Flight | null>(null);
   const wasSeated = useRef(false);
-  /** The single desk as the camera last framed it, to follow it up and down. */
-  const followed = useRef<Box3 | null>(null);
 
   useEffect(() => {
     const key = `${width}x${height}:${desksMode ? deskCount : 'single'}`;
@@ -150,28 +152,6 @@ function Refit() {
   }, [controls]);
 
   useFrame((_, delta) => {
-    // The single desk raised or lowered: the camera rises and sinks with it.
-    const now = useSetupStore.getState().mode === 'desks' ? undefined : deskBoxes.get(SINGLE_DESK);
-    if (!now || !useViewStore.getState().cameraFree) {
-      followed.current = null;
-    } else if (!followed.current) {
-      followed.current = now.clone();
-    } else if (!followed.current.equals(now)) {
-      if (controls && !flight.current) {
-        followDesk(
-          camera.position,
-          controls.target,
-          followed.current,
-          now,
-          camera as PerspectiveCamera,
-        );
-        camera.lookAt(controls.target);
-        controls.update();
-        invalidate();
-      }
-      followed.current.copy(now);
-    }
-
     const f = flight.current;
     if (!f) return;
     // Workspace mode took the camera (the visitor sat down): it flies from wherever this is.

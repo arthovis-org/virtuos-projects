@@ -149,24 +149,21 @@ export function motionEnvelope(box: Box3, motions: readonly ResolvedMotion[], mo
 }
 
 /**
- * `box` (the model's authored bounds) as the desk stands now: its top moved by as much as the
- * motions have moved it from the height the model was exported at (into `target`).
+ * `box` (the model's authored bounds) with the desk at its default height (`initial`, else the
+ * height the model was exported at): what the single desk's camera frames.
  */
-export function motionBox(
+export function defaultMotionBox(
   box: Box3,
   motions: readonly ResolvedMotion[],
   modelScale: number,
-  deskId: string,
-  target: Box3,
 ) {
-  target.copy(box);
-  const { current } = useMotionStore.getState();
+  const result = box.clone();
   for (const { motion, modelledValue, nodes } of motions) {
     const factor = Math.max(0, ...nodes.map((n) => n.factor));
-    const value = current[motionKey(deskId, motion.id)] ?? modelledValue;
-    target.max[motion.axis] += (value - modelledValue) * motion.metresPerUnit * modelScale * factor;
+    const value = motion.initial ?? modelledValue;
+    result.max[motion.axis] += (value - modelledValue) * motion.metresPerUnit * modelScale * factor;
   }
-  return target;
+  return result;
 }
 
 const parentBasis = new Matrix3();
