@@ -135,24 +135,22 @@ const SITE_STYLES = [
       }
       /*
        * Its "New project" and "N more" sit in a column beside the projects, with no room beside
-       * them here: above them instead, in a row. (Only while open: closed, it is display: none.)
+       * them here: under them instead, in a row (where they come in the list, so nothing moves
+       * as it opens).
        */
-      .widget-projectpicker.ui-menu:not([style*="display: none"]) {
-        display: flex !important;
-        flex-direction: column;
+      .widget-projectpicker.ui-menu {
         height: auto !important;
       }
       .widget-projectpicker.ui-menu > .ui-menu-column {
         float: none !important;
       }
       .widget-projectpicker.ui-menu > .ui-menu-actions {
-        order: -1;
         float: none !important;
         height: auto !important;
-        margin: 0 0 6px !important;
-        padding: 0 0 6px !important;
+        margin: 6px 0 0 !important;
+        padding: 6px 0 0 !important;
         border-left: none !important;
-        border-bottom: 1px solid #ccc;
+        border-top: 1px solid #ccc;
       }
       .widget-projectpicker.ui-menu > .ui-menu-actions > ul {
         display: flex;
@@ -287,6 +285,26 @@ const SITE_STYLES = [
         width: auto !important;
         max-width: 100% !important;
         box-sizing: border-box;
+      }
+      /* The tables around it don't grow with it: on a side monitor its filters sized them past
+         the screen's edge, cutting off the tasks and the filters with them. */
+      table:has(.tasks-panel) {
+        table-layout: fixed !important;
+        width: 100% !important;
+      }
+      [id^="contentbag-"]:has(.tasks-panel),
+      [id^="card-QuickCard-"]:has(.tasks-panel) {
+        width: auto !important;
+        max-width: 100% !important;
+      }
+      /* Its filters wrap within the width. */
+      .tasks-buttonbar,
+      .tasks-buttonbar * {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .tasks-buttonbar div {
+        flex-wrap: wrap;
       }
       /* Its top bar (create, filters, refresh, "71 of 71" and its menu) wraps. */
       .tasks-topbar {
