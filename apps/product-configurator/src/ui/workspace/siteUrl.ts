@@ -21,6 +21,14 @@ export function parseAddress(value: string): { url: string; title: string } | { 
 }
 
 /**
+ * Project management sites, offered in their own group. Not known to allow being shown inside
+ * another page (unlike TOOLS): the desktop app shows them anyway.
+ */
+export const PROJECT_MANAGEMENT = [
+  { title: 'tinygnomes', url: 'https://www.tinygnomes.com/quilt.fcgi#dashboard' },
+] as const;
+
+/**
  * General tools known to allow being shown inside another page (checked when this was
  * written), after the sites of the product's workspaces.
  */

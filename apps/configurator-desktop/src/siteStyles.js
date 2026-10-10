@@ -219,21 +219,28 @@ const SITE_STYLES = [
       .qfw-floatingcard [id^="contentbag-"] {
         width: auto !important;
       }
-      /* The project picker dialog's list: one project a line instead of three a row. */
-      [id$="-projects_bodybag"] [id^="PANEL"] {
+      /* The project picker dialog's lists (All, Favorites, Recent, Hidden...): one project a line. */
+      [id^="card-ProjectPicker-dialog"] [id$="_horizbag"] {
+        width: auto !important;
+        max-width: 100% !important;
+      }
+      [id^="card-ProjectPicker-dialog"] [id$="_headerbody"] {
+        display: none !important;
+      }
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] [id^="PANEL"] {
         height: auto !important;
       }
-      [id$="-projects_bodybag"] table,
-      [id$="-projects_bodybag"] tbody,
-      [id$="-projects_bodybag"] tr,
-      [id$="-projects_bodybag"] td {
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] table,
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] tbody,
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] tr,
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] td {
         display: block !important;
         width: auto !important;
       }
-      [id$="-projects_bodybag"] td:empty {
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] td:empty {
         display: none !important;
       }
-      [id$="-projects_bodybag"] td > div {
+      [id^="card-ProjectPicker-dialog"] [id$="_bodybag"] td > div {
         width: auto !important;
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -262,6 +269,15 @@ const SITE_STYLES = [
       [id^="TaskList-"][id$="-maintable_headerbody"],
       [id^="TaskList-"][id$="-maintable_bodybag"] tr[id*="-rowheader_"] {
         display: none !important;
+      }
+      /* The list and its panel at the screen's width (the app sizes them for its columns). */
+      [id^="TaskList-"].tasks-panel,
+      [id^="TaskList-"][id*="-Mol-EZTable-maintable-"],
+      [id^="TaskList-"][id$="-maintable_horizbag"],
+      [id^="TaskList-"][id$="-maintable_bodybag"] {
+        width: auto !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
       }
       /* Its top bar (create, filters, refresh, "71 of 71" and its menu) wraps. */
       .tasks-topbar {
@@ -336,33 +352,43 @@ const SITE_STYLES = [
         color: #777;
       }
     `,
-    // The project picker lays out as many 240 px columns of projects as fit beside 160 px
-    // (`(window width - 160) / itemWidth`, its _updateMenu), and lists only that many columns'
-    // worth: on a side monitor none. On a narrow window its columns are made to fit: one.
+    // The project list picks as many projects as its columns of them fit the window (its
+    // _updateMenu: `(window width - 160) / 240`, up to 3): on a side monitor none. While it builds
+    // the list on a narrow screen it is told the window is desktop width, so it lists the same
+    // projects as on a desktop; the rules above stack its columns into one.
     script: (maxWidth) => {
+      const DESKTOP_WIDTH = 1280;
       const patch = () => {
-        const picker = window.jQuery?.ui?.projectPicker?.prototype;
+        const $ = window.jQuery;
+        const picker = $?.ui?.projectPicker?.prototype;
         if (!picker) return false;
         if (picker.__virtuosNarrow) return true;
         const update = picker._updateMenu;
         picker._updateMenu = function (...args) {
-          this.__virtuosItemWidth ??= this.options.itemWidth;
-          const narrow = window.innerWidth <= maxWidth;
-          this.options.itemWidth = narrow
-            ? Math.min(
-                this.__virtuosItemWidth,
-                Math.max(120, window.innerWidth - 170),
-              )
-            : this.__virtuosItemWidth;
-          return update.apply(this, args);
+          if (window.innerWidth > maxWidth) return update.apply(this, args);
+          const width = $.fn.width;
+          $.fn.width = function (...a) {
+            return this[0] === window && a.length === 0
+              ? DESKTOP_WIDTH
+              : width.apply(this, a);
+          };
+          try {
+            return update.apply(this, args);
+          } finally {
+            $.fn.width = width;
+          }
         };
         picker.__virtuosNarrow = true;
         return true;
       };
-      // The app's scripts may still be loading.
+      // The picker's script may load late: patch as soon as it is there, at the latest when the
+      // page is used (focus and clicks come before the picker opens its list).
       if (patch()) return;
       const timer = setInterval(() => patch() && clearInterval(timer), 500);
-      setTimeout(() => clearInterval(timer), 30000);
+      setTimeout(() => clearInterval(timer), 60000);
+      for (const type of ["focusin", "pointerdown"]) {
+        document.addEventListener(type, patch, true);
+      }
     },
   },
 ];

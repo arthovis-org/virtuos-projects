@@ -3,7 +3,7 @@ import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { workspaceById } from '@/state/setup';
 import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
 import styles from './EmptyScreen.module.css';
-import { parseAddress, TOOLS } from './siteUrl';
+import { parseAddress, PROJECT_MANAGEMENT, TOOLS } from './siteUrl';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 
 interface EmptyScreenProps {
@@ -22,8 +22,8 @@ interface SiteGroup {
 
 /**
  * What an empty screen shows: a way to put something on it. Closed windows can be reopened,
- * the sites of every workspace (this one first) and a few tools are one click away, and any
- * https address can be typed.
+ * the sites of every workspace (this one first), project management sites and a few tools are
+ * one click away, and any https address can be typed.
  */
 export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
   const product = useProduct();
@@ -51,6 +51,10 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
     const sites = workspace.windows.filter((w) => !taken.has(w.url));
     for (const site of sites) taken.add(site.url);
     if (sites.length > 0) groups.push({ label: workspace.label, icon: workspace.icon, sites });
+  }
+  const projects = PROJECT_MANAGEMENT.filter((site) => !taken.has(site.url));
+  if (projects.length > 0) {
+    groups.push({ label: 'Project management', icon: 'briefcase', sites: [...projects] });
   }
   const tools = TOOLS.filter((site) => !taken.has(site.url));
   if (tools.length > 0) groups.push({ label: 'Tools', sites: [...tools] });
