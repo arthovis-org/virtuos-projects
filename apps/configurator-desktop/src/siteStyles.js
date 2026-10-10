@@ -111,6 +111,22 @@ const SITE_STYLES = [
         width: 100% !important;
       }
 
+      /* The project picker's list (370 px at least, placed for a desktop window): across the screen. */
+      .widget-projectpicker.ui-menu {
+        left: 4px !important;
+        right: 4px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 8px) !important;
+        max-height: 70vh;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+      .widget-projectpicker.ui-menu .ui-menu-item {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
       /* Your own avatar in the top corner: small, out of the way of the project picker. */
       .q3-teambarv {
         transform: scale(0.42);

@@ -20,7 +20,6 @@ import { AgentAppView } from '@/agents/apps/AgentApps';
 import { screenUrl } from './embedUrls';
 import { siteUrl } from './siteUrl';
 import { ZoomControl } from './ZoomControl';
-import { frameName, useReflow } from './Reflow';
 import styles from './WindowFrame.module.css';
 
 interface WindowFrameProps {
@@ -76,10 +75,6 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
   // While the percentage is dragged, the page follows it; the zoom is set when the drag ends.
   const [preview, setPreview] = useState<number | null>(null);
   const fitted = useZoomFactor(zoom, zoomBox);
-  // Reflow (desktop app, experimental): the page's columns one at a time.
-  const reflow = useReflow(win.id, zoom, (next) => {
-    zoomWindow(win.id, next);
-  });
   const factor = preview ?? fitted;
 
   // Only starts the drag; the move and release are followed on the whole window (see
@@ -121,7 +116,6 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
         <span className={styles.title}>{win.title}</span>
         <span className={styles.host}>{agent ? `${agent.name} · ${agent.role}` : host}</span>
         <div className={styles.zoom}>
-          {!blank && !agentApp && reflow.button}
           {!blank && !agentApp && (
             <ZoomControl
               title={win.title}
@@ -184,13 +178,11 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
               </button>
             </div>
           )}
-          {reflow.tabs}
           {/* The page laid out larger or smaller than the window and scaled to fill it, as a
               browser zooms; the frame itself stays (a zoom never reloads the site). */}
           <div ref={setZoomBox} className={styles.viewport}>
             <iframe
               className={styles.frame}
-              name={frameName(win.id)}
               src={shownUrl}
               title={win.title}
               sandbox={SANDBOX}

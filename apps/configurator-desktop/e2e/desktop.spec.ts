@@ -16,7 +16,7 @@ import {
 
 let server: Server;
 
-/** A desktop-only dashboard in columns, like the sites reflow is for: a fixed menu, a feed, a panel, members. */
+/** A desktop-only dashboard in columns, like the sites site styles are for: a fixed menu, a feed, a panel, members. */
 const DASHBOARD = `<!doctype html><title>Dashboard</title>
 <style>
   body { margin: 0; font: 14px sans-serif; }
@@ -145,66 +145,6 @@ test("plays YouTube videos on the screens in its embed player", () => {
   expect(embedFor("https://example.com/watch?v=EMvk7OC4OeY")).toBeNull();
 });
 
-test("reflows a page in columns to one column at a time (experimental)", async () => {
-  const page = await app.firstWindow();
-  const url = `${base}/dashboard`;
-  // A side monitor's width, as the configurator names its site frames.
-  await page.evaluate((src) => {
-    const frame = document.createElement("iframe");
-    frame.name = "vr-test";
-    frame.src = src;
-    frame.style.cssText = "width: 331px; height: 794px";
-    document.body.append(frame);
-  }, url);
-  await expect
-    .poll(() => page.frames().some((f) => f.url() === url))
-    .toBe(true);
-  const dashboard = page.frames().find((f) => f.url() === url)!;
-  await dashboard.waitForLoadState();
-  type Reflow = (
-    frame: string,
-    command: object,
-  ) => Promise<{ sections: { label: string }[]; overflow: number }>;
-  const reflow = (command: object) =>
-    page.evaluate(
-      (c) =>
-        (
-          window as unknown as { virtuosDesktop: { reflow: Reflow } }
-        ).virtuosDesktop.reflow("vr-test", c),
-      command,
-    );
-
-  const found = await reflow({ action: "analyse" });
-  expect(found.sections.map((s) => s.label)).toEqual([
-    "Menu",
-    "Activity",
-    "Project description",
-    "Team",
-  ]);
-
-  // The feed alone, across the window: no longer cut off at the edge.
-  const shown = await reflow({ action: "show", index: 1 });
-  expect(shown.overflow).toBeLessThan(1.05);
-  expect(
-    await dashboard.evaluate(
-      () => getComputedStyle(document.querySelector("nav")!).display,
-    ),
-  ).toBe("none");
-  expect(
-    await dashboard.evaluate(
-      () => document.querySelector(".feed")!.getBoundingClientRect().width,
-    ),
-  ).toBeLessThanOrEqual(331);
-
-  // The full page, as the site lays it out.
-  await reflow({ action: "reset" });
-  expect(
-    await dashboard.evaluate(
-      () => getComputedStyle(document.querySelector("nav")!).display,
-    ),
-  ).toBe("block");
-});
-
 test("applies a site's own style on narrow screens only", async () => {
   const page = await app.firstWindow();
   const url = `${base}/styled`;
@@ -227,5 +167,6 @@ test("applies a site's own style on narrow screens only", async () => {
       ?.evaluate(() => getComputedStyle(document.querySelector("nav")!).display)
       .catch(() => "");
   await expect.poll(() => menu("vr-narrow")).toBe("none");
-  expect(await menu("vr-wide")).toBe("block");
+  // The wide frame may still be loading.
+  await expect.poll(() => menu("vr-wide")).toBe("block");
 });

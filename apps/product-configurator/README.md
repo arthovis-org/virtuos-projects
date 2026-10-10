@@ -188,12 +188,10 @@ embed players (YouTube embed links are even turned back into youtube.com itself:
 `nativeVersion` in `embedUrls.ts`), the AI may use any site, and shared links point to the public website. Develop
 here as usual; `npm run dev` in the desktop folder shows this dev server in the app.
 
-**Reflow** (experimental, in the desktop app's title bars): a desktop-only site laid out in
-columns is cut off on a narrow side monitor, and zoomed out to fit, too small to read. Reflow
-finds the page's columns as a desktop browser lays them out and offers them as tabs; the one
-picked fills the window at a readable size, the page staying the live site
-(`apps/configurator-desktop/src/reflow.js`, `src/ui/workspace/Reflow.tsx`). Sites with their own
-mobile layout already fit and are left as they are.
+**Site styles** (desktop app): a desktop-only site is cut off on a narrow side monitor, and
+zoomed out to fit, too small to read. For particular sites the desktop app adds a compact
+layout of their own while the window is narrow: menus folded to icons, content across the width
+at full size (`apps/configurator-desktop/src/siteStyles.js`; tinygnomes so far).
 
 ## Feedback
 

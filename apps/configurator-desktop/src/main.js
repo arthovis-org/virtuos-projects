@@ -10,7 +10,6 @@ const { app, BrowserWindow, net, protocol, session, shell } = require('electron'
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { allowFraming } = require('./frames');
-const { handleReflow } = require('./reflow');
 const { watchSiteStyles } = require('./siteStyles');
 const { watchForUpdates } = require('./updates');
 const { watchVideosEmbedded } = require('./youtube');
@@ -112,7 +111,6 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     allowFraming(session.defaultSession);
-    handleReflow();
     if (!DEV_URL) serveBundledSite();
     createWindow();
 

@@ -11,19 +11,6 @@ interface DesktopBridge {
   version?: string;
   /** A downloaded update waiting for a restart (from 0.1.2 on). */
   updates?: DesktopUpdates;
-  /** Reflow, experimental (from 0.1.4 on): see `desktopReflow`. */
-  reflow?: (frame: string, command: ReflowCommand) => Promise<ReflowResult | null>;
-}
-
-export type ReflowCommand =
-  { action: 'analyse' } | { action: 'show'; index: number } | { action: 'reset' };
-
-export interface ReflowResult {
-  sections?: { label: string; width: number }[];
-  shown?: number | null;
-  /** The page's width over the window's after showing a column: above 1, still too wide. */
-  overflow?: number;
-  error?: string;
 }
 
 interface DesktopUpdates {
@@ -60,9 +47,3 @@ export function versionLabel(): string {
 
 /** The desktop app's updates, when in it (a recent enough version). */
 export const desktopUpdates: DesktopUpdates | undefined = bridge?.updates;
-
-/**
- * Reflow (desktop app only): shows one column of a site laid out in columns at a time, across
- * its window (apps/configurator-desktop/src/reflow.js). The frame is named after its window.
- */
-export const desktopReflow = bridge?.reflow;
