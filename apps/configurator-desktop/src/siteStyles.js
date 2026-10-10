@@ -124,6 +124,36 @@ const SITE_STYLES = [
         overflow-y: auto;
         box-sizing: border-box;
       }
+      /*
+       * Its "New project" and "N more" sit in a column beside the projects, with no room beside
+       * them here: above them instead, in a row. (Only while open: closed, it is display: none.)
+       */
+      .widget-projectpicker.ui-menu:not([style*="display: none"]) {
+        display: flex !important;
+        flex-direction: column;
+        height: auto !important;
+      }
+      .widget-projectpicker.ui-menu > .ui-menu-column {
+        float: none !important;
+      }
+      .widget-projectpicker.ui-menu > .ui-menu-actions {
+        order: -1;
+        float: none !important;
+        height: auto !important;
+        margin: 0 0 6px !important;
+        padding: 0 0 6px !important;
+        border-left: none !important;
+        border-bottom: 1px solid #ccc;
+      }
+      .widget-projectpicker.ui-menu > .ui-menu-actions > ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 18px;
+      }
+      .widget-projectpicker.ui-menu > .ui-menu-actions li {
+        width: auto !important;
+        position: static !important;
+      }
       .widget-projectpicker.ui-menu .ui-menu-item {
         white-space: normal;
         overflow-wrap: anywhere;
