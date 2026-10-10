@@ -229,7 +229,151 @@ const SITE_STYLES = [
         box-sizing: border-box;
       }
       .qfw-floatingcard [id^="contentbag-"] {
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+      /* A window's title wraps instead of widening it. */
+      .qfw-floatingcard [id^="cardheader-title-"] {
+        white-space: normal !important;
+      }
+      .qfw-floatingcard [id$="-_relativeanchor"] > div > table,
+      .qfw-floatingcard table.qfw-border-normal {
+        width: 100% !important;
+      }
+      /* Their rows of controls (Quick pick, then Create, Edit favorites, Close...) wrap. */
+      .qfw-floatingcard [id^="cardcontent-"] {
+        padding: 8px 8px 0 !important;
+      }
+      .qfw-floatingcard [id^="contentbag-"] > table,
+      .qfw-floatingcard [id^="contentbag-"] > table > tbody {
+        display: block !important;
         width: auto !important;
+      }
+      .qfw-floatingcard [id^="contentbag-"] > table > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 0;
+      }
+      .qfw-floatingcard [id^="contentbag-"] > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+      }
+      .qfw-floatingcard [id^="contentbag-"] > table > tbody > tr > td:has(.tab-bar, .r-border-grey) {
+        flex-basis: 100%;
+      }
+      /*
+       * The task window: its toolbar, header and button bar wrap, and its three columns (people,
+       * the task's fields, its chat and files) are stacked: the fields first, then the people,
+       * then the rest. (Its body is the padded block under the toolbar.)
+       */
+      [id^="card-TaskNew-dialog"] .dialog-bar,
+      [id^="card-TaskNew-dialog"] .dialog-bar table {
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] .dialog-bar tr,
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr,
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] tr,
+      [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] {
+        justify-content: flex-end;
+      }
+      [id^="card-TaskNew-dialog"] .dialog-bar td,
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr > td,
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] td,
+      [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] > td {
+        display: block !important;
+        width: auto !important;
+        white-space: normal !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table,
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody,
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table,
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody,
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] table,
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div[style*="height"] {
+        height: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr {
+        display: flex !important;
+        flex-direction: column;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+        padding: 0 0 10px !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td:nth-child(2) {
+        order: -1;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"],
+      [id^="card-TaskNew-dialog"] [id$="-statuspanel"],
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] div[style*="height:370px"] {
+        width: auto !important;
+        height: auto !important;
+        padding-right: 0 !important;
+      }
+      /* Its fields: each label above its value, the boxes the width of the window. */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table,
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody,
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr,
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+        text-align: left !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr {
+        margin-bottom: 6px;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] table[width],
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] [id*="-Mol-InputBox-"] table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] .input-border-box {
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] td[width]:not([width="1%"]) {
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] input[style*="width"],
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] textarea {
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] [style*="width"] {
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+      /* Its tabs (All, Favorites, Recent, Hidden, Law) wrap onto two rows: the bar holds both, so
+         the list under it isn't pushed beside the second row. */
+      .qfw-floatingcard .tab-bar {
+        height: auto !important;
+        overflow: hidden;
+      }
+      [id^="card-ProjectPicker-dialog"] .r-border-grey > table {
+        width: 100% !important;
+      }
+      [id^="card-ProjectPicker-dialog"] [id$="_message"] div[style*="width"] {
+        width: auto !important;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      /* A closed one is hidden behind the page (visibility: hidden, z-index -10), but parts of
+         it make themselves visible again; here the page has gaps they showed through. */
+      .qfw-floatingcard[style*="visibility: hidden"],
+      .qfw-floatingcard[style*="visibility: hidden"] *,
+      .qfw-floatingcard[style*="z-index: -"],
+      .qfw-floatingcard[style*="z-index: -"] * {
+        visibility: hidden !important;
       }
       /* The project picker dialog's lists (All, Favorites, Recent, Hidden...): one project a line. */
       [id^="card-ProjectPicker-dialog"] [id$="_horizbag"] {
