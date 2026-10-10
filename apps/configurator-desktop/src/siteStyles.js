@@ -147,10 +147,25 @@ const SITE_STYLES = [
       .widget-projectpicker.ui-menu > .ui-menu-column {
         float: none !important;
       }
-      /* Each project's link is placed absolutely in its row (the site's own rule): across it. */
+      /*
+       * A project's row laid out without depending on any width around it: its link (placed
+       * absolutely by the site, sized to its content) in the row's flow, the icon a fixed
+       * column and the name the rest, ending in "…".
+       */
+      .widget-projectpicker.ui-menu .project-sec {
+        width: auto !important;
+        height: auto !important;
+      }
       .widget-projectpicker.ui-menu .project-sec a {
-        left: 0;
-        right: 0;
+        position: static !important;
+        display: block !important;
+      }
+      .widget-projectpicker.ui-menu .project-sec a > table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      .widget-projectpicker.ui-menu .project-sec td.project-icon {
+        width: 34px;
       }
       .widget-projectpicker.ui-menu > .ui-menu-actions {
         float: none !important;
@@ -271,9 +286,13 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] .dialog-bar table {
         width: auto !important;
       }
+      [id^="card-TaskNew-dialog"] [id$="-toppart"],
+      [id^="card-TaskNew-dialog"] .dialog-bar {
+        height: auto !important;
+        padding-bottom: 6px;
+      }
       [id^="card-TaskNew-dialog"] .dialog-bar tr,
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr,
-      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] tr,
       [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] {
         display: flex !important;
         flex-wrap: wrap;
@@ -284,7 +303,6 @@ const SITE_STYLES = [
       }
       [id^="card-TaskNew-dialog"] .dialog-bar td,
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr > td,
-      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] td,
       [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] > td {
         display: block !important;
         width: auto !important;
@@ -293,9 +311,7 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table,
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody,
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table,
-      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody,
-      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] table,
-      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] tbody {
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody {
         display: block !important;
         width: auto !important;
       }
@@ -314,6 +330,69 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td:nth-child(2) {
         order: -1;
       }
+      /* The people and the chat and files: as tall as their content, the window's width. */
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td > div,
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td > div > div {
+        width: auto !important;
+        height: auto !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td:not(:nth-child(2)) [style*="height"],
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td:not(:nth-child(2)) table {
+        height: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > div > table > tbody > tr > td:not(:nth-child(2)) {
+        border-top: 1px solid #eee;
+        padding-top: 8px !important;
+      }
+      /* Its header: no big tick (the title has one); the Lead and Doer cards side by side. */
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr > td:first-child {
+        display: none !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr > td {
+        flex-basis: 100%;
+        padding: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] > table,
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] > table > tbody {
+        display: block !important;
+        width: 100% !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] > table > tbody > tr {
+        display: flex !important;
+        gap: 8px;
+        align-items: stretch;
+        margin: 8px 0;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] > table > tbody > tr > td {
+        display: block !important;
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto !important;
+        padding: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] fieldset {
+        padding: 0 4px 4px !important;
+        min-width: 0;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] fieldset > table {
+        width: 100% !important;
+        height: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] fieldset > table > tbody > tr > td:first-child {
+        width: 48px !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] .q-cb-text {
+        font-size: 12px;
+        padding-right: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-acceptbar"] > table > tbody > tr > td > * {
+        width: auto !important;
+        height: 100%;
+        margin: 0 !important;
+        box-sizing: border-box;
+      }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"],
       [id^="card-TaskNew-dialog"] [id$="-statuspanel"],
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] div[style*="height:370px"] {
@@ -331,7 +410,17 @@ const SITE_STYLES = [
         text-align: left !important;
       }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr {
-        margin-bottom: 6px;
+        margin-bottom: 2px;
+      }
+      /* Compact: a label just above its box, little space after it. */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr > td {
+        padding: 0 0 8px !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr > td[style*="text-align: right"] {
+        padding: 0 0 3px !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr > td:empty {
+        display: none !important;
       }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] table[width],
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] [id*="-Mol-InputBox-"] table {
@@ -407,7 +496,6 @@ const SITE_STYLES = [
       }
       .widget-projectpicker.ui-menu .line1 {
         width: auto !important;
-        max-width: 100%;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
@@ -714,33 +802,39 @@ const SITE_STYLES = [
     // projects as on a desktop; the rules above stack its columns into one.
     script: (maxWidth) => {
       const DESKTOP_WIDTH = 1280;
+      /** Every jQuery on the page (the site may load more than one). */
+      const jQueries = () => [
+        ...new Set([window.jQuery, window.$].filter((j) => j?.fn)),
+      ];
       const patch = () => {
-        const $ = window.jQuery;
-        const picker = $?.ui?.projectPicker?.prototype;
-        if (!picker) return false;
-        if (picker.__virtuosNarrow) return true;
-        const update = picker._updateMenu;
-        picker._updateMenu = function (...args) {
-          if (window.innerWidth > maxWidth) return update.apply(this, args);
-          const width = $.fn.width;
-          $.fn.width = function (...a) {
-            return this[0] === window && a.length === 0
-              ? DESKTOP_WIDTH
-              : width.apply(this, a);
+        for (const $ of jQueries()) {
+          const picker = $.ui?.projectPicker?.prototype;
+          if (!picker || picker.__virtuosNarrow) continue;
+          const update = picker._updateMenu;
+          picker._updateMenu = function (...args) {
+            if (window.innerWidth > maxWidth) return update.apply(this, args);
+            // Told the window is desktop width, on whichever jQuery its code uses.
+            const saved = jQueries().map((j) => [j, j.fn.width]);
+            for (const [j, width] of saved) {
+              j.fn.width = function (...a) {
+                return this[0] === window && a.length === 0
+                  ? DESKTOP_WIDTH
+                  : width.apply(this, a);
+              };
+            }
+            try {
+              return update.apply(this, args);
+            } finally {
+              for (const [j, width] of saved) j.fn.width = width;
+            }
           };
-          try {
-            return update.apply(this, args);
-          } finally {
-            $.fn.width = width;
-          }
-        };
-        picker.__virtuosNarrow = true;
-        return true;
+          picker.__virtuosNarrow = true;
+        }
       };
-      // The picker's script may load late: patch as soon as it is there, at the latest when the
-      // page is used (focus and clicks come before the picker opens its list).
-      if (patch()) return;
-      const timer = setInterval(() => patch() && clearInterval(timer), 500);
+      // The picker's script may load late, or be defined again: patched now, every half second
+      // for a minute, and whenever the page is used (focus and clicks come before the list).
+      patch();
+      const timer = setInterval(patch, 500);
       setTimeout(() => clearInterval(timer), 60000);
       for (const type of ["focusin", "pointerdown"]) {
         document.addEventListener(type, patch, true);
