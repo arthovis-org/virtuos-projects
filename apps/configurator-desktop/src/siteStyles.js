@@ -497,15 +497,16 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr[id$="-rowdates"] > td > img {
         display: block;
       }
-      /* Estimated beside Actual, Priority beside Milestone (each row holds both pairs). */
-      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"]) {
+      /* Estimated beside Actual, Priority beside Milestone, Category beside Sub (each row holds
+         both pairs). */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"], [id$="-rowcategory"]) {
         display: grid !important;
         grid-template-rows: auto auto;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         grid-auto-flow: column;
         column-gap: 12px;
       }
-      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"]) > td {
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"], [id$="-rowcategory"]) > td {
         display: block !important;
         min-width: 0;
         height: auto !important;
