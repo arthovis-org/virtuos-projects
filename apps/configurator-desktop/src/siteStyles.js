@@ -8,13 +8,15 @@
  * so the same site on the main screen, or zoomed to Fit, looks as the site made it. The style
  * is added to the page whenever a frame on a screen loads one of the site's addresses
  * (webFrameMain.executeJavaScript reaches any site's page in the app), and added back if the
- * page replaces its head.
+ * page replaces its head. Where the site's own scripts lay something out from the window's
+ * width (and so leave it out on a narrow one), a site can also have a small page script.
  */
 const { webFrameMain } = require("electron");
 
 /**
  * `hosts`: the site's addresses (a host and its subdomains). `maxWidth`: the window width (CSS
- * pixels) up to which the style applies. `css`: the rules.
+ * pixels) up to which the style applies. `css`: the rules. `script` (optional): a function run
+ * in the page with `maxWidth`, after the rules are added.
  */
 const SITE_STYLES = [
   {
@@ -175,7 +177,163 @@ const SITE_STYLES = [
       [id*="-Mol-Dashboard2Chat-"] img[src*="1px.png"] {
         display: none !important;
       }
+
+      /* Dialogs (the app's floating cards, placed and sized for a desktop window): across the screen. */
+      .qfw-floatingcard {
+        left: 4px !important;
+        right: 4px !important;
+        width: auto !important;
+        max-width: calc(100vw - 8px) !important;
+        box-sizing: border-box;
+      }
+      .qfw-floatingcard [id^="contentbag-"] {
+        width: auto !important;
+      }
+      /* The project picker dialog's list: one project a line instead of three a row. */
+      [id$="-projects_bodybag"] [id^="PANEL"] {
+        height: auto !important;
+      }
+      [id$="-projects_bodybag"] table,
+      [id$="-projects_bodybag"] tbody,
+      [id$="-projects_bodybag"] tr,
+      [id$="-projects_bodybag"] td {
+        display: block !important;
+        width: auto !important;
+      }
+      [id$="-projects_bodybag"] td:empty {
+        display: none !important;
+      }
+      [id$="-projects_bodybag"] td > div {
+        width: auto !important;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      /* The project picker's list: its projects as wide as the screen allows. */
+      .widget-projectpicker.ui-menu .project-sec {
+        width: auto !important;
+      }
+      .widget-projectpicker.ui-menu .line1 {
+        width: auto !important;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .pwidget-large-pp input {
+        width: calc(100% - 64px) !important;
+      }
+
+      /*
+       * Tasks: each task a card (its summary, then project and doer, then status and end date)
+       * instead of a row of ten columns, which left the summary no width at all. Its cells, by
+       * column: check box, project, summary, doer, priority, duration, actual duration, status,
+       * end date, calendar.
+       */
+      [id^="TaskList-"][id$="-maintable_headerbody"],
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr[id*="-rowheader_"] {
+        display: none !important;
+      }
+      /* Its top bar (create, filters, refresh, "71 of 71" and its menu) wraps. */
+      .tasks-topbar {
+        flex-wrap: wrap;
+      }
+      .tasks-topbar > * {
+        max-width: 100%;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] [id^="PANEL"] {
+        height: auto !important;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] table,
+      [id^="TaskList-"][id$="-maintable_bodybag"] tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr[id*="-rowtr_"] {
+        display: grid !important;
+        grid-template-columns: 1fr auto;
+        grid-template-areas: "summary summary" "project doer" "status end";
+        gap: 1px 8px;
+        padding: 6px 2px;
+        border-bottom: 1px solid #eee;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr[id*="-rowtr_"] > td {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: 0;
+        padding: 0 4px !important;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr[id*="-rowtr_"] > td > div {
+        width: auto !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(1),
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(5),
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(6),
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(7),
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(10) {
+        display: none !important;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(2) {
+        grid-area: project;
+        font-size: 12px;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(3) {
+        grid-area: summary;
+        font-weight: 600;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(3) nobr {
+        white-space: normal;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(3) .qfw-molecule,
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(3) a {
+        display: inline !important;
+        white-space: normal !important;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(4) {
+        grid-area: doer;
+        font-size: 12px;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(8) {
+        grid-area: status;
+        font-size: 12px;
+        color: #777;
+      }
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(9) {
+        grid-area: end;
+        font-size: 12px;
+        color: #777;
+      }
     `,
+    // The project picker lays out as many 240 px columns of projects as fit beside 160 px
+    // (`(window width - 160) / itemWidth`, its _updateMenu), and lists only that many columns'
+    // worth: on a side monitor none. On a narrow window its columns are made to fit: one.
+    script: (maxWidth) => {
+      const patch = () => {
+        const picker = window.jQuery?.ui?.projectPicker?.prototype;
+        if (!picker) return false;
+        if (picker.__virtuosNarrow) return true;
+        const update = picker._updateMenu;
+        picker._updateMenu = function (...args) {
+          this.__virtuosItemWidth ??= this.options.itemWidth;
+          const narrow = window.innerWidth <= maxWidth;
+          this.options.itemWidth = narrow
+            ? Math.min(
+                this.__virtuosItemWidth,
+                Math.max(120, window.innerWidth - 170),
+              )
+            : this.__virtuosItemWidth;
+          return update.apply(this, args);
+        };
+        picker.__virtuosNarrow = true;
+        return true;
+      };
+      // The app's scripts may still be loading.
+      if (patch()) return;
+      const timer = setInterval(() => patch() && clearInterval(timer), 500);
+      setTimeout(() => clearInterval(timer), 30000);
+    },
   },
 ];
 
@@ -219,10 +377,17 @@ function addStyleInPage(id, css) {
   return true;
 }
 
-/** The page's script for a style: its rules inside the narrow-window media query. */
+/**
+ * The page's script for a style: its rules inside the narrow-window media query, then its own
+ * script (once a page: it may patch the site's scripts).
+ */
 function scriptFor(style) {
   const css = `@media (max-width: ${style.maxWidth}px) {\n${style.css}\n}`;
-  return `(${addStyleInPage.toString()})(${JSON.stringify(`virtuos-site-${style.name}`)}, ${JSON.stringify(css)})`;
+  const id = `virtuos-site-${style.name}`;
+  const add = `(${addStyleInPage.toString()})(${JSON.stringify(id)}, ${JSON.stringify(css)});`;
+  if (!style.script) return add;
+  const run = `if (!window.__virtuosSiteScript) { window.__virtuosSiteScript = true; (${style.script.toString()})(${style.maxWidth}); }`;
+  return `${add}\n${run}\ntrue;`;
 }
 
 /** Applies site styles to the pages on the configurator's screens (frames, not the window). */
