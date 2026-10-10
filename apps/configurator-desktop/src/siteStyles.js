@@ -440,6 +440,11 @@ const SITE_STYLES = [
         min-width: 0;
         height: auto !important;
       }
+      /* Estimated is short: its column only as wide as it, so "Add time" fits beside Actual. */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr[id$="-rowtime"] {
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 20px;
+      }
       [id^="card-TaskNew-dialog"] [id$="-rowpriority"] > td > div > table,
       [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown {
         width: 100% !important;
@@ -451,7 +456,7 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown td:not(.dd-mid) {
         width: 29px;
       }
-      /* The actual time, and "Add time" under it when the column is too narrow for both. */
+      /* The actual time and "Add time" beside it ("Add time" under it if there's no room). */
       [id^="card-TaskNew-dialog"] table[id$="-actualduration"],
       [id^="card-TaskNew-dialog"] table[id$="-actualduration"] > tbody {
         display: block !important;
@@ -459,14 +464,12 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] table[id$="-actualduration"] > tbody > tr {
         display: flex !important;
         flex-wrap: wrap;
-        gap: 2px 10px;
+        align-items: center;
+        gap: 2px;
       }
       [id^="card-TaskNew-dialog"] table[id$="-actualduration"] > tbody > tr > td {
         display: block !important;
         padding-left: 0 !important;
-      }
-      [id^="card-TaskNew-dialog"] table[id$="-actualduration"] [style*="margin-left: -"] {
-        margin-left: 0 !important;
       }
       /* Chat, Files and Links beside the Private, Calendar, Remind and Recurring boxes. */
       [id^="card-TaskNew-dialog"] table:has(> tbody > tr > td > table > tbody > tr > td > div[id*="-doeronly-"]) {
