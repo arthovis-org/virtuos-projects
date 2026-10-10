@@ -11,3 +11,4 @@ playwright-report/
 # Personal Claude Code settings and dev-server config
 .claude/settings.local.json
 .claude/launch.json
+tinygnomes-sample/

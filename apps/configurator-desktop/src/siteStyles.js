@@ -21,7 +21,145 @@ const SITE_STYLES = [
     name: "tinygnomes",
     hosts: ["tinygnomes.com"],
     maxWidth: 700,
-    css: "",
+    // Written from the dashboard's page (its menu, dashboard and team columns in a splitter,
+    // sized in pixels by the app's own scripts, which these rules override).
+    css: `
+      /*
+       * The page at the window's width: the app sets its main rows to a width of its own (at least
+       * that of a desktop window), and the tables they sit in grow to fit them.
+       */
+      [id*="-Mol-RowLayout-body-"],
+      [id$="-body_north"],
+      [id$="-body_north"] > .qfw-molecule,
+      [id$="-body_middle"],
+      [id$="-splitter2_bag"] {
+        width: 100vw !important;
+      }
+      [id$="splitter2_center"] div[style*="width"] {
+        max-width: 100% !important;
+      }
+      /* The content's own layout (a service's columns), the width of the space beside the menu. */
+      [id*="-Mol-ColumnLayout-servicebodyframe-"] {
+        width: calc(100vw - 48px) !important;
+      }
+      [id*="-qtaskheader_qtaskheadercol"] {
+        max-width: 100vw !important;
+      }
+
+      /* The menu: a strip of its icons (names on hover, as the site's own tooltips). */
+      [id$="splitter2_left"] {
+        width: 40px !important;
+      }
+      .servicebar-scrollarea,
+      .servicebar-scrolldiv,
+      .servicebar-controls,
+      .servicebar-controls table {
+        width: 40px !important;
+      }
+      .link-vservbar table {
+        width: 36px !important;
+      }
+      .link-vservbar td[valign="middle"] {
+        display: none !important;
+      }
+      .servicebar-controls td {
+        width: 40px !important;
+        padding: 5px 0 !important;
+      }
+      /* The big icon of the open service above the menu (the menu shows which is open). */
+      .svc-topicon {
+        display: none !important;
+      }
+      /* Unread counts on the icons. */
+      .svc-pillbox-container {
+        right: auto !important;
+        left: 16px !important;
+        transform: scale(0.75);
+        transform-origin: left center;
+      }
+
+      /* Columns there is no room for: the team, the project's description. */
+      [id$="splitter2_right"],
+      [id$="splitter2_divider"],
+      [id$="splitter2_divider2"],
+      [id$="servicebodyframecol1"],
+      [id$="servicebodyframecol3"] {
+        display: none !important;
+      }
+
+      /* The content: the rest of the width. */
+      [id$="splitter2_center"] {
+        left: 40px !important;
+        right: 0 !important;
+        width: auto !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+      }
+      [id$="servicebodyframecol2"] {
+        width: auto !important;
+        float: none !important;
+        padding: 0 2px !important;
+      }
+
+      /* The project picker in the top bar, beside the menu strip. */
+      .global-projectpicker {
+        left: 44px !important;
+        right: 4px !important;
+        width: auto !important;
+      }
+      .global-projectpicker table {
+        width: 100% !important;
+      }
+
+      /* Your own avatar in the top corner: small, out of the way of the project picker. */
+      .q3-teambarv {
+        transform: scale(0.42);
+        transform-origin: top right;
+      }
+      .global-projectpicker {
+        right: 44px !important;
+      }
+      .global-projectpicker td > div {
+        padding-left: 0 !important;
+      }
+      .pwidget-large-pp {
+        width: auto !important;
+        max-width: 100% !important;
+      }
+
+      /* The dashboard's entries: the time as a small label in the corner, the message the width. */
+      [id*="-Mol-Dashboard2Chat-"] {
+        position: relative;
+      }
+      td:has(> [id*="-Mol-RelativeTime-"]) {
+        position: absolute !important;
+        top: 2px;
+        right: 2px;
+        width: auto !important;
+        padding: 0 4px !important;
+        background: transparent !important;
+        font-size: 11px;
+        color: #8a8a8a;
+      }
+      /* Entries keep to the width (their tables grew to fit the longest line), long names end in "…". */
+      [id*="-Mol-Dashboard2Chat-"] div[style*="nowrap"] {
+        /* Fills its cell without widening it. */
+        width: 0;
+        min-width: 100%;
+        text-overflow: ellipsis;
+      }
+      [id*="-Mol-Dashboard2Chat-"] div[style*="nowrap"] .link-textlink,
+      [id*="-Mol-Dashboard2Chat-"] div[style*="nowrap"] .link-textlink a {
+        display: inline !important;
+      }
+      [id*="-Mol-Dashboard2Chat-"] .qfw-divlink center {
+        overflow-wrap: anywhere;
+      }
+      /* The spacer that kept a column free for the time (now in the corner). */
+      [id*="-Mol-Dashboard2Chat-"] img[src*="1px.png"] {
+        display: none !important;
+      }
+    `,
   },
 ];
 
