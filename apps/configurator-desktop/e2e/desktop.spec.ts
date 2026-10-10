@@ -45,6 +45,11 @@ test.beforeAll(async () => {
         "default-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
     }
     response.writeHead(200, headers);
+    if (request.url === "/styled") {
+      // The dashboard again, as the page the test site style is written for.
+      response.end(`<div class="styled">${DASHBOARD}</div>`);
+      return;
+    }
     if (request.url === "/dashboard") {
       response.end(DASHBOARD);
       return;
@@ -62,6 +67,13 @@ test.beforeAll(async () => {
     env: {
       ...process.env,
       VIRTUOS_USER_DATA: mkdtempSync(join(tmpdir(), "virtuos-test-")),
+      // A site style for the test site: its menu folded away on narrow screens.
+      VIRTUOS_TEST_SITE_STYLE: JSON.stringify({
+        name: "test",
+        hosts: ["127.0.0.1"],
+        maxWidth: 700,
+        css: ".styled nav { display: none !important; } .styled main { margin-left: 0 !important; }",
+      }),
     },
   });
 });
@@ -191,4 +203,29 @@ test("reflows a page in columns to one column at a time (experimental)", async (
       () => getComputedStyle(document.querySelector("nav")!).display,
     ),
   ).toBe("block");
+});
+
+test("applies a site's own style on narrow screens only", async () => {
+  const page = await app.firstWindow();
+  const url = `${base}/styled`;
+  // The same site on a side monitor and on a wide screen.
+  await page.evaluate((src) => {
+    for (const [name, width] of [
+      ["vr-narrow", 331],
+      ["vr-wide", 1440],
+    ] as const) {
+      const frame = document.createElement("iframe");
+      frame.name = name;
+      frame.src = src;
+      frame.style.cssText = `width: ${width}px; height: 600px`;
+      document.body.append(frame);
+    }
+  }, url);
+  const menu = (name: string) =>
+    page
+      .frame({ name })
+      ?.evaluate(() => getComputedStyle(document.querySelector("nav")!).display)
+      .catch(() => "");
+  await expect.poll(() => menu("vr-narrow")).toBe("none");
+  expect(await menu("vr-wide")).toBe("block");
 });

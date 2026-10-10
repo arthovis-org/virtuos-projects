@@ -11,6 +11,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { allowFraming } = require('./frames');
 const { handleReflow } = require('./reflow');
+const { watchSiteStyles } = require('./siteStyles');
 const { watchForUpdates } = require('./updates');
 const { watchVideosEmbedded } = require('./youtube');
 
@@ -89,6 +90,7 @@ function createWindow() {
   });
 
   watchVideosEmbedded(window.webContents);
+  watchSiteStyles(window.webContents);
   void window.loadURL(DEV_URL ?? APP_URL);
 }
 
