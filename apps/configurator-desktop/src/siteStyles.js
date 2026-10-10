@@ -299,7 +299,12 @@ const SITE_STYLES = [
         align-items: center;
       }
       [id^="card-TaskNew-dialog"] [id$="-rbar_tr"] {
-        justify-content: flex-end;
+        justify-content: center;
+        gap: 4px 6px;
+      }
+      /* The actions the site hides for this task stay hidden; no "|" between wrapped rows. */
+      [id^="card-TaskNew-dialog"] .dialog-bar [id$="-rbar_tr"] > td:is([style*="display: none"], :has(> .v-bar)) {
+        display: none !important;
       }
       [id^="card-TaskNew-dialog"] .dialog-bar td,
       [id^="card-TaskNew-dialog"] [id$="-content"] > div[style*="padding"] > table > tbody > tr > td,
@@ -421,6 +426,63 @@ const SITE_STYLES = [
       }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr > td:empty {
         display: none !important;
+      }
+      /* Estimated beside Actual, Priority beside Milestone (each row holds both pairs). */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"]) {
+        display: grid !important;
+        grid-template-rows: auto auto;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-auto-flow: column;
+        column-gap: 12px;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] > table > tbody > tr:is([id$="-rowtime"], [id$="-rowpriority"]) > td {
+        display: block !important;
+        min-width: 0;
+        height: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-rowpriority"] > td > div > table,
+      [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown td.dd-mid {
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown td:not(.dd-mid) {
+        width: 29px;
+      }
+      /* The actual time, and "Add time" under it when the column is too narrow for both. */
+      [id^="card-TaskNew-dialog"] table[id$="-actualduration"],
+      [id^="card-TaskNew-dialog"] table[id$="-actualduration"] > tbody {
+        display: block !important;
+      }
+      [id^="card-TaskNew-dialog"] table[id$="-actualduration"] > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 2px 10px;
+      }
+      [id^="card-TaskNew-dialog"] table[id$="-actualduration"] > tbody > tr > td {
+        display: block !important;
+        padding-left: 0 !important;
+      }
+      [id^="card-TaskNew-dialog"] table[id$="-actualduration"] [style*="margin-left: -"] {
+        margin-left: 0 !important;
+      }
+      /* Chat, Files and Links beside the Private, Calendar, Remind and Recurring boxes. */
+      [id^="card-TaskNew-dialog"] table:has(> tbody > tr > td > table > tbody > tr > td > div[id*="-doeronly-"]) {
+        display: block !important;
+        width: 100% !important;
+      }
+      [id^="card-TaskNew-dialog"] table:has(> tbody > tr > td > table > tbody > tr > td > div[id*="-doeronly-"]) > tbody {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 12px;
+      }
+      [id^="card-TaskNew-dialog"] table:has(> tbody > tr > td > table > tbody > tr > td > div[id*="-doeronly-"]) > tbody > tr,
+      [id^="card-TaskNew-dialog"] table:has(> tbody > tr > td > table > tbody > tr > td > div[id*="-doeronly-"]) > tbody > tr > td {
+        display: block !important;
+        height: auto !important;
+        min-width: 0;
       }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] table[width],
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] [id*="-Mol-InputBox-"] table {
@@ -585,7 +647,8 @@ const SITE_STYLES = [
       [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(5),
       [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(6),
       [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(7),
-      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(10) {
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(10),
+      [id^="TaskList-"][id$="-maintable_bodybag"] tr > td[style*="display: none"] {
         display: none !important;
       }
       [id^="TaskList-"][id$="-maintable_bodybag"] tr > td:nth-child(2) {
