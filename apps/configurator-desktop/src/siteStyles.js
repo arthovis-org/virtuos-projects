@@ -238,6 +238,23 @@ const SITE_STYLES = [
         display: none !important;
       }
 
+      /*
+       * Text buttons (Refresh, Create task...) are three cells, rounded ends and a middle; on a
+       * screen seen at an angle their joins showed as thin white lines. The middle's colour
+       * reaches a pixel under each end.
+       */
+      table[id$="_button_root"] td.m {
+        position: relative;
+      }
+      table[id$="_button_root"] td.m::before {
+        content: "";
+        position: absolute;
+        inset: 0 -1px;
+        background: inherit;
+      }
+      table[id$="_button_root"] td.m > * {
+        position: relative;
+      }
       /* Dialogs (the app's floating cards, placed and sized for a desktop window): across the screen. */
       .qfw-floatingcard {
         left: 4px !important;
@@ -321,6 +338,10 @@ const SITE_STYLES = [
       }
       [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] > div {
         margin: 0 -10px !important;
+      }
+      /* (That reaches past the window's body, which then scrolled sideways for it.) */
+      [id^="card-TaskNew-dialog"] [id^="contentbag-"] {
+        overflow-x: hidden !important;
       }
       [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] > div > table,
       [id^="card-TaskNew-dialog"] .dialog-bar [id$="-dialogbar_right"] > div > table > tbody {
@@ -605,13 +626,13 @@ const SITE_STYLES = [
         box-sizing: border-box;
       }
       /*
-       * A chat window (a task's Chat) and a links window (its Links): their body is set to a
-       * desktop width (722 px), which the window's tables grew to; the screen's width instead
-       * (less the window's margins and padding). Under the message box, the attach links and then the post options and "Post
+       * Dialogs over the task window (its Chat, Links, Actual hours, Remind, Edit people,
+       * Recurring...): their body is set to a desktop width (722 px), which the window's tables
+       * grew to; the screen's width instead (less the window's margins and padding). For a
+       * chat, under the message box: the attach links, then the post options and "Post
        * message", wrapping onto a second line.
        */
-      [id^="card-ChatService-dialog"] [id^="contentbag-"],
-      [id^="card-ServiceLink-dialog"] [id^="contentbag-"] {
+      .qfw-floatingcard:not([id^="card-TaskNew-dialog"]) [id^="contentbag-"] {
         width: calc(100vw - 54px) !important;
       }
       /* The links' table: its columns (Who, When, Source, Type, 100 px each) share the width. */
@@ -628,9 +649,151 @@ const SITE_STYLES = [
         max-width: 100% !important;
         box-sizing: border-box;
       }
+      /*
+       * Actual hours: the hours logged (Doer, Date, Hours, Edit: 355 px of columns) share the
+       * width; the line adding hours (who, when, how many, Add) wraps, the hours under it.
+       */
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr > td[style*="width"]) {
+        table-layout: fixed;
+        width: 100% !important;
+      }
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr > td[style*="width"]) > tbody > tr > td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+      }
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr > td[style*="width"]) > tbody > tr > td:nth-child(1) {
+        width: 30% !important;
+      }
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr > td[style*="width"]) > tbody > tr > td:nth-child(2) {
+        width: 36% !important;
+      }
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr > td[style*="width"]) > tbody > tr > td:nth-child(3),
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr > td[style*="width"]) > tbody > tr > td:nth-child(4) {
+        width: 17% !important;
+      }
+      [id^="card-TaskHoursActual-dialog"] [id*="-Mol-EZTable-"] [style*="width"]:not(td):not(table) {
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr[id$="-addline"]),
+      [id^="card-TaskHoursActual-dialog"] table:has(> tbody > tr[id$="-addline"]) > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="card-TaskHoursActual-dialog"] tr[id$="-addline"] {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px 0;
+      }
+      [id^="card-TaskHoursActual-dialog"] tr[id$="-addline"] > td {
+        display: block !important;
+        padding-left: 3px !important;
+      }
+      /* Notifications (Remind me, Remind all): their choices narrower (150 px), beside the labels. */
+      [id^="card-TaskNew_Notify-dialog"] table.dropdown td.dd-mid,
+      [id^="card-TaskNew_Notify-dialog"] table.dropdown td.dd-mid > div[style*="width"] {
+        width: 96px !important;
+      }
+      /* Recurrence: each rule ("The first Monday of every 1 month(s)") wraps like a sentence. */
+      [id^="card-Recurring-dialog"] [id*="formula."][id$="_txt"] > table,
+      [id^="card-Recurring-dialog"] [id*="formula."][id$="_txt"] > table > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="card-Recurring-dialog"] [id*="formula."][id$="_txt"] > table > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 0;
+      }
+      [id^="card-Recurring-dialog"] [id*="formula."][id$="_txt"] > table > tbody > tr > td {
+        display: block !important;
+      }
+      /* Its wide choices (first, Monday, day(s): 100 px and more) as wide as their words. */
+      [id^="card-Recurring-dialog"] table.dropdown td.dd-mid[style*="width: 1"],
+      [id^="card-Recurring-dialog"] table.dropdown td.dd-mid[style*="width: 1"] > div[style*="width"] {
+        width: 72px !important;
+      }
+      /*
+       * Select participants: its two columns (the project's people to pick from, then the
+       * chosen ones with their roles), 725 px side by side, one under the other.
+       */
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] > div > table,
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] > div > table > tbody,
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] > div > table > tbody > tr,
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] > div > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+        padding-right: 0 !important;
+      }
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] > div > table > tbody > tr > td + td {
+        padding-top: 10px;
+      }
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] table[style*="width"]:not([id$="_button_root"]) {
+        width: 100% !important;
+      }
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] [style*="width"]:not(td) {
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+      /* The people to pick from (380 x 332 px) the width, its name filter too; both lists
+         shorter, so the window's OK stays in view. */
+      [id^="card-TaskActors-dialog"] [id*="-Mol-PersonaPicker-"] {
+        width: auto !important;
+        height: auto !important;
+      }
+      [id^="card-TaskActors-dialog"] [id*="-Mol-PersonaPicker-"] input[style*="width"] {
+        width: 100% !important;
+      }
+      [id^="card-TaskActors-dialog"] [id*="-Mol-PersonaPicker-"] table:not(.tbl) {
+        width: 100% !important;
+      }
+      [id^="card-TaskActors-dialog"] [id$="_bodybag"][style*="height"] {
+        height: 150px !important;
+      }
+      [id^="card-TaskActors-dialog"] [id^="contentbag-"] table[style*="width"]:not([id$="_button_root"]) {
+        table-layout: fixed;
+      }
+      /* Over the people: "Filter names", the filter, "Select all" (under them if need be). */
+      [id^="card-TaskActors-dialog"] td.m-solid > table:has([id*="-Mol-InputBox-filtertext-"]),
+      [id^="card-TaskActors-dialog"] td.m-solid > table:has([id*="-Mol-InputBox-filtertext-"]) > tbody {
+        display: block !important;
+      }
+      [id^="card-TaskActors-dialog"] td.m-solid > table:has([id*="-Mol-InputBox-filtertext-"]) > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      [id^="card-TaskActors-dialog"] td.m-solid > table:has([id*="-Mol-InputBox-filtertext-"]) > tbody > tr > td {
+        display: block !important;
+      }
+      [id^="card-TaskActors-dialog"] td.m-solid > table:has([id*="-Mol-InputBox-filtertext-"]) > tbody > tr > td:has([id*="-Mol-InputBox-filtertext-"]) {
+        flex: 1 1 120px;
+        min-width: 0;
+      }
+      [id^="card-TaskActors-dialog"] td.m-solid > table:has([id*="-Mol-InputBox-filtertext-"]) > tbody > tr > td:last-child {
+        margin-left: auto;
+      }
+      [id^="card-TaskActors-dialog"] [id*="-Mol-InputBox-filtertext-"] table {
+        width: 100% !important;
+      }
+      /* The chosen people: their name and role columns (110 px each) share the width. */
+      [id^="card-TaskActors-dialog"] td[id*="actors_data0_"]:is([id$="_actor"], [id$="_role"]) {
+        width: auto !important;
+      }
       /* The message box (its highlighter sized in pixels by the site's script). */
       [id^="card-ChatService-dialog"] .highlightTextarea {
         width: 100% !important;
+      }
+      /* Tall enough for its instructions (four lines here); it still grows as one types. */
+      [id^="card-ChatService-dialog"] .highlightTextarea,
+      [id^="card-ChatService-dialog"] .highlightTextarea-container,
+      [id^="card-ChatService-dialog"] .highlightTextarea textarea {
+        min-height: 64px;
       }
       [id^="card-ChatService-dialog"] [id$="-post"] > table,
       [id^="card-ChatService-dialog"] [id$="-post"] > table > tbody {
@@ -765,6 +928,47 @@ const SITE_STYLES = [
         background: transparent !important;
         border-color: transparent !important;
       }
+      /*
+       * Create task and the filters in one wrapping row (Filter beside Create task, then the
+       * filters set, then Custom and Clear), not the filters' own block under Create task. Each
+       * keeps only its own height: the site pads them to line up in a desktop-wide bar.
+       */
+      .tasks-buttonbar [id$="-lbar_tr"] {
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        row-gap: 8px;
+        padding: 4px 0 2px;
+      }
+      .tasks-buttonbar [id$="-lbar_tr"] > td {
+        padding: 0 !important;
+      }
+      .tasks-buttonbar [id$="-lbar_tr"] > td:not(.filter-bar) {
+        margin-right: 10px;
+      }
+      .tasks-buttonbar [id$="-lbar_tr"] > td:first-child:not(:has(*)) {
+        display: none !important;
+      }
+      .tasks-buttonbar td.filter-bar {
+        display: contents !important;
+      }
+      .tasks-buttonbar td.filter-bar > * {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .tasks-buttonbar td.filter-bar > :is(div.tasks-filters, div[class*="item"]) {
+        display: flex !important;
+        align-items: center;
+        height: auto !important;
+        min-height: 0 !important;
+        margin-right: 10px !important;
+      }
+      .tasks-buttonbar td.filter-bar > div[class*="item"][style*="display: none"] {
+        display: none !important;
+      }
+      .tasks-buttonbar td.filter-bar [class$="-label"],
+      .tasks-buttonbar td.filter-bar .tasks-filter-item > div:first-child {
+        display: none !important;
+      }
       /* Its top bar (create, filters, refresh, "71 of 71" and its menu) wraps. */
       .tasks-topbar {
         flex-wrap: wrap;
@@ -889,6 +1093,87 @@ const SITE_STYLES = [
       [id^="card-QuickCard-"] .cke,
       [id^="card-QuickCard-"] .cke_inner {
         width: auto !important;
+      }
+
+      /*
+       * Reports, Forms, Search: a service's own panel (report templates; Create form, Filter,
+       * Trashcan; nothing for Search) beside its content, both placed at fixed widths. Here the
+       * panel on top, as tall as it is up to 40% of the height, and the content under it, each
+       * scrolling on its own as the site's side-by-side ones do.
+       */
+      [id*="-Mol-VerticalDivider-servicebodyframe-"],
+      [id$="-servicebodyframe_bag"] {
+        height: 100% !important;
+      }
+      [id$="-servicebodyframe_bag"] {
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+      }
+      [id$="-servicebodyframe_bag"] > [id$="-servicebodyframe_left"],
+      [id$="-servicebodyframe_bag"] > [id$="-servicebodyframe_right"] {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+      }
+      [id$="-servicebodyframe_bag"] > [id$="-servicebodyframe_left"] {
+        flex: 0 1 auto;
+        max-height: 40%;
+        overflow-y: auto !important;
+      }
+      [id$="-servicebodyframe_bag"] > [id$="-servicebodyframe_right"] {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto !important;
+      }
+      [id$="-servicebodyframe_bag"] > [id$="-servicebodyframe_divider"] {
+        display: none !important;
+      }
+      /* Search's form (520 px, its search box 337 px): the width. */
+      [id^="GlobalSearch-"] [id$="-servicebodyframe_right"] div[style*="width"] {
+        width: auto !important;
+        max-width: 100% !important;
+      }
+      [id^="GlobalSearch-"] [id$="-servicebodyframe_right"] :is(table, td)[width] {
+        width: auto !important;
+      }
+      [id^="GlobalSearch-"] [id*="-Mol-RadioButtonGroup-"] table,
+      [id^="GlobalSearch-"] [id*="-Mol-RadioButtonGroup-"] tbody {
+        display: block !important;
+      }
+      [id^="GlobalSearch-"] [id*="-Mol-RadioButtonGroup-"] tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 2px 8px;
+      }
+      [id^="GlobalSearch-"] [id*="-Mol-RadioButtonGroup-"] td {
+        display: block !important;
+      }
+      /* What to search (three columns of check boxes, in groups): two columns. */
+      [id^="GlobalSearch-"] td.m > div > table:has(> tbody > tr > td:nth-child(3) > [id*="-Mol-CheckButton-igs"]):not(:has(input[type="text"])) {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 6px;
+      }
+      [id^="GlobalSearch-"] td.m > div > table:has(> tbody > tr > td:nth-child(3) > [id*="-Mol-CheckButton-igs"]):not(:has(input[type="text"])) > tbody,
+      [id^="GlobalSearch-"] td.m > div > table:has(> tbody > tr > td:nth-child(3) > [id*="-Mol-CheckButton-igs"]):not(:has(input[type="text"])) > tbody > tr {
+        display: contents !important;
+      }
+      [id^="GlobalSearch-"] td.m > div > table:has(> tbody > tr > td:nth-child(3) > [id*="-Mol-CheckButton-igs"]):not(:has(input[type="text"])) > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+        min-width: 0;
+      }
+      [id^="GlobalSearch-"] td.m > div > table:has(> tbody > tr > td:nth-child(3) > [id*="-Mol-CheckButton-igs"]):not(:has(input[type="text"])) > tbody > tr > td:only-child {
+        grid-column: 1 / -1;
+      }
+      [id^="GlobalSearch-"] td.m > div > table:has(> tbody > tr > td:nth-child(3) > [id*="-Mol-CheckButton-igs"]):not(:has(input[type="text"])) > tbody > tr > td:empty {
+        display: none !important;
+      }
+      [id^="GlobalSearch-"] [id$="-servicebodyframe_right"] [id*="-Mol-InputBox-"] table,
+      [id^="GlobalSearch-"] [id$="-servicebodyframe_right"] [id*="-Mol-InputBox-"] input {
+        width: 100% !important;
+        box-sizing: border-box;
       }
 
       /*
@@ -1029,17 +1314,17 @@ const SITE_STYLES = [
         height: auto;
       }
       /* Year: its months (six a row) as many a row as fit, in order. */
-      table.c-year,
-      table.c-year > tbody {
+      table.c-year:not(.submonth),
+      table.c-year:not(.submonth) > tbody {
         display: block !important;
         width: auto !important;
       }
-      table.c-year > tbody > tr {
+      table.c-year:not(.submonth) > tbody > tr {
         display: flex !important;
         flex-wrap: wrap;
         justify-content: space-around;
       }
-      table.c-year > tbody > tr > td {
+      table.c-year:not(.submonth) > tbody > tr > td {
         display: block !important;
         width: auto !important;
         margin-bottom: 8px;

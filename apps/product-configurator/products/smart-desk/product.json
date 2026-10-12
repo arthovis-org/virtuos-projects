@@ -65,7 +65,7 @@
       "label": "Office",
       "icon": "briefcase",
       "accent": "#64748b",
-      "description": "Calendar, research, notes and a whiteboard, each on its own screen.",
+      "description": "Calendar, research, projects and a whiteboard, each on its own screen.",
       "windows": [
         {
           "title": "Calendar",
@@ -77,7 +77,11 @@
           "url": "https://en.wikipedia.org/wiki/Multi-monitor",
           "screen": "MonitorLeft"
         },
-        { "title": "Notes", "url": "https://stackedit.io/app", "screen": "MonitorRight" },
+        {
+          "title": "TinyGnomes",
+          "url": "https://www.tinygnomes.com/quilt.fcgi#dashboard",
+          "screen": "MonitorRight"
+        },
         { "title": "Whiteboard", "url": "https://excalidraw.com/", "screen": "MainMonitor" }
       ]
     }
