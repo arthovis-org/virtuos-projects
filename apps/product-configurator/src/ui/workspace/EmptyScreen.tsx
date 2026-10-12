@@ -1,4 +1,4 @@
-import { useState, type SyntheticEvent } from 'react';
+import { useState, type CSSProperties, type SyntheticEvent } from 'react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { workspaceById } from '@/state/setup';
 import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
@@ -12,6 +12,30 @@ interface EmptyScreenProps {
   closed: readonly WorkspaceWindow[];
   /** A blank window this picker is in: picking turns it into the site (else a new window). */
   blankId?: string | undefined;
+}
+
+/** A hue of the site's own, from its name, for its initial's badge. */
+function hueOf(name: string): number {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) % 360;
+  return hash;
+}
+
+/** A site to open, as a tile: its initial on a colour of its own, then its name. */
+function SiteTile({ title, onOpen }: { title: string; onOpen: () => void }) {
+  const initial = title.trim().charAt(0).toUpperCase() || '?';
+  return (
+    <button type="button" className={styles.site} onClick={onOpen} title={title}>
+      <span
+        className={styles.badge}
+        style={{ '--hue': hueOf(title) } as CSSProperties}
+        aria-hidden="true"
+      >
+        {initial}
+      </span>
+      <span className={styles.siteName}>{title}</span>
+    </button>
+  );
 }
 
 interface SiteGroup {
@@ -74,10 +98,13 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
 
   return (
     <div className={styles.empty}>
-      <p className={styles.heading}>{blankId ? 'New window' : `${screen.label} screen`}</p>
-      <p className={styles.hint}>
-        {blankId ? 'Open a site in this window:' : 'Drag a window here, or open a site:'}
-      </p>
+      {/* A blank window's title bar names it already. */}
+      <div className={styles.top}>
+        {!blankId && <p className={styles.heading}>{screen.label} screen</p>}
+        <p className={styles.hint}>
+          {blankId ? 'Open a site in this window' : 'Drag a window here, or open a site'}
+        </p>
+      </div>
 
       <form className={styles.form} onSubmit={submit}>
         <input
@@ -102,37 +129,30 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
         </p>
       )}
 
-      {closed.length > 0 && (
-        <div className={styles.group}>
-          <span className={styles.groupLabel}>Reopen</span>
-          <div className={styles.chips}>
-            {closed.map((w) => (
-              <button key={w.id} type="button" className={styles.chip} onClick={() => open(w)}>
-                {w.title}
-              </button>
-            ))}
+      <div className={styles.groups}>
+        {closed.length > 0 && (
+          <div className={styles.group}>
+            <span className={styles.groupLabel}>Reopen</span>
+            <div className={styles.sites}>
+              {closed.map((w) => (
+                <SiteTile key={w.id} title={w.title} onOpen={() => open(w)} />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-      <div className={styles.suggestions}>
+        )}
         {groups.map((group) => (
           <div key={group.label} className={styles.group}>
             <span className={styles.groupLabel}>
-              {group.icon && (
-                <WorkspaceIcon name={group.icon} size={16} className={styles.groupIcon} />
-              )}
+              {group.icon && <WorkspaceIcon name={group.icon} size={13} />}
               {group.label}
             </span>
-            <div className={styles.chips}>
+            <div className={styles.sites}>
               {group.sites.map((site) => (
-                <button
+                <SiteTile
                   key={site.url}
-                  type="button"
-                  className={styles.chip}
-                  onClick={() => open({ title: site.title, url: site.url })}
-                >
-                  {site.title}
-                </button>
+                  title={site.title}
+                  onOpen={() => open({ title: site.title, url: site.url })}
+                />
               ))}
             </div>
           </div>
