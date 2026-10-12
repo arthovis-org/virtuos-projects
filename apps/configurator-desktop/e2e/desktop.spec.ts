@@ -171,6 +171,23 @@ test("applies a site's own style on narrow screens only", async () => {
   await expect.poll(() => menu("vr-wide")).toBe("block");
 });
 
+test("shows the launch's update check in the corner", async () => {
+  const page = await app.firstWindow();
+  // Only installed copies check; here the main process tells the page as updates.js would.
+  const tell = (status: string | null) =>
+    app.evaluate(({ BrowserWindow }, value) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        window.webContents.send("virtuos:update-status", value);
+      }
+    }, status);
+  await tell("checking");
+  await expect(page.getByText("Checking for updates…")).toBeVisible();
+  await page.screenshot({ path: "test-results/update-check.png" });
+  await tell("current");
+  await expect(page.getByText("Up to date")).toBeVisible();
+  await expect(page.getByText("Up to date")).toBeHidden({ timeout: 5000 });
+});
+
 test("switches the site styles off and on again from the page", async () => {
   const page = await app.firstWindow();
   type Bridge = {

@@ -424,6 +424,14 @@ const SITE_STYLES = [
         display: block !important;
         break-inside: avoid;
       }
+      /* A person's row as tall as their picture (20 px in a 17 px line): the list clipped the
+         pictures in its last row. */
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] > tr[id*="-rowtr_"] {
+        min-height: 24px;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] {
+        padding-bottom: 4px;
+      }
       [id^="card-TaskNew-dialog"] [id$="-actors_table_tablebody0"] > tr > td {
         display: block !important;
         width: auto !important;
@@ -562,6 +570,11 @@ const SITE_STYLES = [
       }
       [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown td:not(.dd-mid) {
         width: 29px;
+      }
+      /* Its estimated hours on the line of the actual ones (the link is padded like theirs, but
+         inline, where padding doesn't move the text down). */
+      [id^="card-TaskNew-dialog"] [id*="-Mol-TextLink-editduration-"] {
+        display: inline-block !important;
       }
       /* The actual time and "Add time" beside it ("Add time" under it if there's no room). */
       [id^="card-TaskNew-dialog"] table[id$="-actualduration"],
@@ -1279,6 +1292,11 @@ const SITE_STYLES = [
         max-width: 100%;
         box-sizing: border-box;
         overflow: hidden;
+      }
+      /* Back and forth: the forth circle was placed 3 px into the back one, whose edge showed
+         as a line on it; placed like the back one instead. */
+      .calendar-titlebar .goright {
+        left: 1px !important;
       }
       .calendar-titlebar > table > tbody > tr > td[width="100%"] {
         flex: 1 1 0;

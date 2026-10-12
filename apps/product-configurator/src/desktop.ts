@@ -26,7 +26,13 @@ interface DesktopUpdates {
   ready: () => Promise<string | null>;
   onReady: (callback: (version: string) => void) => () => void;
   restart: () => Promise<void>;
+  /** Where the launch's update check is (from 0.1.11 on). */
+  status?: () => Promise<UpdateStatus>;
+  onStatus?: (callback: (status: UpdateStatus) => void) => () => void;
 }
+
+/** The launch's update check: running, downloading what it found, found nothing, or failed. */
+export type UpdateStatus = 'checking' | 'downloading' | 'current' | 'failed' | null;
 
 const bridge = (window as { virtuosDesktop?: DesktopBridge }).virtuosDesktop;
 

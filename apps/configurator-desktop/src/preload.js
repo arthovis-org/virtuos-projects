@@ -26,6 +26,14 @@ contextBridge.exposeInMainWorld('virtuosDesktop', {
     },
     /** Quits, installs the update and opens the app again. */
     restart: () => ipcRenderer.invoke('virtuos:restart-to-update'),
+    /** Where the launch's check is ('checking', 'downloading', 'current', 'failed'), or null. */
+    status: () => ipcRenderer.invoke('virtuos:update-status'),
+    /** Calls back as the launch's check goes on; returns a function to stop. */
+    onStatus: (callback) => {
+      const listener = (_event, status) => callback(status);
+      ipcRenderer.on('virtuos:update-status', listener);
+      return () => ipcRenderer.removeListener('virtuos:update-status', listener);
+    },
   },
   /** The layouts adapting some desktop-only sites to narrow screens (siteStyles.js). */
   siteStyles: {
