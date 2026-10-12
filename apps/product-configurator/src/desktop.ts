@@ -11,6 +11,15 @@ interface DesktopBridge {
   version?: string;
   /** A downloaded update waiting for a restart (from 0.1.2 on). */
   updates?: DesktopUpdates;
+  /** The layouts adapting some desktop-only sites to narrow screens (from 0.1.9 on). */
+  siteStyles?: DesktopSiteStyles;
+}
+
+interface DesktopSiteStyles {
+  /** Whether they apply, and the sites (hosts, with their subdomains) they are for. */
+  state: () => Promise<{ enabled: boolean; hosts: string[] } | null>;
+  /** Switches them on or off on every screen; resolves to whether they apply. */
+  set: (on: boolean) => Promise<boolean>;
 }
 
 interface DesktopUpdates {
@@ -47,3 +56,6 @@ export function versionLabel(): string {
 
 /** The desktop app's updates, when in it (a recent enough version). */
 export const desktopUpdates: DesktopUpdates | undefined = bridge?.updates;
+
+/** The desktop app's adapted site layouts and their switch, when in it (a recent enough version). */
+export const desktopSiteStyles: DesktopSiteStyles | undefined = bridge?.siteStyles;

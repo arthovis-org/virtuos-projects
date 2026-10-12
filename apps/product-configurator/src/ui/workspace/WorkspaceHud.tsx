@@ -5,6 +5,7 @@ import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore
 import { useViewStore } from '@/state/viewStore';
 import { DeskArrows } from './DeskArrows';
 import { DeskSwitcher } from './DeskSwitcher';
+import { useSiteLayouts } from './siteLayouts';
 import { WindowMenu } from './WindowMenu';
 import styles from './WorkspaceHud.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
@@ -15,14 +16,17 @@ const MAX_TABS = 4;
 /**
  * The workspace demo's own controls, over the viewer: a card to start it (one desk, or the
  * room of unlimited desks), then a toolbar while it runs (switch workspace, seated view or
- * looking around, reset, close) and the label that follows the pointer while a window is
+ * looking around, reset, close; in the desktop app, sites in their adapted layouts or as
+ * they are) and the label that follows the pointer while a window is
  * dragged between screens. In the room, the desk switcher runs along the bottom.
  */
 export function WorkspaceHud() {
   const product = useProduct();
   const active = useViewStore((s) => s.active);
   const cameraFree = useViewStore((s) => s.cameraFree);
-  const { workspaceId } = useCurrentWindows();
+  const { workspaceId, windows } = useCurrentWindows();
+  // In the desktop app, with TinyGnomes on a screen: its adapted layout or the site as it is.
+  const siteLayouts = useSiteLayouts(windows.map((w) => w.url));
   const focus = useViewStore((s) => s.focus);
   const drag = useViewStore((s) => s.drag);
   const seated = useViewStore((s) => s.seated);
@@ -299,6 +303,31 @@ export function WorkspaceHud() {
                 </button>
               )}
             </div>
+            {siteLayouts && (
+              // Compare the sites adapted to the screens' sizes with the sites as they are.
+              <div className={styles.tabs} role="radiogroup" aria-label="Site layouts">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={siteLayouts.adapted}
+                  className={styles.tab}
+                  onClick={() => siteLayouts.setAdapted(true)}
+                  title="Sites laid out for each screen's size and shape"
+                >
+                  Adapted
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!siteLayouts.adapted}
+                  className={styles.tab}
+                  onClick={() => siteLayouts.setAdapted(false)}
+                  title="Sites as they are, unchanged"
+                >
+                  Original
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

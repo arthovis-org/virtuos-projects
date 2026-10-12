@@ -1,7 +1,7 @@
 /**
  * Tells the configurator it runs in the desktop app, where every site can be shown on its
- * screens: no "blocked" marks or embed players needed. Also its version and its updates;
- * nothing else of the computer is exposed.
+ * screens: no "blocked" marks or embed players needed. Also its version, its updates and the
+ * switch for its adapted site layouts; nothing else of the computer is exposed.
  */
 const { contextBridge, ipcRenderer } = require('electron');
 
@@ -26,5 +26,12 @@ contextBridge.exposeInMainWorld('virtuosDesktop', {
     },
     /** Quits, installs the update and opens the app again. */
     restart: () => ipcRenderer.invoke('virtuos:restart-to-update'),
+  },
+  /** The layouts adapting some desktop-only sites to narrow screens (siteStyles.js). */
+  siteStyles: {
+    /** Whether they apply, and the sites (hosts) they are for. */
+    state: () => ipcRenderer.invoke('virtuos:site-styles'),
+    /** Switches them on or off on every screen; resolves to whether they apply. */
+    set: (on) => ipcRenderer.invoke('virtuos:set-site-styles', on),
   },
 });

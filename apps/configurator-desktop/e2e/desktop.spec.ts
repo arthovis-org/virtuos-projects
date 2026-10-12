@@ -170,3 +170,35 @@ test("applies a site's own style on narrow screens only", async () => {
   // The wide frame may still be loading.
   await expect.poll(() => menu("vr-wide")).toBe("block");
 });
+
+test("switches the site styles off and on again from the page", async () => {
+  const page = await app.firstWindow();
+  type Bridge = {
+    virtuosDesktop: {
+      siteStyles: {
+        state: () => Promise<{ enabled: boolean; hosts: string[] }>;
+        set: (on: boolean) => Promise<boolean>;
+      };
+    };
+  };
+  const styles = (on?: boolean) =>
+    page.evaluate(async (value) => {
+      const { siteStyles } = (window as unknown as Bridge).virtuosDesktop;
+      if (value !== undefined) await siteStyles.set(value);
+      return siteStyles.state();
+    }, on);
+  expect(await styles()).toMatchObject({ enabled: true });
+  expect((await styles()).hosts).toContain("127.0.0.1");
+
+  const menu = () =>
+    page
+      .frame({ name: "vr-narrow" })
+      ?.evaluate(() => getComputedStyle(document.querySelector("nav")!).display)
+      .catch(() => "");
+  // The narrow frame from the test before: the site as it is, then adapted again.
+  await expect.poll(menu).toBe("none");
+  expect(await styles(false)).toMatchObject({ enabled: false });
+  await expect.poll(menu).toBe("block");
+  expect(await styles(true)).toMatchObject({ enabled: true });
+  await expect.poll(menu).toBe("none");
+});

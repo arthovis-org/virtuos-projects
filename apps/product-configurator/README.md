@@ -191,7 +191,9 @@ here as usual; `npm run dev` in the desktop folder shows this dev server in the 
 **Site styles** (desktop app): a desktop-only site is cut off on a narrow side monitor, and
 zoomed out to fit, too small to read. For particular sites the desktop app adds a compact
 layout of their own while the window is narrow: menus folded to icons, content across the width
-at full size (`apps/configurator-desktop/src/siteStyles.js`; tinygnomes so far).
+at full size (`apps/configurator-desktop/src/siteStyles.js`; tinygnomes so far). While such a
+site is on a screen, the workspace toolbar's **Adapted | Original** switch shows every screen's
+pages in their adapted layout or as the site made them, to compare.
 
 ## Feedback
 

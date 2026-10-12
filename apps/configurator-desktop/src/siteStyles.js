@@ -10,8 +10,11 @@
  * (webFrameMain.executeJavaScript reaches any site's page in the app), and added back if the
  * page replaces its head. Where the site's own scripts lay something out from the window's
  * width (and so leave it out on a narrow one), a site can also have a small page script.
+ *
+ * The styles can be switched off (and on again) from the configurator's workspace toolbar, to
+ * compare a site as it is with how it is adapted: every page on the screens follows at once.
  */
-const { webFrameMain } = require("electron");
+const { ipcMain, webFrameMain } = require("electron");
 
 /**
  * `hosts`: the site's addresses (a host and its subdomains). `maxWidth`: the window width (CSS
@@ -250,6 +253,10 @@ const SITE_STYLES = [
       /* A window's title wraps instead of widening it. */
       .qfw-floatingcard [id^="cardheader-title-"] {
         white-space: normal !important;
+      }
+      /* (Its text is sized in pixels by the site's script, for the window's desktop width.) */
+      .qfw-floatingcard [id^="cardheader-title-"] > div[style*="width"] {
+        width: auto !important;
       }
       .qfw-floatingcard [id$="-_relativeanchor"] > div > table,
       .qfw-floatingcard table.qfw-border-normal {
@@ -516,6 +523,14 @@ const SITE_STYLES = [
         grid-template-columns: auto minmax(0, 1fr);
         column-gap: 20px;
       }
+      /* A new task's Estimated is a box ("Hours" after it): a few digits wide, so Actual fits. */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] [id$="-duration"] table[width],
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] [id$="-duration"] [id*="-Mol-InputBox-"] table {
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] [id$="-duration"] td.inputbox table {
+        width: 64px !important;
+      }
       [id^="card-TaskNew-dialog"] [id$="-rowpriority"] > td > div > table,
       [id^="card-TaskNew-dialog"] [id$="-rowpriority"] table.dropdown {
         width: 100% !important;
@@ -566,6 +581,17 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] .input-border-box {
         width: auto !important;
       }
+      /* A new task's intro ("Create a task", then a line about it), 275 px wide. */
+      [id^="card-TaskNew-dialog"] [id$="-panelcreate"] [style*="width"] {
+        width: auto !important;
+      }
+      /* A new task's project is a picker (a set width, its box a set width less its icons). */
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] .pwidget-small-pp {
+        width: auto !important;
+      }
+      [id^="card-TaskNew-dialog"] [id$="-detailspane"] .pwidget-small-pp input {
+        width: calc(100% - 48px) !important;
+      }
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] td[width]:not([width="1%"]) {
         width: auto !important;
       }
@@ -577,6 +603,57 @@ const SITE_STYLES = [
       [id^="card-TaskNew-dialog"] [id$="-detailspane"] [style*="width"] {
         max-width: 100% !important;
         box-sizing: border-box;
+      }
+      /*
+       * A chat window (a task's Chat) and a links window (its Links): their body is set to a
+       * desktop width (722 px), which the window's tables grew to; the screen's width instead
+       * (less the window's margins and padding). Under the message box, the attach links and then the post options and "Post
+       * message", wrapping onto a second line.
+       */
+      [id^="card-ChatService-dialog"] [id^="contentbag-"],
+      [id^="card-ServiceLink-dialog"] [id^="contentbag-"] {
+        width: calc(100vw - 54px) !important;
+      }
+      /* The links' table: its columns (Who, When, Source, Type, 100 px each) share the width. */
+      [id^="card-ServiceLink-dialog"] [id*="-Mol-EZTable-"] td[style*="width"]:not([id$="_massaction"]) {
+        width: auto !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      [id^="card-ServiceLink-dialog"] [id*="-Mol-EZTable-"] table {
+        table-layout: fixed;
+        width: 100% !important;
+      }
+      [id^="card-ServiceLink-dialog"] [id*="-Mol-EZTable-"] [style*="width"]:not(td) {
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+      /* The message box (its highlighter sized in pixels by the site's script). */
+      [id^="card-ChatService-dialog"] .highlightTextarea {
+        width: 100% !important;
+      }
+      [id^="card-ChatService-dialog"] [id$="-post"] > table,
+      [id^="card-ChatService-dialog"] [id$="-post"] > table > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="card-ChatService-dialog"] [id$="-post"] > table > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px 8px;
+      }
+      [id^="card-ChatService-dialog"] [id$="-post"] > table > tbody > tr > td {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="card-ChatService-dialog"] [id$="-post"] > table > tbody > tr > td:last-child {
+        margin-left: auto;
+      }
+      /* The Ctrl+Return picture beside it (the message box says so too). */
+      [id^="card-ChatService-dialog"] [id$="-post"] td:has(> img[src*="ctrl_return"]) {
+        display: none !important;
       }
       /* Its tabs (All, Favorites, Recent, Hidden, Law) wrap onto two rows: the bar holds both, so
          the list under it isn't pushed beside the second row. */
@@ -682,6 +759,12 @@ const SITE_STYLES = [
       .tasks-buttonbar div {
         flex-wrap: wrap;
       }
+      /* With a filter on, the site frames the filters in a pink box: room it takes for nothing
+         here (the filters themselves show which are on). */
+      .tasks-buttonbar td.filter-bar.active {
+        background: transparent !important;
+        border-color: transparent !important;
+      }
       /* Its top bar (create, filters, refresh, "71 of 71" and its menu) wraps. */
       .tasks-topbar {
         flex-wrap: wrap;
@@ -754,6 +837,58 @@ const SITE_STYLES = [
         grid-area: end;
         font-size: 12px;
         color: #777;
+      }
+
+      /*
+       * Wikis, a page being written: its bar (the title, Save, Cancel) and its text editor are
+       * sized in pixels for a desktop window (1600 px): the screen's width instead, the title
+       * box as wide as there is room, Save and Cancel beside it or under it.
+       */
+      .qwiki-topbar {
+        width: auto !important;
+        height: auto !important;
+      }
+      .qwiki-topbar .qwiki-buttonbar > table,
+      .qwiki-topbar .qwiki-buttonbar > table > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      .qwiki-topbar .qwiki-buttonbar > table > tbody > tr,
+      .qwiki-topbar [id$="-leftpropbar_tr"] {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 0;
+      }
+      .qwiki-topbar .qwiki-buttonbar > table > tbody > tr > td:not([style*="display: none"]),
+      .qwiki-topbar [id$="-leftpropbar_tr"] > td:not([style*="display: none"]) {
+        display: block !important;
+        width: auto !important;
+      }
+      .qwiki-topbar .qwiki-buttonbar > table > tbody > tr > td:has([id$="-leftpropbar_tr"]) {
+        flex: 1 1 100%;
+        min-width: 0;
+      }
+      .qwiki-topbar [id*="-leftpropbar-"],
+      .qwiki-topbar [id*="-leftpropbar-"] > table,
+      .qwiki-topbar [id*="-leftpropbar-"] > table > tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      .qwiki-topbar [id$="-leftpropbar_tr"] > td:has(input) {
+        flex: 1 1 160px;
+        min-width: 0;
+      }
+      .qwiki-topbar [id$="-leftpropbar_tr"] td:has(input) table {
+        width: 100% !important;
+      }
+      .qwiki-topbar [id$="-leftpropbar_tr"] input[style*="width"] {
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+      [id^="card-QuickCard-"] .cke,
+      [id^="card-QuickCard-"] .cke_inner {
+        width: auto !important;
       }
 
       /*
@@ -939,6 +1074,9 @@ const SITE_STYLES = [
     // projects as on a desktop; the rules above stack its columns into one.
     script: (maxWidth) => {
       const DESKTOP_WIDTH = 1280;
+      /** A narrow window, with the style on (it can be switched off to compare). */
+      const adapted = () =>
+        window.innerWidth <= maxWidth && !window.__virtuosSiteStyle?.off;
       /** Every jQuery on the page (the site may load more than one). */
       const jQueries = () => [
         ...new Set([window.jQuery, window.$].filter((j) => j?.fn)),
@@ -949,7 +1087,7 @@ const SITE_STYLES = [
           if (!picker || picker.__virtuosNarrow) continue;
           const update = picker._updateMenu;
           picker._updateMenu = function (...args) {
-            if (window.innerWidth > maxWidth) return update.apply(this, args);
+            if (!adapted()) return update.apply(this, args);
             // Told the window is desktop width, on whichever jQuery its code uses.
             const saved = jQueries().map((j) => [j, j.fn.width]);
             for (const [j, width] of saved) {
@@ -984,7 +1122,7 @@ const SITE_STYLES = [
       window.addEventListener(
         "scroll",
         (event) => {
-          if (window.innerWidth > maxWidth) return;
+          if (!adapted()) return;
           if (event.target?.classList?.contains("servicebar-scrollarea")) {
             event.stopImmediatePropagation();
           }
@@ -1014,17 +1152,28 @@ function styleFor(url) {
   );
 }
 
-/** Runs in the site's page: adds the style (once), and again if the page drops it. */
-function addStyleInPage(id, css) {
+/** Whether the styles apply (the toolbar's switch); on until switched off. */
+let enabled = true;
+
+/**
+ * Runs in the site's page: adds the style (once), and again if the page drops it; on or off as
+ * the switch is (an off style stays in the page, for no media).
+ */
+function addStyleInPage(id, css, on) {
+  const state = (window.__virtuosSiteStyle ??= {});
+  state.off = !on;
   const add = () => {
-    if (document.getElementById(id)) return;
-    const style = document.createElement("style");
-    style.id = id;
-    style.textContent = css;
-    (document.head ?? document.documentElement).appendChild(style);
+    let style = document.getElementById(id);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = id;
+      style.textContent = css;
+      (document.head ?? document.documentElement).appendChild(style);
+    }
+    const media = state.off ? "not all" : "";
+    if (style.media !== media) style.media = media;
   };
   add();
-  const state = (window.__virtuosSiteStyle ??= {});
   if (!state.observer) {
     state.observer = new MutationObserver(add);
     state.observer.observe(document.documentElement, {
@@ -1036,20 +1185,78 @@ function addStyleInPage(id, css) {
 }
 
 /**
+ * Runs in the site's page: switches its style on or off, and has the site lay itself out again
+ * (some of its parts are sized by its scripts, on a resize).
+ */
+function switchStyleInPage(id, on) {
+  const state = (window.__virtuosSiteStyle ??= {});
+  state.off = !on;
+  const style = document.getElementById(id);
+  if (style) style.media = on ? "" : "not all";
+  window.dispatchEvent(new Event("resize"));
+  return true;
+}
+
+const styleId = (style) => `virtuos-site-${style.name}`;
+
+/**
  * The page's script for a style: its rules inside the narrow-window media query, then its own
  * script (once a page: it may patch the site's scripts).
  */
-function scriptFor(style) {
-  const css = `@media (max-width: ${style.maxWidth}px) {\n${style.css}\n}`;
-  const id = `virtuos-site-${style.name}`;
-  const add = `(${addStyleInPage.toString()})(${JSON.stringify(id)}, ${JSON.stringify(css)});`;
+function scriptFor(style, on = enabled) {
+  const css = `@media (max-width: ${style.maxWidth}px) {
+${style.css}
+}`;
+  const add = `(${addStyleInPage.toString()})(${JSON.stringify(styleId(style))}, ${JSON.stringify(css)}, ${on});`;
   if (!style.script) return add;
   const run = `if (!window.__virtuosSiteScript) { window.__virtuosSiteScript = true; (${style.script.toString()})(${style.maxWidth}); }`;
-  return `${add}\n${run}\ntrue;`;
+  return `${add}
+${run}
+true;`;
+}
+
+/** Every frame on the screens showing a styled site, with its style. */
+function styledFrames(webContents) {
+  return webContents.mainFrame.framesInSubtree.flatMap((frame) => {
+    if (frame === webContents.mainFrame) return [];
+    const style = styleFor(frame.url);
+    return style ? [{ frame, style }] : [];
+  });
+}
+
+/** Only the configurator's own page (the window's top frame) may switch them. */
+const fromPage = (event) => event.senderFrame === event.sender.mainFrame;
+
+let switchHandled = false;
+
+/**
+ * Lets the configurator read and flip the switch (preload.js): its state and the sites it
+ * covers, and switching every styled page on its screens.
+ */
+function handleSwitch() {
+  if (switchHandled) return;
+  switchHandled = true;
+  ipcMain.handle("virtuos:site-styles", (event) =>
+    fromPage(event)
+      ? { enabled, hosts: SITE_STYLES.flatMap((style) => style.hosts) }
+      : null,
+  );
+  ipcMain.handle("virtuos:set-site-styles", (event, on) => {
+    if (!fromPage(event)) return enabled;
+    enabled = Boolean(on);
+    for (const { frame, style } of styledFrames(event.sender)) {
+      const run = `(${switchStyleInPage.toString()})(${JSON.stringify(styleId(style))}, ${enabled});`;
+      frame.executeJavaScript(run).catch(() => {
+        // The frame navigated away or closed meanwhile.
+      });
+    }
+    return enabled;
+  });
 }
 
 /** Applies site styles to the pages on the configurator's screens (frames, not the window). */
 function watchSiteStyles(webContents) {
+  handleSwitch();
   webContents.on(
     "did-frame-finish-load",
     (_event, isMainFrame, processId, routingId) => {

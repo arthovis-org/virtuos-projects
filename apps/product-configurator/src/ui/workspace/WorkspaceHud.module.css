@@ -93,6 +93,7 @@
 /* The camera choices, under the toolbar. */
 .views {
   display: flex;
+  gap: 6px;
   padding: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
