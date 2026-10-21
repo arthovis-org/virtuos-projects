@@ -34,6 +34,7 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
   const weights = screenWeights(sizes ?? {}, screen.id, ids);
   const drop = useViewStore((s) => (s.drag?.over?.screen === screen.id ? s.drag.over : null));
   const dropLabel = useViewStore((s) => (s.drag ? dropDescription(s.drag, windows) : ''));
+  const dropAction = useViewStore((s) => s.drag?.over?.action);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -75,11 +76,30 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
           }}
           aria-hidden="true"
         >
-          <span className={styles.dropLabel}>{dropLabel}</span>
+          <span className={styles.dropLabel}>
+            <span className={styles.dropIcon}>{dropIcon(dropAction)}</span>
+            {dropLabel}
+          </span>
         </div>
       )}
     </div>
   );
+}
+
+/** A sign for what dropping does: swap, side by side, a new window beside it, move here. */
+function dropIcon(action: string | undefined) {
+  switch (action) {
+    case 'swap':
+      return '⇄';
+    case 'before':
+    case 'after':
+      return '◧';
+    case 'split-before':
+    case 'split-after':
+      return '⊞';
+    default:
+      return '→';
+  }
 }
 
 /** What the drop preview says, e.g. "Swap with Notes". */

@@ -61,10 +61,13 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
 
   // Every workspace's sites, each once, leaving out this workspace's own (on a screen, or
   // offered to reopen above) and the sites the visitor opened.
+  // Project management sites are always offered, in a group of their own (even when one is
+  // open already: a second one beside it is a way to work), so no workspace group repeats them.
   const current = workspaceById(product, workspaceId);
-  const taken = new Set([
+  const taken = new Set<string>([
     ...(current?.windows ?? []).map((w) => w.url),
     ...opened.map((w) => w.url),
+    ...PROJECT_MANAGEMENT.map((site) => site.url),
   ]);
   const groups: SiteGroup[] = [];
   const ordered = [
@@ -76,10 +79,11 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
     for (const site of sites) taken.add(site.url);
     if (sites.length > 0) groups.push({ label: workspace.label, icon: workspace.icon, sites });
   }
-  const projects = PROJECT_MANAGEMENT.filter((site) => !taken.has(site.url));
-  if (projects.length > 0) {
-    groups.push({ label: 'Project management', icon: 'briefcase', sites: [...projects] });
-  }
+  groups.unshift({
+    label: 'Project management',
+    icon: 'briefcase',
+    sites: [...PROJECT_MANAGEMENT],
+  });
   const tools = TOOLS.filter((site) => !taken.has(site.url));
   if (tools.length > 0) groups.push({ label: 'Tools', sites: [...tools] });
 

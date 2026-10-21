@@ -26,21 +26,53 @@
   position: absolute;
   z-index: 1;
   display: grid;
-  place-items: center;
+  /* The chip at the top, clear of the label that follows the pointer. */
+  place-items: start center;
   box-sizing: border-box;
-  border: 6px solid #4c8dff;
-  border-radius: 12px;
-  background: rgb(76 141 255 / 28%);
+  padding-top: clamp(10px, 6%, 48px);
+  border: 2px solid rgb(76 141 255 / 90%);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgb(76 141 255 / 14%), rgb(76 141 255 / 24%));
+  box-shadow:
+    inset 0 0 0 4px rgb(76 141 255 / 16%),
+    0 10px 30px rgb(20 60 160 / 22%);
   pointer-events: none;
+  animation: drop-in 140ms ease-out;
 }
 
+/* What dropping does: a compact chip, sized to the screen (it is seen small). */
 .dropLabel {
-  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  max-width: 86%;
+  padding: 0.5em 1em 0.5em 0.55em;
   border-radius: 999px;
-  background: #4c8dff;
+  background: rgb(17 23 37 / 90%);
   color: #ffffff;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 28%);
   font:
-    600 28px/1.2 'Inter Variable',
+    600 clamp(14px, 3cqw, 22px) / 1.25 'Inter Variable',
     system-ui,
     sans-serif;
+  text-align: left;
+}
+
+.dropIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: #4c8dff;
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }

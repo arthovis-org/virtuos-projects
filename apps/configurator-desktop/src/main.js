@@ -20,6 +20,11 @@ const APP_URL = `${SCHEME}://configurator/`;
 const WEB = path.join(__dirname, '..', 'web');
 const DEV_URL = process.env.VIRTUOS_DEV_URL;
 
+// The sites on the screens are drawn turned in 3D, in tiles; the compositor softens each tile's
+// edges, which on some graphics cards left a thin white line between two tiles across a page
+// (through a blue button, say). The screens' own edges are under the monitors' bezels.
+app.commandLine.appendSwitch('disable-composited-antialiasing');
+
 // Served like https (a secure origin with fetch, CORS and module scripts), so the page works
 // exactly as it does on the website.
 protocol.registerSchemesAsPrivileged([
