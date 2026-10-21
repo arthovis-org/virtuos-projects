@@ -1,186 +1,339 @@
 /*
- * The picker scrolls as one, so nothing in it is ever squeezed away (in a window split in two
- * the list of sites was, to nothing). Centred while it fits, from the top once it doesn't. It
- * uses the screen's whole width: on a wide screen the groups of sites stand in columns side by
- * side, so they fit without scrolling; a narrow one has a column of them. Everything is sized
- * from the type, which grows with the screen's width (about 14 px on a side monitor, 17 px on
- * a wide main one), so a big screen isn't a few small tiles in a corner.
+ * The site picker: light, like a launcher. It scrolls as one, so nothing in it is ever squeezed
+ * away (in a window split in two the list of sites was, to nothing), centred while it fits.
+ * Everything is sized from the type, which grows with the screen's width (about 14 px on a side
+ * monitor, 20 px on a wide main one), and the folders and sites stand in as many columns as
+ * the width holds: the same picker on every screen's shape, and in a window split in two.
  */
 .empty {
+  --text: #14161b;
+  --muted: #6b7180;
+  --line: rgb(17 24 39 / 9%);
+  --card: #ffffff;
+  --blue: #2563eb;
+
   display: flex;
   flex-direction: column;
   justify-content: safe center;
-  gap: 0.93em;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 1.2em clamp(16px, 3cqw, 48px);
+  padding: 1.4em clamp(16px, 4cqw, 64px);
   overflow-y: auto;
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #ffffff 0%, rgb(255 255 255 / 0%) 60%),
+    linear-gradient(180deg, #f4f5f8, #eceef2);
+  color: var(--text);
   scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 25%) transparent;
-  color: rgb(255 255 255 / 85%);
+  scrollbar-color: rgb(17 24 39 / 18%) transparent;
   font:
-    400 clamp(14px, 10px + 0.5cqw, 17px) / 1.4 'Inter Variable',
+    400 clamp(14px, 9px + 0.85cqw, 20px) / 1.4 'Inter Variable',
     system-ui,
     sans-serif;
+}
+
+/* The content keeps a readable width on a very wide screen. */
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1em;
+  width: 100%;
+  max-width: 68em;
+  margin: 0 auto;
 }
 
 .top {
   display: flex;
   flex-direction: column;
-  gap: 0.13em;
+  gap: 0.15em;
 }
 
 .heading {
   margin: 0;
-  font-size: 1.27em;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.hint,
-.note,
-.error {
-  margin: 0;
+  font-size: 1.4em;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 .hint {
+  margin: 0;
+  color: var(--muted);
   font-size: 0.93em;
-  color: rgb(255 255 255 / 60%);
-}
-
-.note {
-  font-size: 0.8em;
-  color: rgb(255 255 255 / 45%);
-}
-
-.error {
-  font-size: 0.93em;
-  color: #ff9b9b;
 }
 
 .form {
   display: flex;
-  gap: 0.53em;
+  gap: 0.5em;
   max-width: 40em;
 }
 
-.input {
+.field {
+  position: relative;
+  display: flex;
   flex: 1 1 auto;
+  align-items: center;
   min-width: 0;
-  height: 2.67em;
-  padding: 0 0.8em;
-  border: 1.5px solid rgb(255 255 255 / 22%);
-  border-radius: 0.67em;
-  background: rgb(255 255 255 / 7%);
-  color: #ffffff;
+}
+
+.fieldIcon {
+  position: absolute;
+  left: 0.85em;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 2.75em;
+  padding: 0 0.9em 0 2.5em;
+  border: 1px solid var(--line);
+  border-radius: 0.8em;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(17 24 39 / 5%);
+  color: var(--text);
   font: inherit;
 }
 
 .input::placeholder {
-  color: rgb(255 255 255 / 40%);
+  color: #9aa0ac;
 }
 
 .input:focus {
-  border-color: #4c8dff;
+  border-color: var(--blue);
   outline: none;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 18%);
 }
 
 .open {
   flex: none;
-  height: 2.67em;
-  padding: 0 1.2em;
+  height: 2.75em;
+  padding: 0 1.3em;
   border: 0;
-  border-radius: 0.67em;
-  background: #4c8dff;
+  border-radius: 0.8em;
+  background: var(--blue);
   color: #ffffff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgb(37 99 235 / 30%);
 }
 
 .open:hover {
-  background: #6a9fff;
+  background: #1d4fd8;
 }
 
-/* As many columns of groups as the width holds, each group whole in one. */
-.groups {
-  columns: 16.5em;
-  column-gap: 1.6em;
+.error {
+  margin: -0.4em 0 0;
+  color: #c2410c;
+  font-size: 0.9em;
 }
 
-.group {
+.section {
   display: flex;
   flex-direction: column;
-  gap: 0.4em;
-  margin-bottom: 0.8em;
-  break-inside: avoid;
+  gap: 0.55em;
 }
 
-.groupLabel {
+.sectionLabel {
   display: flex;
   align-items: center;
   gap: 0.4em;
-  font-size: 0.73em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8em;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgb(255 255 255 / 50%);
+  letter-spacing: 0.04em;
 }
 
-/* A group's sites: tiles in as many columns as fit. */
-.sites {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.9em, 1fr));
+/* Recently closed windows: chips to reopen them. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.4em;
 }
 
-.site {
-  display: flex;
-  align-items: center;
-  gap: 0.57em;
-  min-width: 0;
-  height: 2.43em;
-  padding: 0 0.71em 0 0.43em;
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 0.64em;
-  background: rgb(255 255 255 / 6%);
-  color: #ffffff;
+.chip {
+  padding: 0.4em 0.85em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
   font: inherit;
-  font-size: 0.93em;
+  font-size: 0.9em;
   font-weight: 500;
-  text-align: left;
   cursor: pointer;
 }
 
-.site:hover {
-  border-color: rgb(255 255 255 / 18%);
-  background: rgb(255 255 255 / 13%);
+/* The folders: as many columns as fit. */
+.folders {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14.5em, 1fr));
+  gap: 0.6em;
 }
 
-.site:focus-visible,
-.open:focus-visible {
-  outline: 2px solid #4c8dff;
-  outline-offset: 1px;
-}
-
-.siteName {
+.folder,
+.site {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
   min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(17 24 39 / 5%);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow 120ms ease,
+    transform 120ms ease,
+    border-color 120ms ease;
+}
+
+.folder {
+  padding: 0.75em 0.8em;
+  border-radius: 0.9em;
+}
+
+.folder:hover,
+.site:hover,
+.chip:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--blue)) 35%, transparent);
+  box-shadow: 0 6px 18px rgb(17 24 39 / 9%);
+  transform: translateY(-1px);
+}
+
+.folder:focus-visible,
+.site:focus-visible,
+.chip:focus-visible,
+.open:focus-visible,
+.back:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* A folder's icon on a tint of its colour. */
+.folderIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.4em;
+  height: 2.4em;
+  border-radius: 0.7em;
+  background: color-mix(in srgb, var(--accent) 13%, #ffffff);
+  color: var(--accent);
+}
+
+.folderIcon svg {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.folderText,
+.siteText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.folderName,
+.siteName {
   overflow: hidden;
+  font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-/* The site's initial on a colour of its own, so tiles are told apart at a glance. */
+.folderCount,
+.siteHost {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.82em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.folderArrow {
+  flex: none;
+  color: #b3b8c2;
+}
+
+/* An open folder: back to all of them, and its name. */
+.folderBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em 0.9em;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.4em 0.8em 0.4em 0.6em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.back:hover {
+  background: #f8f9fb;
+}
+
+.folderTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  font-size: 1.05em;
+  font-weight: 650;
+}
+
+.folderTitle .folderIcon {
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 0.55em;
+}
+
+/* A folder's sites (or the matching ones): tiles in as many columns as fit. */
+.sites {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5em, 1fr));
+  gap: 0.6em;
+}
+
+.site {
+  padding: 0.65em 0.75em;
+  border-radius: 0.85em;
+}
+
+/* The site's initial on its folder's colour. */
 .badge {
   display: grid;
   flex: none;
   place-items: center;
-  width: 1.71em;
-  height: 1.71em;
-  border-radius: 0.43em;
-  background: hsl(var(--hue) 55% 45%);
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 0.6em;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 85%, #ffffff),
+    var(--accent)
+  );
   color: #ffffff;
-  font-size: 0.86em;
+  font-size: 0.9em;
   font-weight: 700;
+}
+
+.note {
+  margin: 0.2em 0 0;
+  color: #9aa0ac;
+  font-size: 0.78em;
 }

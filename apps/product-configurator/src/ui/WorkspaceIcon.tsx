@@ -12,7 +12,9 @@ import {
   Palette,
   Plane,
   Rocket,
+  SquareKanban,
   Trophy,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -34,7 +36,9 @@ const ICONS: Readonly<Record<string, LucideIcon>> = {
   palette: Palette,
   plane: Plane,
   rocket: Rocket,
+  'square-kanban': SquareKanban,
   trophy: Trophy,
+  wrench: Wrench,
 };
 
 interface WorkspaceIconProps {

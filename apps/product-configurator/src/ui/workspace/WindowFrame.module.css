@@ -117,14 +117,13 @@
   outline-offset: -2px;
 }
 
-/* A blank window's site picker, on the screen's own colour (it is the empty screen's; it
-   scrolls itself). */
+/* A blank window's site picker (the empty screen's, light; it scrolls itself). */
 .blankBody {
   display: flex;
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #1d2433;
+  background: #eceef2;
 }
 
 /* What the site fills; the page inside may be laid out larger or smaller (zoom). */

@@ -205,7 +205,8 @@ test('a window dropped on its own edge splits, with a new window to pick a site 
   await page.mouse.up();
   await expect(main.locator('[data-window-id]')).toHaveCount(2);
   await expect(main.getByText('New window').first()).toBeVisible();
-  // Picking a site fills the new window where it is.
+  // Picking a site (in its folder) fills the new window where it is.
+  await main.getByRole('button', { name: /^Tools:/ }).click({ force: true });
   await main.locator('button[class*="site"]').first().click({ force: true });
   await expect(main.locator('iframe')).toHaveCount(2);
   await expect(main.getByText('New window')).toHaveCount(0);

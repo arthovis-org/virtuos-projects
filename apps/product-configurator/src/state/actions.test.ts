@@ -44,6 +44,16 @@ describe('the single desk', () => {
     expect(setup().single.workspaceId).toBe('crypto');
     expect(view()).toMatchObject({ active: true, seated: true });
   });
+
+  it('a saved layout opens at its screens, sites on (the sheet’s set-ups leave them off)', () => {
+    enterWorkspace('crypto');
+    const saved = currentSetup();
+    loadSetup(initialSetup(product));
+    expect(view().active).toBe(false);
+    loadSetup(saved, { sit: true });
+    expect(setup().single.workspaceId).toBe('crypto');
+    expect(view()).toMatchObject({ active: true, seated: true });
+  });
 });
 
 describe('the room', () => {

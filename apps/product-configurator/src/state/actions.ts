@@ -118,10 +118,15 @@ export function switchWorkspace(workspaceId: string) {
   view().setFocus(null);
 }
 
-/** Brings a whole set-up in (a saved layout, the sheet): back at its desk, or the overview. */
-export function loadSetup(next: Setup) {
+/**
+ * Brings a whole set-up in (a saved layout, the sheet): back at its desk, or the overview.
+ * With `sit` (opening a saved layout, which is its desks' windows as much as their set-up), a
+ * single desk is sat at with its sites on; else its sites are off, and the screens dark.
+ */
+export function loadSetup(next: Setup, { sit = false }: { sit?: boolean } = {}) {
   singleView = null;
   setup().replace(next);
   if (next.mode === 'desks' && currentDesk(next)) view().showSites(false);
+  else if (sit && next.mode !== 'desks') view().showSites(true);
   else view().close();
 }

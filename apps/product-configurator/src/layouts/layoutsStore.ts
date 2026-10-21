@@ -70,7 +70,10 @@ export const useLayoutsStore = create<LayoutsState>()((set, get) => {
       try {
         const layout = await fetchLayout(id);
         if (layout.product !== productId()) throw new Error('This layout is for another product');
-        loadSetup(setupFromLayout(product(), layout.data));
+        // Its screens as they were saved, with the sites on (a product with screens).
+        loadSetup(setupFromLayout(product(), layout.data), {
+          sit: product().workspaces.length > 0,
+        });
         set({ current: { id: layout.id, name: layout.name } });
         // Keep this browser's list in step with the saved name.
         if (keyOf(id)) {
