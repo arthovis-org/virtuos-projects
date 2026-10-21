@@ -111,7 +111,7 @@ export class Device3D extends Block3D {
 
   applyVisual() {
     const disabled = this.derivedState === 'disabled';
-    if (this.face?.mesh) this.face.mesh.material.emissiveIntensity = disabled ? 0.1 : this.derivedState === 'active' ? 0.95 : 0.75;
+    if (this.face?.mesh) materials.faceDim(this.face.mesh.material, disabled ? 0.75 : 0);
     super.applyVisual();
   }
 
@@ -124,10 +124,6 @@ export class Device3D extends Block3D {
   }
 
   update(time, dt) {
-    if (this.derivedState === 'active' && this.face?.mesh) {
-      const pulse = 0.5 + 0.5 * Math.sin(time * 3.0);
-      this.face.mesh.material.emissiveIntensity = 0.75 + 0.25 * pulse;
-    }
     this._updateLOD(dt);
     this._updateShadow();
   }

@@ -33,7 +33,9 @@ import { faceLayer, layered } from '../../layers.js';
 const COL_W = 3.4, COL_GAP = 0.3, MARGIN = 1.5, TOP = 1.0, COL_H = 6.6, PLINTH = 0.3, DEPTH = 0.6, BACK_D = 0.24;
 const PANEL_Z = 0.04, PANEL_D = 0.06, PANEL_FRONT = PANEL_Z + PANEL_D / 2;   // the frosted column panel: its front carries the header rule, pill and titles (layers.js)
 const CARD_W = COL_W - 0.4, CARD_H = 1.15, CARD_D = 0.1, CARD_GAP = 0.14, ADD_H = 0.42, CARD_Z = 0.14, CARD_R = 0.12;
-const LANE_MIN = 2.0;                                   // a swimlane fits one card and its label
+const LANE_HEAD = 0.38;                                 // a swimlane's header row (its rule and tab)
+const LANE_MIN = LANE_HEAD + CARD_H + 0.3;              // a swimlane fits its header and one card with air below
+const LANE_CHROME = 0.95 + ADD_H + 0.3;                 // what a column spends outside the lanes: header row above, "+" tile below
 const H0 = TOP + 0.25 + COL_H + PLINTH + 0.25;         // base height: the body grows upward from here for lanes
 const UNASSIGNED = '__unassigned__';
 
@@ -53,7 +55,7 @@ function laneDefs(node) {
   if (mode !== 'swimlanes') return null;
   return [...people.map((p) => ({ key: p.uid, name: String(p.params.name), colour: p.params.colour || '#5aa9ff', person: p })), { key: UNASSIGNED, name: people.length ? 'Unassigned / others' : 'All cards', colour: '#6f8bb0', person: null }];
 }
-const colHeightFor = (lanes) => (lanes ? Math.max(COL_H, lanes.length * LANE_MIN) : COL_H);
+const colHeightFor = (lanes) => (lanes ? Math.max(COL_H, lanes.length * LANE_MIN + LANE_CHROME) : COL_H);
 const dims = (defOrNode) => {
   const n = Math.max(1, columnsOf(defOrNode));
   const colH = colHeightFor(defOrNode.params ? laneDefs(defOrNode) : null);
@@ -128,12 +130,12 @@ export function drawCard(g, w, h, card, { blocked = false, overdue = false, sele
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + 15, y + 5); g.lineTo(x, y + 10); g.closePath(); g.fill();
   }
   // bottom row: assignee chip · due · checklist · tags · (time logged · comments) · estimate — tags give way first
-  const by = h - 38, ch = 24;
+  const by = h - 40, ch = 26;
   let x = P;
   // the right end is laid out first: estimate, then the clock ("6.5h") and the bubble (comment count) when present
   const logged = loggedMinutes(card), nComments = (card.comments || []).length;
   let rx = w - 14 - coverW;
-  g.font = font(13, 500); tabular(g);
+  g.font = font(15, 500); tabular(g);
   const estW = card.estimate ? g.measureText(`${card.estimate}d`).width + 10 : 0;
   const logW = logged > 0 ? g.measureText(fmtHours(logged)).width + 22 : 0;
   const comW = nComments ? g.measureText(String(nComments)).width + 22 : 0;
@@ -141,28 +143,28 @@ export function drawCard(g, w, h, card, { blocked = false, overdue = false, sele
   if (card.assignee) {
     const c = colour || '#6f8bb0';
     g.fillStyle = c; g.beginPath(); g.arc(x + ch / 2, by + ch / 2, ch / 2, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#fff'; g.font = font(11, 700); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(initials(card.assignee), x + ch / 2, by + ch / 2 + 0.5);
+    g.fillStyle = '#fff'; g.font = font(12, 700); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(initials(card.assignee), x + ch / 2, by + ch / 2 + 0.5);
     x += ch + 10;
   }
   g.textAlign = 'left'; g.textBaseline = 'middle'; tabular(g);
   if (card.due) {
     const late = overdue && !done;
-    g.fillStyle = late ? PRIORITY_COLOURS.urgent : dim; g.font = font(15, late ? 600 : 500);
+    g.fillStyle = late ? PRIORITY_COLOURS.urgent : dim; g.font = font(17, late ? 600 : 500);
     const s2 = (late ? '! ' : '') + fmtDate(card.due); g.fillText(s2, x, by + ch / 2); x += g.measureText(s2).width + 14;
   }
   const ratio = checklistRatio(card);
   if (!Number.isNaN(ratio)) {
     const done2 = card.checklist.filter((i) => i.done).length;
-    g.fillStyle = dim; g.font = font(13, 500); const s2 = `${done2}/${card.checklist.length}`; g.fillText(s2, x, by + ch / 2); x += g.measureText(s2).width + 6;
+    g.fillStyle = dim; g.font = font(15, 500); const s2 = `${done2}/${card.checklist.length}`; g.fillText(s2, x, by + ch / 2); x += g.measureText(s2).width + 6;
     g.fillStyle = 'rgba(128,140,160,0.3)'; roundRect(g, x, by + ch / 2 - 3, 40, 6, 3); g.fill();
     g.fillStyle = ratio >= 1 ? PRIORITY_COLOURS.medium : hex(palette.pmToday); roundRect(g, x, by + ch / 2 - 3, Math.max(6, 40 * ratio), 6, 3); g.fill(); x += 50;
   }
   for (const tag2 of card.tags || []) {
-    g.font = font(12, 600); const tw = g.measureText(tag2).width + 16;
+    g.font = font(14, 600); const tw = g.measureText(tag2).width + 18;
     if (x + tw > rx - rightW - 6) break;
-    x += drawChip(g, tag2, x, by + (ch - 20) / 2, { h: 20, size: 12, bg: 'rgba(90,169,255,0.14)', color: hex(palette.pmToday), padX: 8 }) + 6;
+    x += drawChip(g, tag2, x, by + (ch - 22) / 2, { h: 22, size: 14, bg: palette.tagBg, color: palette.tagText, padX: 9 }) + 6;
   }
-  g.fillStyle = dim; g.font = font(13, 500); g.textAlign = 'right'; tabular(g);
+  g.fillStyle = dim; g.font = font(15, 500); g.textAlign = 'right'; tabular(g);
   if (card.estimate && x < rx - estW) { g.fillText(`${card.estimate}d`, rx, by + ch / 2); rx -= estW; }
   const cy2 = by + ch / 2;
   if (logged > 0 && x < rx - logW) {   // clock glyph + hours
@@ -243,11 +245,11 @@ const body3d = {
     node.themed = node.themed.filter(([m]) => !f.children.includes(m));
     while (f.children.length) { const c = f.children.pop(); c.geometry?.dispose(); c.material?.dispose(); }
     // backing panel (extruded, bevelled), a slim accent line along its top edge, a flat plinth it stands on
-    const back = h.part(panelGeometry(W, H, BACK_D, { radius: 0.36 }), h.materials.body(), { parent: f, theme: () => palette.body });
+    const back = h.part(panelGeometry(W, H, BACK_D, { radius: 0.36, bevel: 0.06 }), h.materials.body(), { parent: f, theme: () => palette.body });
     back.position.set(0, L.centreY, -BACK_D / 2 + 0.01);
     const accent = h.part(new THREE.BoxGeometry(W - 1.2, 0.045, 0.012), h.materials.accent(node.headerColor()), { parent: f, theme: node.headerColor, pick: false });
     accent.position.set(0, L.top - 0.1, 0.03);
-    const plinth = h.part(slabGeometry(W + 0.2, 1.5, PLINTH, { radius: 0.24, bevel: 0.02 }), h.materials.body(), { parent: f, theme: () => palette.body });
+    const plinth = h.part(slabGeometry(W + 0.2, 1.5, PLINTH, { radius: 0.24, bevel: 0.06 }), h.materials.body(), { parent: f, theme: () => palette.body });
     plinth.position.set(0, L.bottom + PLINTH / 2 - 0.02, 0.25);
     node.header = accent;
   },
@@ -275,20 +277,20 @@ const body3d = {
     const laneOf = (card) => { if (!lanes) return null; const i = lanes.findIndex((l) => l.person && sameName(l.name, card.assignee)); return i >= 0 ? i : lanes.length - 1; };
     // lanes: horizontal bands across every column; each starts with a rule in the person's colour
     // and a "MC · Maya" header inside the first column (the left margin belongs to the port labels)
-    const LANE_HEAD = 0.38;
     const laneAreaTop = L.colTop - 0.95, laneAreaH = L.colH - 0.95 - ADD_H - 0.3;
     const laneH = lanes ? laneAreaH / lanes.length : 0;
     if (lanes) {
       const x0 = L.colX(0) - COL_W / 2, x1 = L.colX(L.n - 1) + COL_W / 2;
       node._laneBoxes = lanes.map((ln, i) => ({ ...ln, top: laneAreaTop - i * laneH, bottom: laneAreaTop - (i + 1) * laneH }));
       node._laneBoxes.forEach((ln) => {
-        const rule = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.025, 0.02), new THREE.MeshBasicMaterial({ color: new THREE.Color(ln.colour), transparent: true, opacity: ln.person ? 0.7 : 0.35 }));
-        rule.position.set((x0 + x1) / 2, ln.top - 0.02, 0.1); node.children3d.add(rule);
-        // swimlane label as a subtle side tab in the left margin
+        // the lane's rule: a hairline on the column panels, under the cards (a card never sits on a line)
+        const rule = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, 0.022), layered(new THREE.MeshBasicMaterial({ color: new THREE.Color(ln.colour), transparent: true, opacity: ln.person ? 0.9 : 0.45, depthWrite: false, toneMapped: false }), 2));
+        rule.position.set((x0 + x1) / 2, ln.top - 0.02, PANEL_FRONT + faceLayer(2)); node.children3d.add(rule);
+        // swimlane label: a solid tab in the person's colour in the left margin, white small caps on it
         const text = ln.person ? ln.name.split(' ')[0] : ln.name;
-        const tab = new THREE.Mesh(panelGeometry(MARGIN - 0.5, LANE_HEAD - 0.06, 0.04, { radius: 0.08, bevel: 0.006 }), new THREE.MeshBasicMaterial({ color: new THREE.Color(ln.colour), transparent: true, opacity: ln.person ? 0.22 : 0.12 }));
+        const tab = new THREE.Mesh(panelGeometry(MARGIN - 0.5, LANE_HEAD - 0.04, 0.05, { radius: (LANE_HEAD - 0.04) / 2, bevel: 0.008 }), new THREE.MeshBasicMaterial({ color: new THREE.Color(ln.colour), transparent: !ln.person, opacity: ln.person ? 1 : 0.16, toneMapped: false }));
         tab.position.set(x0 - COL_GAP - (MARGIN - 0.5) / 2 + 0.1, ln.top - LANE_HEAD / 2, 0.1); node.children3d.add(tab);
-        node.childLabel(text, { size: 0.15, color: ln.person ? ln.colour : 'textDim', weight: 600, caps: true, spacing: 0.06, maxWidth: MARGIN - 0.7 }, [tab.position.x, ln.top - LANE_HEAD / 2 - 0.005, 0.13]);
+        node.childLabel(text, { size: 0.16, color: ln.person ? '#ffffff' : 'textDim', weight: 700, caps: true, spacing: 0.06, maxWidth: MARGIN - 0.75 }, [tab.position.x, ln.top - LANE_HEAD / 2 - 0.005, 0.14]);
         if (ln.person) { const dot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(ln.colour) })); dot.position.set(x0 + 0.12, ln.top - 0.02, 0.12); node.children3d.add(dot); }
       });
     } else node._laneBoxes = null;
@@ -335,9 +337,9 @@ const body3d = {
         group.position.set(cx, place.get(card.id), CARD_Z + CARD_D / 2 - i * 0.008);
         // one extruded card: the canvas is the front cap's texture (UVs map it exactly), the sides are plain
         const plane = makeCanvasPlane(CARD_W, CARD_H, { emissive: 0.4, owner: node });
-        const faceMat = new THREE.MeshPhysicalMaterial({ map: plane.texture, emissive: 0xffffff, emissiveMap: plane.texture, emissiveIntensity: 0.35, roughness: 0.55, clearcoat: 0.25, clearcoatRoughness: 0.4, envMapIntensity: 0.3, transparent: true, opacity: 1 });
+        const faceMat = materials.face(plane.texture, { transparent: false, layer: 0 });   // the front cap shows the canvas exactly (unlit, like every face); the sides keep the lit, machined edge
         const sideMat = materials.panel(palette.pmCard, { transparent: true, opacity: 1 });
-        const slab = new THREE.Mesh(panelGeometry(CARD_W, CARD_H, CARD_D, { radius: CARD_R, bevel: 0.012 }), [faceMat, sideMat]);
+        const slab = new THREE.Mesh(panelGeometry(CARD_W, CARD_H, CARD_D, { radius: CARD_R, bevel: 0.022 }), [faceMat, sideMat]);
         const sub = { kind: 'card', id: card.id, column: col.id, index: i };
         node.childSub(slab, sub);
         group.add(slab);

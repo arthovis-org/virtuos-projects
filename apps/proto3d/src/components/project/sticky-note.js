@@ -36,7 +36,7 @@ export default registry.register({
       const curl = h.part(new THREE.BoxGeometry(S * 0.96, 0.08, D * 1.6), new THREE.MeshStandardMaterial({ color: paper(node).clone().multiplyScalar(0.92), roughness: 0.9 }), { parent: node.paper });
       curl.position.set(0, S / 2 - 0.05, D * 0.3); node.curl = curl;
       const face = h.face(S - 0.3, S - 0.3, [0, -0.02, D / 2 + faceLayer(1)], { emissive: 0.0 });
-      node.paper.add(face); face.material.color.set(0xffffff); face.material.emissiveIntensity = 0.35;
+      node.paper.add(face);
       node.paper.rotation.z = tiltOf(node);
       node.rim = h.rim(h.outlineGeometry(S, S, D, h.sizes.outline.grow, { radius: 0.12 }));
       node.rim.rotation.z = tiltOf(node);

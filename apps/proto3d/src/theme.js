@@ -8,7 +8,9 @@
 // flat, modern UI on canvas — a slim category accent line instead of a header band, Inter type,
 // 8-pt spacing, thin dividers, chips and thin rounded bars. Dark = deep navy greys, light =
 // a cool, paper-like room: a mid-grey floor pool so white cards stand off it, a soft grid, white
-// faces with a hairline edge, and a touch more light (see `exposure`, `keyLight`, `faceBoost`).
+// faces with a hairline edge, and a touch more light on the lit bodies (see `exposure`, `keyLight`).
+// Faces, labels and accents are unlit and skip tone mapping, so their canvas colours reach the
+// screen exactly; bodies carry a machined edge (side walls + bevel in their own finish, `edge`).
 import * as THREE from 'three';
 import { layered } from './layers.js';
 
@@ -41,7 +43,8 @@ export const palettes = {
     groundLight: 0x141a26,
     shadowAlpha: 0.9,
     /* render tuning: tone-mapping exposure, key light strength, face emissive multiplier, optional hairline on faces */
-    exposure: 1.2, keyLight: 2.0, faceBoost: 1, faceEdge: null, fogScale: 1, poolScale: 1,
+    exposure: 1.2, keyLight: 2.0, faceEdge: null, fogScale: 1, poolScale: 1,
+    edge: { tint: 1.75, mix: 1, roughness: 0.3, metalness: 0.45 },   // side walls + bevel: a lighter, slightly metallic slate rim
     groupFill: 0x5aa9ff,
     groupFillAlpha: 0.06,
     groupEdge: 0x5aa9ff,
@@ -57,6 +60,7 @@ export const palettes = {
     faceAccent: '#5aa9ff',
     faceGrid: 'rgba(255,255,255,0.06)',
     faceGood: '#34c99a', faceWarn: '#f5b942', faceBad: '#ff5c6c',
+    tagBg: 'rgba(90,169,255,0.16)', tagText: '#9ccbff',   // card tag pills
     // project-management surfaces: frosted column panels, card slabs, rail, today marker
     pmColumn: 0x22304a, pmColumnAlpha: 0.42, pmCard: 0x27334a, pmCardText: '#eaf1ff', pmCardDim: '#8b9ab5', pmRail: 0x2a3a52, pmToday: 0x5aa9ff,
     screenTop: '#182643', screenBottom: '#0f1a30',
@@ -75,14 +79,14 @@ export const palettes = {
     // (was 1.06), board vs floor 1.49 : 1 (was 1.08), face #f2 over body #e9 plus the hairline
     // (was a face darker than its body), grid line vs floor 1.85 : 1, face text 14 : 1. The floor is
     // unlit (its shader skips tone mapping) while bodies and faces go through ACES, so `exposure`,
-    // `keyLight` and `faceBoost` lift only the lit surfaces; `fogScale` / `poolScale` keep far
+    // `keyLight` lift only the lit surfaces (faces are unlit since round 8); `fogScale` / `poolScale` keep far
     // blocks on the grey mat instead of fading into the background.
-    bg: 0xdfe3e8,
-    fog: 0xdfe3e8,
-    gridMajor: 0x9ea6b2,
-    gridMinor: 0xb4bbc5,
-    ground: 0xc6ccd4,
-    body: 0xfdfdfb,
+    bg: 0xd8dde4,
+    fog: 0xd8dde4,
+    gridMajor: 0x98a1ae,
+    gridMinor: 0xaeb6c1,
+    ground: 0xbfc6d0,
+    body: 0xfdfdfc,
     bodyDisabled: 0xdcdee2,
     headerDefault: 0xcfd3d9,
     screen: 0x16223a,
@@ -95,22 +99,25 @@ export const palettes = {
     skyLight: 0xffffff,
     groundLight: 0x9a9da4,
     shadowAlpha: 0.62,
-    exposure: 1.5, keyLight: 2.6, faceBoost: 2.4, faceEdge: 'rgba(28,33,48,0.16)', fogScale: 0.55, poolScale: 1.7,   // thinner fog and a wider floor pool: far blocks keep their grey mat
+    exposure: 1.5, keyLight: 2.6, faceEdge: 'rgba(13,18,32,0.14)', fogScale: 0.55, poolScale: 1.7,   // thinner fog and a wider floor pool: far blocks keep their grey mat
+    edge: { tint: 0.74, mix: 1, roughness: 0.32, metalness: 0.35 },   // side walls + bevel: a brushed-aluminium rim that outlines every white body
     groupFill: 0x2b7fe0,
     groupFillAlpha: 0.08,
     groupEdge: 0x2b7fe0,
-    text: '#1c2130',
-    textDim: '#5f6675',
-    textOnHeader: '#1c2130',
+    // text: near-black ink (17 : 1 on white) and a dim grey that still clears 7 : 1, so meta lines stay readable
+    text: '#0d1220',
+    textDim: '#454d5d',
+    textOnHeader: '#0d1220',
     faceBg: '#ffffff',
-    faceCard: '#eef0f3',
-    faceLine: 'rgba(28,33,48,0.12)',
-    faceText: '#1c2130',
-    faceDim: '#5f6675',
+    faceCard: '#eef1f5',
+    faceLine: 'rgba(13,18,32,0.13)',
+    faceText: '#0d1220',
+    faceDim: '#454d5d',
     faceAccent: '#2b7fe0',
     faceGrid: 'rgba(0,0,0,0.06)',
     faceGood: '#13906a', faceWarn: '#b8830c', faceBad: '#d93848',
-    pmColumn: 0xd6d9df, pmColumnAlpha: 0.82, pmCard: 0xffffff, pmCardText: '#1c2130', pmCardDim: '#5f6675', pmRail: 0xb9bfc8, pmToday: 0x2b7fe0,
+    tagBg: 'rgba(43,127,224,0.12)', tagText: '#1554a3',
+    pmColumn: 0xe4e8ee, pmColumnAlpha: 0.96, pmCard: 0xffffff, pmCardText: '#0d1220', pmCardDim: '#454d5d', pmRail: 0xb3bac4, pmToday: 0x2b7fe0,
     screenTop: '#26468a', screenBottom: '#172a55',
     env: ['#ffffff', '#dfe2e7', '#8a8f98'],
     categories: {
@@ -179,7 +186,7 @@ export const sizes = {
   /** Node footprints by size class: width and face height (0 = no face area). */
   nodeSize: { S: { width: 3.6, faceH: 0 }, M: { width: 4.6, faceH: 2.4 }, L: { width: 6.4, faceH: 3.6 }, XL: { width: 9, faceH: 4.6 } },
   /** Node body: a thin extruded card. `header` is the title row, `pad` the 8-pt-grid margin (0.24 = ~29 px on the face). */
-  node: { depth: 0.16, radius: 0.32, header: 0.78, footer: 0.44, portTop: 0.22, faceGap: 0.12, pad: 0.28, minHeight: 1.7, accent: 0.045, bevel: 0.02 },
+  node: { depth: 0.26, radius: 0.3, header: 0.78, footer: 0.44, portTop: 0.22, faceGap: 0.12, pad: 0.28, minHeight: 1.7, accent: 0.045, bevel: 0.05 },
   port: {
     radius: 0.095, stem: 0.24, gap: 0.55, hoverScale: 1.5,
     minGap: 0.44,                        // a side's pins compress to this pitch before the body grows
@@ -239,16 +246,53 @@ export const typography = {
 /* ------------------------------------------------------------------ */
 /* Materials factory                                                    */
 /* ------------------------------------------------------------------ */
-const SATIN = { roughness: 0.45, metalness: 0.0, clearcoat: 0.4, clearcoatRoughness: 0.3, envMapIntensity: 0.45 };
+const SATIN = { roughness: 0.5, metalness: 0.0, clearcoat: 0.35, clearcoatRoughness: 0.35, envMapIntensity: 0.5 };
+/**
+ * The machined edge: panelGeometry marks its side walls and bevel with `aEdge` = 1 (caps 0), and
+ * every panel material mixes those fragments towards an edge finish — the body colour times
+ * `edgeTint`, a little metal, lower roughness — so a white card reads as a solid object with a
+ * defined rim instead of a flat sticker. The uniforms are shared: a theme change retunes every
+ * body at once. Geometry without the attribute (boxes) reads 0 and keeps the plain finish.
+ */
+const EDGE = { uEdgeTint: { value: new THREE.Color(1, 1, 1) }, uEdgeMix: { value: 1 }, uEdgeRough: { value: 0.3 }, uEdgeMetal: { value: 0.4 } };
+function retuneEdge() {
+  const e = palette.edge || {};
+  EDGE.uEdgeTint.value.setScalar(e.tint ?? 1); EDGE.uEdgeMix.value = e.mix ?? 1;
+  EDGE.uEdgeRough.value = e.roughness ?? 0.3; EDGE.uEdgeMetal.value = e.metalness ?? 0.4;
+}
+retuneEdge(); onThemeChange(retuneEdge);
+function withEdge(m) {
+  m.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, EDGE);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+attribute float aEdge;
+varying float vEdge;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+vEdge = aEdge;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+varying float vEdge;
+uniform vec3 uEdgeTint; uniform float uEdgeMix; uniform float uEdgeRough; uniform float uEdgeMetal;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * uEdgeTint, vEdge * uEdgeMix);`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+roughnessFactor = mix(roughnessFactor, uEdgeRough, vEdge * uEdgeMix);`)
+      .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
+metalnessFactor = mix(metalnessFactor, uEdgeMetal, vEdge * uEdgeMix);`);
+  };
+  m.customProgramCacheKey = () => 'panel-edge';
+  return m;
+}
 export const materials = {
-  /** The body finish: satin physical material, low roughness on the bevel through the clearcoat, no gloss. */
+  /** The body finish: a satin front with a machined edge (see EDGE), no gloss. */
   panel(color = palette.body, extra = {}) {
-    return new THREE.MeshPhysicalMaterial({ color, ...SATIN, ...extra });
+    return withEdge(new THREE.MeshPhysicalMaterial({ color, ...SATIN, ...extra }));
   },
   body(color = palette.body) { return materials.panel(color); },
   header(color = palette.headerDefault) { return materials.panel(color); },
-  /** Flat unlit accent (category line, chips). */
-  accent(color) { return new THREE.MeshBasicMaterial({ color }); },
+  /** Flat unlit accent (category line, chips): the exact colour, never tone mapped. */
+  accent(color) { return new THREE.MeshBasicMaterial({ color, toneMapped: false }); },
   port(type = 'any', color = null) {
     const c = color ?? (portTypes[type] || portTypes.any).color;
     return new THREE.MeshStandardMaterial({
@@ -269,20 +313,23 @@ export const materials = {
       color, transparent: true, opacity: 0.85, side: THREE.BackSide, depthWrite: false,
     });
   },
-  /** Face / screen material driven by a canvas texture; `transparent` lets a canvas keep rounded corners. */
-  face(texture, { emissive = 0.55, transparent = true, layer = 1 } = {}) {
-    const m = layered(new THREE.MeshStandardMaterial({
-      color: 0x000000, emissive: 0xffffff, emissiveMap: texture, emissiveIntensity: emissive * (palette.faceBoost ?? 1),
-      roughness: 0.6, metalness: 0.0, envMapIntensity: 0.15,
-    }), layer);   // a face sits on a body front (layers.js): it wins the depth tie at any distance
-    m.userData.faceEmissive = emissive;   // the base value; `retuneFace` re-applies the theme's boost
-    if (transparent) { m.map = texture; m.transparent = true; m.alphaTest = 0.02; }
+  /**
+   * Face / screen material driven by a canvas texture. Unlit and outside tone mapping: the pixels
+   * on screen are the canvas colours exactly (white is white, text keeps its full contrast) — a lit,
+   * tone-mapped face greyed its whites, lifted its dark text and caught the environment's sheen.
+   * Always transparent so `faceDim` can fade it; `transparent: false` only drops the alpha test.
+   */
+  face(texture, { transparent = true, layer = 1 } = {}) {
+    const m = layered(new THREE.MeshBasicMaterial({ map: texture, transparent: true, toneMapped: false }), layer);   // a face sits on a body front (layers.js): it wins the depth tie at any distance
+    if (transparent) m.alphaTest = 0.02;
     return m;
   },
-  /** Re-apply the theme's face boost to a face material made by `face()` (called on theme change). */
-  retuneFace(m) { if (m?.userData?.faceEmissive !== undefined) m.emissiveIntensity = m.userData.faceEmissive * (palette.faceBoost ?? 1); return m; },
+  /** Fade a face towards what is behind it (a disabled block); `dim` 0 = full, 1 = gone. */
+  faceDim(m, dim = 0) { if (m) m.opacity = 1 - Math.max(0, Math.min(1, dim)); return m; },
+  /** Kept for callers from the lit-face era: faces no longer depend on the theme's light. */
+  retuneFace(m) { return m; },
   device(color = palette.deviceBody) {
-    return new THREE.MeshPhysicalMaterial({ color, roughness: 0.38, metalness: 0.15, clearcoat: 0.5, clearcoatRoughness: 0.25, envMapIntensity: 0.6 });
+    return withEdge(new THREE.MeshPhysicalMaterial({ color, roughness: 0.38, metalness: 0.15, clearcoat: 0.5, clearcoatRoughness: 0.25, envMapIntensity: 0.6 }));
   },
   /** Frosted translucent panel (board columns). */
   frosted(color = palette.pmColumn, opacity = palette.pmColumnAlpha) {
@@ -326,7 +373,7 @@ export function makeLabel(text, opts = {}) {
   };
   const canvas = document.createElement('canvas');
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
-    layered(new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }), 3));   // labels sit above everything on a face (layers.js)
+    layered(new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false }), 3));   // labels sit above everything on a face (layers.js); exact colours, like faces
   mesh.userData.label = { text: String(text ?? ''), opts: o, canvas };
   mesh.userData.align = o.align;
   mesh.renderOrder = 2;
