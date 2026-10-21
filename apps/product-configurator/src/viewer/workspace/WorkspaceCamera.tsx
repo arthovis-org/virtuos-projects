@@ -45,6 +45,8 @@ const FOLLOW_LAG = 0.6;
 /** Space around the screens; small, so they fill the view. */
 const MARGIN = 1.03;
 const WORLD_UP = new Vector3(0, 1, 0);
+/** How far up from the main screen's direction the camera looks down at a flat screen zoomed to. */
+const FLAT_ZOOM_ELEVATION = MathUtils.degToRad(70);
 /**
  * Looking around a desk in the room: from a three-quarter view (turned this far from the
  * screens' front, and looking down this much), far enough back to see the whole desk, legs
@@ -283,7 +285,13 @@ export function WorkspaceCamera({ screens, primaryId, tilt }: WorkspaceCameraPro
     const facing = focused ?? screens.find((s) => s.id === primaryId) ?? screens[0];
     if (!facing) return;
     let back = worldFront(facing);
-    if (!focused) {
+    const primary = screens.find((s) => s.id === primaryId) ?? screens[0];
+    if (focused && primary && Math.abs(back.y) >= 0.7 && primary !== focused) {
+      // Zoomed to a screen lying on the desk: from the seat, looking down at it, not from
+      // straight above. Seen from straight above the browser hit nothing on it (its page and
+      // its window's buttons ignored every click).
+      back = tilted(worldFront(primary), FLAT_ZOOM_ELEVATION);
+    } else if (!focused) {
       // Look down a little when a screen lies on the desk, so it can be read too.
       const flat = screens.find((s) => Math.abs(worldFront(s).y) >= 0.7);
       if (flat) back = tilted(back, MathUtils.degToRad(tilt));

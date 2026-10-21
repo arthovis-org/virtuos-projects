@@ -25,7 +25,10 @@ const SITE_STYLES = [
   {
     name: "tinygnomes",
     hosts: ["tinygnomes.com"],
-    maxWidth: 700,
+    // Up to about two thirds of a main monitor: two TinyGnomes windows side by side on one
+    // (each about 700 px) are both adapted, rather than one of them, just under the line, being
+    // adapted and the other not. Dialogs keep to a phone's width in a wider window.
+    maxWidth: 1000,
     // Written from the dashboard's page (its menu, dashboard and team columns in a splitter,
     // sized in pixels by the app's own scripts, which these rules override).
     css: `
@@ -126,13 +129,14 @@ const SITE_STYLES = [
         width: 100% !important;
       }
 
-      /* The project picker's list (370 px at least, placed for a desktop window): across the screen. */
+      /* The project picker's list (370 px at least, placed for a desktop window): across the
+         screen, up to 460 px. */
       .widget-projectpicker.ui-menu {
         left: 4px !important;
-        right: 4px !important;
+        right: max(4px, 100vw - 464px) !important;
         width: auto !important;
         min-width: 0 !important;
-        max-width: calc(100vw - 8px) !important;
+        max-width: min(100vw - 8px, 460px) !important;
         max-height: 70vh;
         overflow-y: auto;
         box-sizing: border-box;
@@ -255,12 +259,13 @@ const SITE_STYLES = [
       table[id$="_button_root"] td.m > * {
         position: relative;
       }
-      /* Dialogs (the app's floating cards, placed and sized for a desktop window): across the screen. */
+      /* Dialogs (the app's floating cards, placed and sized for a desktop window): across the
+         screen, up to 520 px (centred in a wider window). */
       .qfw-floatingcard {
-        left: 4px !important;
-        right: 4px !important;
+        left: max(4px, 50vw - 260px) !important;
+        right: max(4px, 50vw - 260px) !important;
         width: auto !important;
-        max-width: calc(100vw - 8px) !important;
+        max-width: min(100vw - 8px, 520px) !important;
         box-sizing: border-box;
       }
       .qfw-floatingcard [id^="contentbag-"] {
@@ -646,7 +651,7 @@ const SITE_STYLES = [
        * message", wrapping onto a second line.
        */
       .qfw-floatingcard:not([id^="card-TaskNew-dialog"]) [id^="contentbag-"] {
-        width: calc(100vw - 54px) !important;
+        width: min(100vw - 54px, 466px) !important;
       }
       /* The links' table: its columns (Who, When, Source, Type, 100 px each) share the width. */
       [id^="card-ServiceLink-dialog"] [id*="-Mol-EZTable-"] td[style*="width"]:not([id$="_massaction"]) {
@@ -1106,6 +1111,41 @@ const SITE_STYLES = [
       [id^="card-QuickCard-"] .cke,
       [id^="card-QuickCard-"] .cke_inner {
         width: auto !important;
+      }
+      /*
+       * A wiki being read: its bar (Back to index, the title, Edit wiki, read time) is fixed over
+       * the page with room left for one line of it, so wrapped here it covered the article's
+       * first heading: it scrolls with the article instead. The article keeps to the width:
+       * long words and code wrap, its tables are the width, a wider one scrolls on its own.
+       */
+      .qwiki-topbar:has(~ .qwiki-panel [id$="-wiki_html"]) {
+        position: relative !important;
+        top: auto !important;
+      }
+      .qwiki-panel:has([id$="-wiki_html"]) {
+        padding-top: 8px !important;
+      }
+      .qwiki-panel [id$="-pagecontent"] {
+        table-layout: fixed;
+        width: 100% !important;
+      }
+      [id$="-wiki_html"] {
+        overflow-wrap: anywhere;
+      }
+      [id$="-wiki_html"] :is(div, p, ul, ol, table, img, iframe, video) {
+        max-width: 100% !important;
+        box-sizing: border-box;
+      }
+      [id$="-wiki_html"] table {
+        display: block;
+        overflow-x: auto;
+      }
+      [id$="-wiki_html"] pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      [id$="-wiki_html"] img {
+        height: auto !important;
       }
       /* The list of wikis' filters: Filter and the filter set beside it, on a line of their own
          under Create wiki, without the box the site draws round them. */
