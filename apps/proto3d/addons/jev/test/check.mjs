@@ -211,7 +211,7 @@ try {
     assert(Math.abs(rDead.x - rDown.x) < 1 && Math.abs(rDead.y - rDown.y) < 1, 'moved inside the 6 px dead zone');
     await page.mouse.move(sx - 300, sy - 250, { steps: 12 });
     if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, 'tutorial-drag.png') }); }
-    await page.mouse.move(sx - 5000, sy - 5000, { steps: 4 });   // far past the edge: must clamp
+    await page.mouse.move(1, 1, { steps: 4 });   // into the window's corner, well past where the card fits: it must clamp (Linux CI drops moves outside the page)
     await page.mouse.up();
     const r1 = await page.locator('#jev-tutorial').boundingBox();
     const vp = page.viewportSize();
