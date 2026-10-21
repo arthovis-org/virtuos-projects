@@ -991,7 +991,7 @@ function updateConnectionLabel() {
  * (the engine gets the real elapsed time, so timers keep their pace) until the next event wakes it.
  */
 const IDLE_AFTER = 3000, IDLE_INTERVAL = 250;   // ms
-let lastActive = performance.now(), lastFrameAt = 0, seenChanges = -1;
+let lastActive = performance.now(), lastFrameAt = 0, seenChanges = -1, skippedFrames = 0;   // skippedFrames: animation frames the idle gate passed over (tests read it)
 const lastCam = new THREE.Vector3(), lastTarget = new THREE.Vector3();
 const wake = () => { lastActive = performance.now(); };
 for (const type of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'keyup', 'click', 'input', 'change', 'dragover', 'drop', 'touchstart', 'resize', 'focus']) window.addEventListener(type, wake, { capture: true, passive: true });
@@ -1009,7 +1009,7 @@ function frame() {
   const now = performance.now();
   noteActivity(now);
   const idle = now - lastActive > IDLE_AFTER;
-  if (idle && now - lastFrameAt < IDLE_INTERVAL) { requestAnimationFrame(frame); return; }
+  if (idle && now - lastFrameAt < IDLE_INTERVAL) { skippedFrames++; requestAnimationFrame(frame); return; }
   lastFrameAt = now;
   const elapsed = clock.getDelta();
   const dt = Math.min(elapsed, 0.05);
@@ -1052,7 +1052,7 @@ window.__proto = {
   plan: { isOn: isPlanOn, set: setPlanView, toggle: () => setPlanView(!isPlanOn()), snap, toggleSnap, setSnapOption, GRID_SIZES, SNAP_KINDS, ROTATION_STEPS, SCALE_STEPS, fmtDeg, fmtScale },
   cables, setCableOption, bundles,
   layout: { arrange: autoLayoutSelection, plan: (nodes) => layoutPlan(world, nodes), tweening },
-  loop: { isIdle, wake },
+  loop: { isIdle, wake, get skipped() { return skippedFrames; } },
   newProject, closeTab, renameProject, saveProject, saveProjectAs, openProject, openRecent, openDoc, importDoc, copySelection, cutSelection, pasteClipboard, exportSelection, exportScreenshot, toggleBypass, dropFileOn, blockAt,
   wiring: { isOn: isWiringOn, set: setWiring, toggle: toggleWiring },
   ai: { vault, jobs, spend, store, providers: providerRegistry, providerStatus, connections, modelBrowser, jobsTray },

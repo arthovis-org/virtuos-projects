@@ -59,16 +59,19 @@ test('a file from a newer Proto3D is refused before a tab opens', async () => {
 });
 
 test('the frame loop idles when nothing happens and wakes on input', async () => {
-  const rate = () => page.evaluate(async () => { const e = window.__proto.engine; const n0 = e.evaluations; await new Promise((r) => setTimeout(r, 1000)); return e.evaluations - n0; });
+  // Measured against the loop's own gate, not raw frame rates: a CI machine rendering in software
+  // may only manage a few frames a second at full speed, so "awake is faster" proves nothing there.
   await page.evaluate(() => { const p = window.__proto; p.start?.hide?.('test'); if (p.tour?.active) p.tour.finish(); });
   await page.waitForFunction(() => window.__proto.loop.isIdle(), null, { timeout: 15000 });
-  const idle = await rate();
-  assert.ok(idle <= 8, `idle: ${idle} evaluations a second`);
+  const idle = await page.evaluate(async () => { const { loop, engine } = window.__proto; const s0 = loop.skipped, n0 = engine.evaluations; await new Promise((r) => setTimeout(r, 1500)); return { skipped: loop.skipped - s0, frames: engine.evaluations - n0 }; });
+  assert.ok(idle.skipped > 0, `idle: the gate skipped ${idle.skipped} frames`);
+  assert.ok(idle.frames <= 1.5 * 1000 / 250 + 2, `idle: ${idle.frames} frames in 1.5 s (one per 250 ms expected)`);
   const box = await page.locator('#viewport canvas').first().boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   assert.equal(await page.evaluate(() => window.__proto.loop.isIdle()), false, 'a pointer move wakes the loop');
-  const awake = await page.evaluate(async () => { const p = window.__proto; const e = p.engine; const n0 = e.evaluations; const stop = setInterval(() => p.loop.wake(), 100); await new Promise((r) => setTimeout(r, 1000)); clearInterval(stop); return e.evaluations - n0; });
-  assert.ok(awake > idle * 3, `awake: ${awake} evaluations a second (idle ${idle})`);
+  const awake = await page.evaluate(async () => { const { loop, engine } = window.__proto; const stop = setInterval(() => loop.wake(), 100); const s0 = loop.skipped, n0 = engine.evaluations; await new Promise((r) => setTimeout(r, 1000)); clearInterval(stop); return { skipped: loop.skipped - s0, frames: engine.evaluations - n0 }; });
+  assert.equal(awake.skipped, 0, 'awake: the gate lets every frame through');
+  assert.ok(awake.frames > 0, 'awake: frames run');
 });
 
 test('no page errors', () => { assert.deepEqual(errors, [], errors.join('\n')); });
