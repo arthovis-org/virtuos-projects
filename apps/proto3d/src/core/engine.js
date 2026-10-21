@@ -37,6 +37,7 @@ export class Engine {
     this.dt = 1 / 60;
     this.evaluations = 0;
     this.pending = [];          // external pulses: { port, payload }
+    this.changes = 0;           // output values that changed, ever, except a def's `ambient` outputs (main.js stays at full frame rate while it grows)
     this.onError = null;        // optional (instance, error) hook
     world.engine = this;
   }
@@ -205,7 +206,7 @@ export class Engine {
     const changed = port._touch || !equal(port.value, v);
     port._touch = false;
     port.value = v;
-    if (changed) { port.changedAt = t; port.changes = (port.changes || 0) + 1; }
+    if (changed) { port.changedAt = t; port.changes = (port.changes || 0) + 1; if (!port.owner?.def?.ambient?.includes(port.key)) this.changes += 1; }
     const inst = changed ? 1 / Math.max(this.dt, 1 / 240) : 0;
     port.rate = (port.rate || 0) * 0.9 + inst * 0.1;
   }

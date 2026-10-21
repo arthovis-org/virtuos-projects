@@ -11,6 +11,33 @@ import { isWiringOn, setWiring } from './wiring.js';
 import { RouteNode } from './routing.js';
 
 export const FORMAT_VERSION = 2;
+/**
+ * Document upgrades: `MIGRATIONS[n]` turns a version-n document into a version-(n + 1) one. When the
+ * format changes, bump FORMAT_VERSION and add the step for the old number here; `upgradeDoc` runs
+ * every step a document needs, oldest first, on a copy. Version 1 and 2 share one shape (v1's port
+ * names are still read through LEGACY_PORTS below), so 1 → 2 only restamps the number.
+ */
+const MIGRATIONS = {
+  1: (doc) => doc,
+};
+/**
+ * A document in today's format: validated, upgraded step by step, never mutated in place. A document
+ * without a version counts as version 1. One written by a newer Proto3D is refused rather than half
+ * read, because saving it back here would silently drop whatever the newer format added.
+ */
+export function upgradeDoc(doc) {
+  if (!doc || doc.app !== 'proto3d' || !Array.isArray(doc.nodes)) throw new Error('Not a Proto3D document');
+  const from = Number.isInteger(doc.version) && doc.version > 0 ? doc.version : 1;
+  if (from > FORMAT_VERSION) throw new Error(`This file was made by a newer Proto3D (format v${from}; this one reads up to v${FORMAT_VERSION}). Reload the page to get the latest version.`);
+  let out = from === FORMAT_VERSION ? doc : structuredClone(doc);
+  for (let v = from; v < FORMAT_VERSION; v++) {
+    const step = MIGRATIONS[v];
+    if (!step) throw new Error(`No upgrade from format v${v}`);
+    out = step(out);
+    out.version = v + 1;
+  }
+  return out;
+}
 /** Port keys renamed when the project ports got plain names; older documents still reconnect. */
 const LEGACY_PORTS = {
   'kanban-board': { in: { addCard: 'addTask', move: 'moveTask' }, out: { cardMoved: 'moved', stats: 'progress', cards: 'tasks' } },
@@ -50,14 +77,22 @@ export function serializeWorld(world, { camera, controls, pose = null, name = 'u
   return {
     app: 'proto3d', version: FORMAT_VERSION, name, savedAt: new Date().toISOString(),
     ...(project ? { project } : {}),
-    nodes: world.nodes.map((n) => n.serialize()),
-    connections: world.connections.filter((c) => c.to).map((c) => c.serialize()),
+    nodes: [...world.nodes.map((n) => n.serialize()), ...carriedOf(world).nodes],
+    connections: [...world.connections.filter((c) => c.to).map((c) => c.serialize()), ...carriedOf(world).connections],
     ...routeNodesDoc(world.connections.filter((c) => c.to), world),
     groups: world.groups.map((g) => g.serialize()),
     wiring: isWiringOn(),
     camera: cam ? { position: cam.position.toArray().map((v) => +v.toFixed(2)), target: cam.target.toArray().map((v) => +v.toFixed(2)) } : undefined,
   };
 }
+
+/**
+ * Components whose type this page does not know (an add-on's nodes opened in the core page, a type
+ * from a newer Proto3D) are not built, but their records — and the links touching them — ride along
+ * on `world.carried` and are written back unchanged, so opening and autosaving a project never
+ * deletes them. Opening it where the type exists (the add-on's page) brings them back to life.
+ */
+const carriedOf = (world) => world.carried || { nodes: [], connections: [] };
 
 const routeNodesDoc = (conns, world) => { const r = routeNodesOf(conns, world); return r.length ? { routeNodes: r } : {}; };
 
@@ -82,7 +117,7 @@ export function serializeSelection(world, nodes, { name = 'selection' } = {}) {
  * positions. Returns null when the document holds nothing the registry knows.
  */
 export function importCommand(world, doc, { place = 'beside', label } = {}) {
-  if (!doc || doc.app !== 'proto3d' || !Array.isArray(doc.nodes)) throw new Error('Not a Proto3D document');
+  doc = upgradeDoc(doc);
   const byUid = new Map(); const entries = []; const skipped = [];
   for (const n of doc.nodes) {
     const def = registry.get(n.type);
@@ -128,10 +163,19 @@ export function importCommand(world, doc, { place = 'beside', label } = {}) {
   };
 }
 
-/** Replace the world's content with a saved document. Unknown types are skipped and reported. */
+/**
+ * Replace the world's content with a saved document (upgraded to today's format first). Unknown
+ * types are not built and are reported in `skipped`; their records are kept on `world.carried` and
+ * saved back (see carriedOf).
+ */
 export function loadWorld(world, doc, { camera, controls } = {}) {
-  if (!doc || doc.app !== 'proto3d' || !Array.isArray(doc.nodes)) throw new Error('Not a Proto3D document');
+  doc = upgradeDoc(doc);
   world.clear();
+  const unknown = new Set(doc.nodes.filter((n) => !registry.get(n.type)).map((n) => n.uid));
+  world.carried = {
+    nodes: doc.nodes.filter((n) => unknown.has(n.uid)),
+    connections: (doc.connections || []).filter((c) => unknown.has(c.from?.node) || unknown.has(c.to?.node)),
+  };
   const skipped = [];
   const byUid = new Map();
   let maxSeq = 0;

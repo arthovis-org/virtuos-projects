@@ -15,9 +15,10 @@ components in the same registry (see [Project management](#project-management)).
 Person onto the board, the Board onto the Timeline); the workspace says what the link means and
 you can undo it. Turn **Wiring** on (`P`) and every block shows its typed pins and every cable
 appears, for the people who want to see or edit the graph (see [Wiring is optional](#wiring-is-optional)).
-Navigation follows **Blender by default** (middle-drag orbits, Shift pans, numpad views) with
-**Unreal**, **Maya**, **Simple** and **Trackpad** presets under **? → Controls**; a pinch zooms in
-every preset and touchscreens work everywhere (see [Controls](#controls)).
+Navigation starts on **Simple** (left-drag orbits, right-drag pans, the wheel zooms — no middle
+button or numpad needed), with **Blender**, **Unreal**, **Maya** and **Trackpad** presets under
+**View → Navigation** or **? → Controls**; a pinch zooms in every preset and touchscreens work
+everywhere (see [Controls](#controls)).
 
 **Generate content with AI.** A **Generate** category adds a Prompt editor with `{variables}` and
 Generate Text / Image / Video / Audio components that call **OpenRouter** (language models),
@@ -438,10 +439,10 @@ zoom to cursor, fly speed — live in the same panel section and persist per pre
 
 | Preset | Orbit | Pan | Zoom | Select | Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Blender** (default) | middle-drag · `Alt`+left | `Shift`+middle · `Alt`+`Shift`+left · `Shift`/`Ctrl`+wheel | `Ctrl`+middle · wheel | click · `Shift`+click adds · left-drag on the floor box-selects · right-click selects + opens properties | `Numpad 1/3/7` front / right / top (`Ctrl` for the opposite side), `Numpad 5` orthographic, `Numpad 2/4/6/8` 15° steps, `Numpad .` / `Shift+F` focus, `Home` frame all, `A` all, `Alt+A` none, `X` delete, `Shift+D` duplicate + move, `G`/`R`/`S` gizmo move / rotate / scale, `Tab` panel |
+| **Blender** | middle-drag · `Alt`+left | `Shift`+middle · `Alt`+`Shift`+left · `Shift`/`Ctrl`+wheel | `Ctrl`+middle · wheel | click · `Shift`+click adds · left-drag on the floor box-selects · right-click selects + opens properties | `Numpad 1/3/7` front / right / top (`Ctrl` for the opposite side), `Numpad 5` orthographic, `Numpad 2/4/6/8` 15° steps, `Numpad .` / `Shift+F` focus, `Home` frame all, `A` all, `Alt+A` none, `X` delete, `Shift+D` duplicate + move, `G`/`R`/`S` gizmo move / rotate / scale, `Tab` panel |
 | **Unreal** | `Alt`+left | middle-drag | wheel | click · `Ctrl`+click adds · left-drag box-selects | right-drag **looks around**; right-drag + `W A S D` / `Q E` **flies** (wheel changes fly speed); `F` focus |
 | **Maya** | `Alt`+left | `Alt`+middle | `Alt`+right · wheel | click · `Shift`+click adds · left-drag box-selects · right-click properties | `F` focus, `A` frame all |
-| **Simple** | left-drag on empty space | right-drag | middle-drag · wheel | click · `Shift`+click adds · `Shift`+left-drag box-selects | the previous scheme |
+| **Simple** (default) | left-drag on empty space | right-drag | middle-drag · wheel | click · `Shift`+click adds · `Shift`+left-drag box-selects | `F` focus, `Home` frame all, `Ctrl+A` all, `Delete` deletes, `W`/`E`/`R` gizmo move / rotate / scale |
 | **Trackpad** | two-finger scroll · `Alt`+left | `Shift`+two-finger scroll · right-drag (two-finger click) · `Alt`+`Shift`+left | pinch · `Ctrl`+scroll | click · `Shift`+click adds · left-drag on the floor box-selects | Simple's keys plus Blender's numpad views; in 2D the plain scroll pans |
 
 **Trackpads.** A pinch zooms towards the cursor in every preset (the browser reports it as a
@@ -483,6 +484,14 @@ Everything else is the same in every preset:
 Shortcuts are ignored while typing in a panel field.
 
 ## Projects: tabs, autosave and version history
+
+**Documents are versioned.** Every file carries `version` (the format, `FORMAT_VERSION` in
+`serialize.js`). Opening an older file upgrades a copy step by step (`MIGRATIONS` in
+`serialize.js`; a format change adds one step); a file from a newer Proto3D is refused with a
+message instead of being half read, and a stored tab that cannot be read turns read-only so
+autosave never replaces it. **Components of a type this page does not know** (an add-on's nodes
+opened in the core page) are not built, but they and their links are kept and written back on
+every save, so opening a project in the wrong page never deletes anything.
 
 Every open project is a **tab** in the slim strip under the menu bar — its own scene, undo
 history, camera, 2D mode and selection; switching swaps them into the one renderer without a
