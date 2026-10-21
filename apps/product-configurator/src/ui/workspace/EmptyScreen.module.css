@@ -1,24 +1,26 @@
 /*
  * The picker scrolls as one, so nothing in it is ever squeezed away (in a window split in two
- * the list of sites was, to nothing). Centred while it fits, from the top once it doesn't.
+ * the list of sites was, to nothing). Centred while it fits, from the top once it doesn't. It
+ * uses the screen's whole width: on a wide screen the groups of sites stand in columns side by
+ * side, so they fit without scrolling; a narrow one has a column of them. Everything is sized
+ * from the type, which grows with the screen's width (about 14 px on a side monitor, 17 px on
+ * a wide main one), so a big screen isn't a few small tiles in a corner.
  */
 .empty {
   display: flex;
   flex-direction: column;
   justify-content: safe center;
-  gap: 14px;
+  gap: 0.93em;
   box-sizing: border-box;
   width: 100%;
-  max-width: 720px;
   height: 100%;
-  margin: 0 auto;
-  padding: 18px 16px;
+  padding: 1.2em clamp(16px, 3cqw, 48px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgb(255 255 255 / 25%) transparent;
   color: rgb(255 255 255 / 85%);
   font:
-    400 15px/1.4 'Inter Variable',
+    400 clamp(14px, 10px + 0.5cqw, 17px) / 1.4 'Inter Variable',
     system-ui,
     sans-serif;
 }
@@ -26,12 +28,12 @@
 .top {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.13em;
 }
 
 .heading {
   margin: 0;
-  font-size: 19px;
+  font-size: 1.27em;
   font-weight: 600;
   color: #ffffff;
 }
@@ -43,32 +45,33 @@
 }
 
 .hint {
-  font-size: 14px;
+  font-size: 0.93em;
   color: rgb(255 255 255 / 60%);
 }
 
 .note {
-  font-size: 12px;
+  font-size: 0.8em;
   color: rgb(255 255 255 / 45%);
 }
 
 .error {
-  font-size: 14px;
+  font-size: 0.93em;
   color: #ff9b9b;
 }
 
 .form {
   display: flex;
-  gap: 8px;
+  gap: 0.53em;
+  max-width: 40em;
 }
 
 .input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 40px;
-  padding: 0 12px;
+  height: 2.67em;
+  padding: 0 0.8em;
   border: 1.5px solid rgb(255 255 255 / 22%);
-  border-radius: 10px;
+  border-radius: 0.67em;
   background: rgb(255 255 255 / 7%);
   color: #ffffff;
   font: inherit;
@@ -85,10 +88,10 @@
 
 .open {
   flex: none;
-  height: 40px;
-  padding: 0 18px;
+  height: 2.67em;
+  padding: 0 1.2em;
   border: 0;
-  border-radius: 10px;
+  border-radius: 0.67em;
   background: #4c8dff;
   color: #ffffff;
   font: inherit;
@@ -100,23 +103,25 @@
   background: #6a9fff;
 }
 
+/* As many columns of groups as the width holds, each group whole in one. */
 .groups {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  columns: 16.5em;
+  column-gap: 1.6em;
 }
 
 .group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.4em;
+  margin-bottom: 0.8em;
+  break-inside: avoid;
 }
 
 .groupLabel {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 0.4em;
+  font-size: 0.73em;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -126,23 +131,23 @@
 /* A group's sites: tiles in as many columns as fit. */
 .sites {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(7.9em, 1fr));
+  gap: 0.4em;
 }
 
 .site {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.57em;
   min-width: 0;
-  height: 36px;
-  padding: 0 10px 0 6px;
+  height: 2.43em;
+  padding: 0 0.71em 0 0.43em;
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 9px;
+  border-radius: 0.64em;
   background: rgb(255 255 255 / 6%);
   color: #ffffff;
   font: inherit;
-  font-size: 14px;
+  font-size: 0.93em;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -171,11 +176,11 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 1.71em;
+  height: 1.71em;
+  border-radius: 0.43em;
   background: hsl(var(--hue) 55% 45%);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 0.86em;
   font-weight: 700;
 }

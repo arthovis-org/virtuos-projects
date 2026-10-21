@@ -1107,6 +1107,111 @@ const SITE_STYLES = [
       [id^="card-QuickCard-"] .cke_inner {
         width: auto !important;
       }
+      /* The list of wikis' filters: Filter and the filter set beside it, on a line of their own
+         under Create wiki, without the box the site draws round them. */
+      .qwiki-topbar .qwiki-buttonbar > table > tbody > tr > td.filter-bar:not([style*="display: none"]) {
+        display: flex !important;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        align-items: center;
+        row-gap: 6px;
+        margin: 0 0 4px !important;
+        padding: 0 !important;
+        border-color: transparent !important;
+        background: transparent !important;
+      }
+      .qwiki-topbar td.filter-bar > * {
+        flex: 0 0 auto;
+        width: auto !important;
+        min-width: 0 !important;
+        height: auto !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+      }
+      .qwiki-topbar td.filter-bar > .qwiki-filters {
+        display: flex;
+        align-items: center;
+        margin-right: 8px;
+      }
+      /* The filter set (140 px) takes the rest of the line. */
+      .qwiki-topbar td.filter-bar > .qwiki-filter-item {
+        flex: 1 1 100px;
+        max-width: 180px;
+      }
+      .qwiki-topbar td.filter-bar > .qwiki-filter-item table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      .qwiki-topbar td.filter-bar > .qwiki-filter-item table.dropdown td.dd-mid,
+      .qwiki-topbar td.filter-bar > .qwiki-filter-item [style*="width"] {
+        width: auto !important;
+      }
+      .qwiki-topbar td.filter-bar > .qwiki-filter-item table.dropdown td:not(.dd-mid) {
+        width: 29px;
+      }
+      .qwiki-topbar td.filter-bar .qwiki-filters-label,
+      .qwiki-topbar td.filter-bar .qwiki-filter-item > div:first-child {
+        display: none !important;
+      }
+      /*
+       * The list of wikis: each wiki a card (its title across the width, then who edited it
+       * last, when, and its shares) instead of a row of columns, which left the title 46 px.
+       * Its cells: title, project (hidden), last editor, posted, shares.
+       */
+      [id^="WikiIndex-"][id$="-indextable_headerbody"],
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowheader_"] {
+        display: none !important;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] [id^="PANEL"] {
+        height: auto !important;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] table,
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tbody {
+        display: block !important;
+        width: auto !important;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "title title title" "editor posted shares";
+        align-items: center;
+        gap: 2px 10px;
+        padding: 7px 4px;
+        border-bottom: 1px solid #eee;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: 0;
+        padding: 0 4px !important;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td[style*="display: none"] {
+        display: none !important;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td:nth-child(1) {
+        grid-area: title;
+        font-weight: 600;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td:nth-child(1) div,
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td:nth-child(1) nobr {
+        width: auto !important;
+        white-space: normal;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td:nth-child(3) {
+        grid-area: editor;
+        font-size: 12px;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td:nth-child(4) {
+        grid-area: posted;
+        font-size: 12px;
+        color: #777;
+      }
+      [id^="WikiIndex-"][id$="-indextable_bodybag"] tr[id*="-rowtr_"] > td:nth-child(5) {
+        grid-area: shares;
+        font-size: 12px;
+      }
 
       /*
        * Reports, Forms, Search: a service's own panel (report templates; Create form, Filter,
