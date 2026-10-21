@@ -41,6 +41,7 @@ import {
   type WindowZoom,
 } from './setup';
 import { setupFromSearch } from './setupUrl';
+import { useSiteZoomStore } from './siteZoomStore';
 
 interface SetupState extends Setup {
   /** Replaces the whole set-up (a saved layout, the command center sheet). */
@@ -105,6 +106,23 @@ interface SetupState extends Setup {
 
 const productOf = (setup: Pick<Setup, 'productId'>) => getProduct(setup.productId);
 
+/**
+ * A window just opened on a site takes the zoom this browser last set for that site, as its
+ * own: once, as it opens. After that it keeps its own (coming back to its desk, say, doesn't
+ * give it whatever zoom another window of the site was set to meanwhile).
+ */
+function withSiteZoom(windows: DeskWindows, windowId: string, url: string): DeskWindows {
+  if (windows.zoom?.[windowId] !== undefined) return windows;
+  let host: string;
+  try {
+    host = new URL(url).host;
+  } catch {
+    return windows;
+  }
+  const zoom = useSiteZoomStore.getState().zooms[host];
+  return zoom === undefined ? windows : setWindowZoom(windows, windowId, zoom);
+}
+
 export const useSetupStore = create<SetupState>()((set, get) => {
   /** Changes the current desk, if there is one. */
   const changeCurrent = (change: (desk: DeskSetup, product: ProductDefinition) => DeskSetup) => {
@@ -152,12 +170,18 @@ export const useSetupStore = create<SetupState>()((set, get) => {
 
     moveWindow: (windowId, screenId) => changeWindows((w) => moveWindow(w, windowId, screenId)),
     closeWindow: (windowId) => changeWindows((w) => closeWindow(w, windowId)),
-    openWindow: (screenId, site) => changeWindows((w) => openWindow(w, screenId, site)),
+    openWindow: (screenId, site) =>
+      changeWindows((w) => {
+        const next = openWindow(w, screenId, site);
+        const id = site.id ?? next.opened.at(-1)?.id;
+        return id ? withSiteZoom(next, id, site.url) : next;
+      }),
     updateDeskWindows: (deskId, change) =>
       set((setup) =>
         updateDesk(setup, deskId, (desk) => ({ ...desk, windows: change(desk.windows) })),
       ),
-    fillBlank: (blankId, site) => changeWindows((w) => fillBlank(w, blankId, site)),
+    fillBlank: (blankId, site) =>
+      changeWindows((w) => withSiteZoom(fillBlank(w, blankId, site), site.id ?? blankId, site.url)),
     zoomWindow: (windowId, zoom) => changeWindows((w) => setWindowZoom(w, windowId, zoom)),
     visitWindow: (deskId, windowId, url) =>
       set((setup) =>
