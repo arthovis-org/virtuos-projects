@@ -28,6 +28,7 @@ import {
   newDeskId,
   openWindow,
   roomWithSingle,
+  setWindowVisited,
   setWindowZoom,
   starterRoom,
   updateDesk,
@@ -66,6 +67,8 @@ interface SetupState extends Setup {
   resizeWindows: (screenId: string, windows: readonly string[], weights: readonly number[]) => void;
   /** A window's page zoom on the current desk (1 is 100%). */
   zoomWindow: (windowId: string, zoom: WindowZoom) => void;
+  /** The page a window's site is on now (desktop app), on the desk it is on. */
+  visitWindow: (deskId: string, windowId: string, url: string) => void;
   /** Changes a desk's windows (an agent's desk: its apps and sources). */
   updateDeskWindows: (deskId: string, change: (windows: DeskWindows) => DeskWindows) => void;
   /** A blank window on the current desk turned into a site (see `fillBlank`). */
@@ -156,6 +159,13 @@ export const useSetupStore = create<SetupState>()((set, get) => {
       ),
     fillBlank: (blankId, site) => changeWindows((w) => fillBlank(w, blankId, site)),
     zoomWindow: (windowId, zoom) => changeWindows((w) => setWindowZoom(w, windowId, zoom)),
+    visitWindow: (deskId, windowId, url) =>
+      set((setup) =>
+        updateDesk(setup, deskId, (desk) => {
+          const windows = setWindowVisited(desk.windows, windowId, url);
+          return windows === desk.windows ? desk : { ...desk, windows };
+        }),
+      ),
     resizeWindows: (screenId, windows, weights) =>
       changeWindows((w) => ({ ...w, sizes: { ...w.sizes, [screenId]: { windows, weights } } })),
     dropWindow: (windowId, fromScreen, place) =>

@@ -41,6 +41,28 @@ export interface DeskWindows {
   sizes: Readonly<Record<string, ScreenSizes>>;
   /** Each window's page zoom, by window id; 100% when missing (see `WindowZoom`). */
   zoom?: Readonly<Record<string, WindowZoom>>;
+  /**
+   * The page each window's site was last on, by window id, when it went on from the address it
+   * was opened at (a TinyGnomes task, say): shown again when the window comes back (another
+   * desk and back, a saved layout). Only the desktop app sees where a site goes.
+   */
+  visited?: Readonly<Record<string, string>>;
+}
+
+/** A window's site's page as it is now (`url`, http or https only). */
+export function setWindowVisited(windows: DeskWindows, windowId: string, url: string): DeskWindows {
+  if (!/^https?:\/\//i.test(url) || windows.visited?.[windowId] === url) return windows;
+  return { ...windows, visited: { ...windows.visited, [windowId]: url } };
+}
+
+/** The same site: the same host, with or without www. */
+export function sameSite(a: string, b: string): boolean {
+  try {
+    const host = (url: string) => new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    return host(a) === host(b);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -314,8 +336,12 @@ export function moveWindow(windows: DeskWindows, windowId: string, screenId: str
 }
 
 export function closeWindow(windows: DeskWindows, windowId: string): DeskWindows {
+  const visited = Object.fromEntries(
+    Object.entries(windows.visited ?? {}).filter(([id]) => id !== windowId),
+  );
   return {
     ...windows,
+    ...(windows.visited && { visited }),
     closed: windows.closed.includes(windowId) ? windows.closed : [...windows.closed, windowId],
     opened: windows.opened.filter((w) => w.id !== windowId),
     order: windows.order.filter((w) => w !== windowId),

@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import type { WorkspaceWindow } from '@/catalog/schema';
-import { framesAnySite } from '@/desktop';
+import { framesAnySite, registerWindowFrame, windowFrameName } from '@/desktop';
 import {
   currentDesk,
   FIT_WIDTH,
   isBlankWindow,
   MAX_ZOOM,
   MIN_ZOOM,
+  sameSite,
   type WindowZoom,
 } from '@/state/setup';
 import { useSetupStore } from '@/state/setupStore';
@@ -66,10 +67,24 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
   const embeddable = useEmbeddable(win.url);
   // A blocked site shown anyway, to see for oneself that it stays blank.
   const [tryAnyway, setTryAnyway] = useState(false);
-  // The window's own zoom (saved in layouts), else the zoom this browser remembers for the site.
+  // The window's own zoom (saved in layouts), else the zoom this browser remembered for the site
+  // when the window opened: setting one window's zoom changes only that window, also when
+  // others show the same site.
   const ownZoom = useSetupStore((s) => (currentDesk(s) ?? s.single).windows.zoom?.[win.id]);
-  const siteZoom = useSiteZoomStore((s) => s.zooms[host]);
+  const [siteZoom] = useState(() => useSiteZoomStore.getState().zooms[host]);
   const zoom = ownZoom ?? siteZoom ?? 1;
+  // Where the site opens: the page it was last on, if it is still on the same site (in the
+  // desktop app, which sees where sites go: a TinyGnomes task, not its start page, after
+  // another desk and back). Read once, as the window appears; the site goes on by itself.
+  const startUrl = useMemo(() => {
+    const state = useSetupStore.getState();
+    const visited = (currentDesk(state) ?? state.single).windows.visited?.[win.id];
+    return visited && sameSite(visited, shownUrl) ? visited : shownUrl;
+  }, [shownUrl, win.id]);
+  // The frame's name, for the desktop app to say where its site went, and which desk and
+  // window it is now.
+  const [frameName] = useState(windowFrameName);
+  useEffect(() => registerWindowFrame(frameName, deskId, win.id), [frameName, deskId, win.id]);
   const zoomWindow = useSetupStore((s) => s.zoomWindow);
   const rememberZoom = useSiteZoomStore((s) => s.remember);
   const [zoomBox, setZoomBox] = useState<HTMLDivElement | null>(null);
@@ -184,7 +199,8 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
           <div ref={setZoomBox} className={styles.viewport}>
             <iframe
               className={styles.frame}
-              src={shownUrl}
+              src={startUrl}
+              name={frameName}
               title={title}
               sandbox={SANDBOX}
               allow="fullscreen; clipboard-read; clipboard-write"

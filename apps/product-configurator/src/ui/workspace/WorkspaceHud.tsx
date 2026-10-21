@@ -6,6 +6,7 @@ import { useViewStore } from '@/state/viewStore';
 import { DeskArrows } from './DeskArrows';
 import { DeskSwitcher } from './DeskSwitcher';
 import { useSiteLayouts } from './siteLayouts';
+import { useWindowVisits } from './windowVisits';
 import { WindowMenu } from './WindowMenu';
 import styles from './WorkspaceHud.module.css';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
@@ -27,6 +28,8 @@ export function WorkspaceHud() {
   const { workspaceId, windows } = useCurrentWindows();
   // In the desktop app, with TinyGnomes on a screen: its adapted layout or the site as it is.
   const siteLayouts = useSiteLayouts(windows.map((w) => w.url));
+  // In the desktop app: the pages the sites in windows go to, to show them again later.
+  useWindowVisits();
   const focus = useViewStore((s) => s.focus);
   const drag = useViewStore((s) => s.drag);
   const seated = useViewStore((s) => s.seated);

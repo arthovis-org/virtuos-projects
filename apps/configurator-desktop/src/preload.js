@@ -1,7 +1,8 @@
 /**
  * Tells the configurator it runs in the desktop app, where every site can be shown on its
- * screens: no "blocked" marks or embed players needed. Also its version, its updates and the
- * switch for its adapted site layouts; nothing else of the computer is exposed.
+ * screens: no "blocked" marks or embed players needed. Also its version, its updates, the
+ * switch for its adapted site layouts and where the sites in its windows go; nothing else of
+ * the computer is exposed.
  */
 const { contextBridge, ipcRenderer } = require('electron');
 
@@ -33,6 +34,15 @@ contextBridge.exposeInMainWorld('virtuosDesktop', {
       const listener = (_event, status) => callback(status);
       ipcRenderer.on('virtuos:update-status', listener);
       return () => ipcRenderer.removeListener('virtuos:update-status', listener);
+    },
+  },
+  /** Where the sites in the configurator's windows go (windowVisits.js). */
+  windows: {
+    /** Calls back with a window frame's name and its page; returns a function to stop. */
+    onVisit: (callback) => {
+      const listener = (_event, name, url) => callback(name, url);
+      ipcRenderer.on('virtuos:window-visit', listener);
+      return () => ipcRenderer.removeListener('virtuos:window-visit', listener);
     },
   },
   /** The layouts adapting some desktop-only sites to narrow screens (siteStyles.js). */

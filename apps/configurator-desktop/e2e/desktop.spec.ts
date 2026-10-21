@@ -188,6 +188,46 @@ test("shows the launch's update check in the corner", async () => {
   await expect(page.getByText("Up to date")).toBeHidden({ timeout: 5000 });
 });
 
+test("tells the page where the sites in its windows go", async () => {
+  const page = await app.firstWindow();
+  // A window's frame (named as the configurator names them), and a site's own frame.
+  await page.evaluate((src) => {
+    type Bridge = {
+      virtuosDesktop: {
+        windows: { onVisit: (cb: (name: string, url: string) => void) => void };
+      };
+    };
+    const visits: string[] = [];
+    (window as unknown as { __visits: string[] }).__visits = visits;
+    (window as unknown as Bridge).virtuosDesktop.windows.onVisit((name, url) =>
+      visits.push(`${name} ${url}`),
+    );
+    for (const name of ['virtuos-window:["single","tasks"]', "someone-elses"]) {
+      const frame = document.createElement("iframe");
+      frame.name = name;
+      frame.src = src;
+      document.body.append(frame);
+    }
+  }, `${base}/dashboard`);
+  const visits = () =>
+    page.evaluate(() => (window as unknown as { __visits: string[] }).__visits);
+  await expect
+    .poll(visits)
+    .toContain(`virtuos-window:["single","tasks"] ${base}/dashboard`);
+  // A move within the page, as TinyGnomes' tasks are (#addresses).
+  await page
+    .frame({ name: 'virtuos-window:["single","tasks"]' })!
+    .evaluate(() => {
+      location.hash = "#task-42";
+    });
+  await expect
+    .poll(visits)
+    .toContain(`virtuos-window:["single","tasks"] ${base}/dashboard#task-42`);
+  expect((await visits()).some((v) => v.startsWith("someone-elses"))).toBe(
+    false,
+  );
+});
+
 test("switches the site styles off and on again from the page", async () => {
   const page = await app.firstWindow();
   type Bridge = {

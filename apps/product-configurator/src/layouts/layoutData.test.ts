@@ -94,3 +94,34 @@ describe('saved layouts', () => {
     expect(setup.room).toHaveLength(4);
   });
 });
+
+describe('the pages windows were left on', () => {
+  it('are kept in a layout, and only web addresses come back', () => {
+    const setup = setupFromLayout(product, saved);
+    const windowId = setup.single.windows.order[0]!;
+    const withPages = {
+      ...setup,
+      single: {
+        ...setup.single,
+        windows: {
+          ...setup.single.windows,
+          visited: { [windowId]: 'https://www.tinygnomes.com/quilt.fcgi#qwiki-33167' },
+        },
+      },
+    };
+    const layout = layoutFromSetup(product, withPages);
+    const tampered = {
+      ...layout,
+      single: {
+        ...layout.single,
+        windows: {
+          ...layout.single.windows!,
+          visited: { ...layout.single.windows!.visited, other: 'javascript:alert(1)' },
+        },
+      },
+    } as LayoutData;
+    expect(setupFromLayout(product, tampered).single.windows.visited).toEqual({
+      [windowId]: 'https://www.tinygnomes.com/quilt.fcgi#qwiki-33167',
+    });
+  });
+});

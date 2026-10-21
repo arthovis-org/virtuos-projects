@@ -91,6 +91,16 @@ export function layoutFromSetup(product: ProductDefinition, setup: Setup): Layou
  * longer has are left out, unknown options fall back to defaults, and windows arranged for
  * another workspace give way to the desk's workspace's own.
  */
+/** The pages windows were left on, as loaded: http and https addresses only. */
+function savedVisited(visited: Readonly<Record<string, unknown>>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(visited).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[1] === 'string' && /^https?:\/\//i.test(entry[1]),
+    ),
+  );
+}
+
 export function setupFromLayout(product: ProductDefinition, layout: LayoutData): Setup {
   const motion = product.motions[0];
   const restore = (entry: LayoutDesk, id?: string): DeskSetup => {
@@ -114,6 +124,7 @@ export function setupFromLayout(product: ProductDefinition, layout: LayoutData):
               opened: windows.opened,
               sizes: windows.sizes,
               ...(windows.zoom && { zoom: savedZoom(windows.zoom) }),
+              ...(windows.visited && { visited: savedVisited(windows.visited) }),
             }
           : initialWindows(workspace),
     };

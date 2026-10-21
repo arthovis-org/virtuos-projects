@@ -13,6 +13,13 @@ interface DesktopBridge {
   updates?: DesktopUpdates;
   /** The layouts adapting some desktop-only sites to narrow screens (from 0.1.9 on). */
   siteStyles?: DesktopSiteStyles;
+  /** Where the sites in windows go (from 0.1.16 on). */
+  windows?: DesktopWindows;
+}
+
+interface DesktopWindows {
+  /** Calls back with a window frame's name and its page whenever its site goes to another. */
+  onVisit: (callback: (name: string, url: string) => void) => () => void;
 }
 
 interface DesktopSiteStyles {
@@ -62,6 +69,34 @@ export function versionLabel(): string {
 
 /** The desktop app's updates, when in it (a recent enough version). */
 export const desktopUpdates: DesktopUpdates | undefined = bridge?.updates;
+
+/**
+ * Windows' frames, by the name each is given (`windowFrameName`): the desktop app reports where
+ * a frame's site goes by that name. A frame keeps the name it was made with (its desk can change
+ * under it: the single desk becoming the room's first), so the name is a token of its own, and
+ * this says which desk and window it is now.
+ */
+const FRAME_PREFIX = 'virtuos-window:';
+const windowFrames = new Map<string, { deskId: string; windowId: string }>();
+let frameCount = 0;
+
+/** A name for a new window frame. */
+export const windowFrameName = () => `${FRAME_PREFIX}${Date.now().toString(36)}-${++frameCount}`;
+
+/** Says which desk and window the frame `name` is now; returns a function to forget it. */
+export function registerWindowFrame(name: string, deskId: string, windowId: string) {
+  const entry = { deskId, windowId };
+  windowFrames.set(name, entry);
+  return () => {
+    if (windowFrames.get(name) === entry) windowFrames.delete(name);
+  };
+}
+
+/** The desk and window a frame is now, by its name, if it is one of the windows'. */
+export const windowOfFrame = (name: string) => windowFrames.get(name) ?? null;
+
+/** Where the sites in windows go, when in the desktop app (a recent enough version). */
+export const desktopWindows: DesktopWindows | undefined = bridge?.windows;
 
 /** The desktop app's adapted site layouts and their switch, when in it (a recent enough version). */
 export const desktopSiteStyles: DesktopSiteStyles | undefined = bridge?.siteStyles;

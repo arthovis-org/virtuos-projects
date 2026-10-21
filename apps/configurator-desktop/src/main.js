@@ -13,6 +13,7 @@ const { allowFraming } = require('./frames');
 const { watchSiteStyles } = require('./siteStyles');
 const { watchForUpdates } = require('./updates');
 const { watchVideosEmbedded } = require('./youtube');
+const { watchWindowVisits } = require('./windowVisits');
 
 /** The bundled configurator is served from here, like a website. */
 const SCHEME = 'app';
@@ -95,6 +96,7 @@ function createWindow() {
 
   watchVideosEmbedded(window.webContents);
   watchSiteStyles(window.webContents);
+  watchWindowVisits(window.webContents);
   void window.loadURL(DEV_URL ?? APP_URL);
 }
 

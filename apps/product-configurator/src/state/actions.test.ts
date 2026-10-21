@@ -267,3 +267,24 @@ describe('home', () => {
     expect(setup().single.workspaceId).toBe('finance');
   });
 });
+
+describe('the pages sites in windows go to', () => {
+  it('are remembered per window, and forgotten when it closes', () => {
+    enterWorkspace('crypto');
+    const desk = setup().single;
+    const windowId = desk.windows.order[0]!;
+    setup().visitWindow(desk.id, windowId, 'https://example.com/page#2');
+    setup().visitWindow(desk.id, windowId, 'javascript:alert(1)');
+    expect(setup().single.windows.visited).toEqual({ [windowId]: 'https://example.com/page#2' });
+    setup().closeWindow(windowId);
+    expect(setup().single.windows.visited).toEqual({});
+  });
+
+  it('are forgotten when the windows are reset', () => {
+    enterWorkspace('crypto');
+    const desk = setup().single;
+    setup().visitWindow(desk.id, desk.windows.order[0]!, 'https://example.com/a');
+    setup().resetWindows();
+    expect(setup().single.windows.visited).toBeUndefined();
+  });
+});
