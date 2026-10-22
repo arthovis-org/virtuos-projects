@@ -77,6 +77,23 @@ const COVERED = 0.002;
 
 type Quad = [number, number][];
 
+/**
+ * The sites whose screens show their picture while the view moves: the busy ones, whose
+ * redrawing made moving stutter (TinyGnomes, for now). Other screens stay live.
+ */
+const STILL_WHILE_MOVING = /(^|\.)tinygnomes\.com$/i;
+
+/** Whether a screen showing these sites shows its picture while the view moves. */
+export function stillWhileMoving(urls: readonly string[]): boolean {
+  return urls.some((url) => {
+    try {
+      return STILL_WHILE_MOVING.test(new URL(url).hostname);
+    } catch {
+      return false;
+    }
+  });
+}
+
 /** Takes the pictures while the desk is on view (seated or looking around it). */
 export function useScreenSnapshots() {
   const capture = desktopWindows?.capture;
