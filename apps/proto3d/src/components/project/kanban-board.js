@@ -88,9 +88,12 @@ export function drawCard(g, w, h, card, { blocked = false, overdue = false, sele
   // the card body is the extruded slab itself: paint edge to edge, the geometry rounds the corners
   g.clearRect(0, 0, w, h);
   g.fillStyle = hex(palette.pmCard); g.fillRect(0, 0, w, h);
-  // priority as a 3-px stripe down the left edge; a connected person's colour as a hairline along the top
-  g.fillStyle = PRIORITY_COLOURS[card.priority] || PRIORITY_COLOURS.medium; g.fillRect(0, 0, 7, h);
-  if (tag) { g.fillStyle = tag; g.fillRect(7, 0, w - 7, 5); }
+  // priority: a short rounded pill inset from the left edge (never touching the card's edges or corners);
+  // low priority stays a quiet grey so the colours that remain mean something. The assignee's colour
+  // lives on the avatar, so the card carries no second colour bar.
+  const pri = card.priority || 'medium';
+  g.fillStyle = pri === 'low' ? hex(palette.pmRail) : PRIORITY_COLOURS[pri] || PRIORITY_COLOURS.medium;
+  roundRect(g, 9, 16, 5, h - 32, 2.5); g.fill();
   if (selected || hovered) { g.strokeStyle = hex(selected ? states.selected : states.hover); g.lineWidth = selected ? 4 : 2.5; roundRect(g, 2, 2, w - 4, h - 4, 12); g.stroke(); }
   const text = palette.pmCardText, dim = palette.pmCardDim;
   const P = 22;

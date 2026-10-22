@@ -86,14 +86,14 @@ export class PreferencesDialog extends Dialog {
         <div class="pref-row"><label for="pref-scale">UI scale</label><span class="pref-ctl grow"><input id="pref-scale" type="range" min="${SCALE_RANGE[0]}" max="${SCALE_RANGE[1]}" step="0.05" value="${s}"><output class="pref-val" for="pref-scale">${fmtScale(s)}</output></span></div>
         <div class="pref-presets" role="group" aria-label="UI scale presets">${UI_SCALES.map((v) => `<button type="button" data-scale="${v}" aria-pressed="${v === s}">${fmtScale(v)}</button>`).join('')}</div>
         <p class="pref-note">Scales the menus, toolbars, panel and dialogs; the 3D view keeps its own resolution.</p>
-        <div class="pref-row"><label for="pref-theme">Theme</label><span class="pref-ctl"><select id="pref-theme"><option value="dark">Dark</option><option value="light">Light</option></select></span></div>
+        <div class="pref-row"><span class="pref-label" id="pref-theme-l">Theme</span><span class="pref-ctl"><span class="pref-switch" role="radiogroup" aria-labelledby="pref-theme-l"><button type="button" role="radio" data-theme-pick="dark">Dark</button><button type="button" role="radio" data-theme-pick="light">Light</button></span></span></div>
       </section>
       <section class="pref-sec"><h3>Layout</h3>${regions}</section>`,
       `<button type="button" data-act="reset-layout">Reset layout</button><button type="button" data-act="reset-all">Reset all</button><span class="grow"></span><span>Saved in this browser</span>`);
     const el = this.el;
     const own = (fn) => { this._own = true; try { fn(); } finally { this._own = false; } this._sync(); };
     el.querySelector('#pref-scale').addEventListener('input', (e) => own(() => P.setScale(+e.target.value)));
-    el.querySelector('#pref-theme').addEventListener('change', (e) => this.setTheme(e.target.value));
+    el.querySelectorAll('[data-theme-pick]').forEach((b) => b.addEventListener('click', () => { this.setTheme(b.dataset.themePick); this._sync(); }));
     el.querySelectorAll('[data-scale]').forEach((b) => b.addEventListener('click', () => own(() => P.setScale(+b.dataset.scale))));
     el.querySelectorAll('[data-region]').forEach((i) => i.addEventListener('change', () => own(() => P.setSize(i.dataset.region, i.value === '' ? 0 : +i.value))));
     el.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => own(() => P.resetSize(b.dataset.reset))));
@@ -108,7 +108,7 @@ export class PreferencesDialog extends Dialog {
     if (document.activeElement !== r) r.value = String(s);
     el.querySelector('.pref-val').textContent = fmtScale(s);
     el.querySelectorAll('[data-scale]').forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.scale - s) < 1e-6)));
-    el.querySelector('#pref-theme').value = this.getTheme();
+    el.querySelectorAll('[data-theme-pick]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.themePick === this.getTheme())));
     el.querySelectorAll('[data-region]').forEach((i) => { if (document.activeElement !== i) { const v = P.size(i.dataset.region); i.value = i.dataset.region === 'help' && !v ? '' : String(Math.round(v)); } });
   }
 }

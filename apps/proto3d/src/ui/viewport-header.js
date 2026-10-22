@@ -17,7 +17,7 @@ export class ViewportHeader {
   /**
    * @param {object} o { el, viewport, snap, cables, gizmo, isPlanOn(), toggleSnap(), setSnapOption(k, v), setGizmo(on),
    *   setGizmoMode(m), setCableOption(k, v), isWiringOn(), toggleWiring(), portsOnSelection() → { n, v: true | false | null },
-   *   setPortsOnSelection(v), isFlowEnabled(), setFlowEnabled(on), GRID_SIZES, ROTATION_STEPS, SCALE_STEPS, CABLE_STYLES, THICKNESSES, fmtDeg, fmtScale }
+   *   setPortsOnSelection(v), isFlowEnabled(), setFlowEnabled(on), getFlowSpeed(), setFlowSpeed(v), GRID_SIZES, ROTATION_STEPS, SCALE_STEPS, CABLE_STYLES, THICKNESSES, fmtDeg, fmtScale }
    */
   constructor(o) {
     Object.assign(this, o);
@@ -135,6 +135,7 @@ export class ViewportHeader {
     this._seg(p, 'ports on selection', [['follow', 'Follow switch', 'the selected blocks show ports when Wiring is on'], ['show', 'Always show', 'the selected blocks keep their ports'], ['hide', 'Always hide', 'the selected blocks never show ports']],
       () => { const { v } = this.portsOnSelection(); return v === true ? 'show' : v === false ? 'hide' : 'follow'; }, (k) => this.setPortsOnSelection(PORTS[k]), { stack: true, enabled: () => this.portsOnSelection().n > 0 });
     this._check(p, 'Flow animation', () => this.isFlowEnabled(), (v) => this.setFlowEnabled(v), 'animated flow along the cables');
+    if (this.getFlowSpeed) this._num(p, 'flow speed', () => this.getFlowSpeed(), (v) => this.setFlowSpeed(Math.min(5, Math.max(0, v))), { step: 0.1, min: 0, max: 5, enabled: () => this.isFlowEnabled() });
     this._sep(p);
     this._title(p, 'Cables');
     this._cableRows(p);

@@ -924,6 +924,12 @@ input[type="color"] { background: var(--field-solid); }
 .modal .pref-presets button { padding: 4px 9px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
 .pref-presets button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
 .pref-note { margin: 6px 0 8px 182px; color: var(--dim); font-size: 11.5px; }
+/* two-way switch (theme): one track, the chosen half raised */
+.pref-switch { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: var(--field); border: 1px solid var(--border); }
+.modal .pref-switch button { min-width: 74px; padding: 5px 14px; border-radius: 999px; background: none; color: var(--dim); font-weight: 600; }
+.modal .pref-switch button:hover { color: var(--text); }
+.modal .pref-switch button[aria-checked="true"] { background: var(--accent); color: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+.modal .pref-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (max-width: 560px) { .pref-row { grid-template-columns: 1fr; gap: 4px; } .pref-presets, .pref-note { margin-left: 0; } }
 .about-rows { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; }
 .about-rows dt { color: var(--dim); }
