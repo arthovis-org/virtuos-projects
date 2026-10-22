@@ -43,9 +43,11 @@ import type { Activity } from '@/agents/types';
 const CLIPS = {
   working: 'typing',
   seated: 'sittingIdle',
-  /** Optional: a seated thinking clip, when the character has one. */
-  thinking: 'thinking',
+  /** Optional: writing notes by hand, seated. */
+  writing: 'sittingWriting',
   standing: 'standingIdle',
+  /** Optional: thinking, standing (Mixamo's Thinking is a standing clip). */
+  thinking: 'thinking',
   rising: 'sitToStand',
   sittingDown: 'standToSit',
 } as const;
@@ -54,6 +56,13 @@ const isMesh = (node: Object3D): node is Mesh => 'isMesh' in node;
 
 /** Seconds two clips blend over. */
 const FADE = 0.35;
+/**
+ * At a desk with no agent, the person now and then stops typing to write a note (or, at a
+ * raised desk, to think): seconds between such breaks, and how long one lasts (each a range).
+ */
+const BREAK_EVERY = [20, 40] as const;
+const BREAK_FOR = [8, 13] as const;
+const between = ([low, high]: readonly [number, number]) => low + Math.random() * (high - low);
 /**
  * How far the person and chair roll back from the desk before standing up (and in again after
  * sitting down), in metres: getting up right at the desk put the head and arms through it.
@@ -230,8 +239,9 @@ function Seat({
     return {
       working: pick(CLIPS.working) ?? pick(CLIPS.seated),
       seated: pick(CLIPS.seated) ?? pick(CLIPS.working),
-      thinking: pick(CLIPS.thinking) ?? pick(CLIPS.seated) ?? pick(CLIPS.working),
+      writing: pick(CLIPS.writing) ?? pick(CLIPS.seated) ?? pick(CLIPS.working),
       standing: pick(CLIPS.standing),
+      thinking: pick(CLIPS.thinking) ?? pick(CLIPS.standing),
       rising: pick(CLIPS.rising),
       sittingDown: pick(CLIPS.sittingDown),
     };
@@ -270,12 +280,25 @@ function Seat({
     if (mission?.status === 'planning') return 'thinking';
     return activityOf(taskOf(mission, agent.id));
   };
-  /** The clip for sitting, by activity: typing while writing, else sitting back. */
+  /** A break from typing at a desk with no agent: whether one is on, and when that changes. */
+  const pause = useRef({ on: false, until: between(BREAK_EVERY) });
+  /**
+   * The clip for sitting, by activity: typing while the agent writes (and with no agent, but
+   * for a break now and then to write a note), notes by hand while it reads, else sitting
+   * back (thinking, waiting, done).
+   */
   const seatedAction = () => {
     const activity = agentActivity();
-    if (activity === null || activity === 'typing') return actions.working;
-    if (activity === 'thinking') return actions.thinking;
+    if (activity === null) return pause.current.on ? actions.writing : actions.working;
+    if (activity === 'typing') return actions.working;
+    if (activity === 'reading') return actions.writing;
     return actions.seated;
+  };
+  /** The clip for standing: thinking while the agent thinks (or on a break), else idle. */
+  const standingAction = () => {
+    const activity = agentActivity();
+    if (activity === 'thinking' || (activity === null && pause.current.on)) return actions.thinking;
+    return actions.standing;
   };
 
   const play = (action: AnimationAction | undefined, once: boolean) => {
@@ -291,12 +314,12 @@ function Seat({
   };
 
   useEffect(() => {
-    play(pose.current === 'standing' ? actions.standing : seatedAction(), false);
+    play(pose.current === 'standing' ? standingAction() : seatedAction(), false);
     // A transition done: settle into what it led to.
     const onFinished = () => {
       if (pose.current === 'rising') {
         pose.current = 'standing';
-        play(actions.standing, false);
+        play(standingAction(), false);
       } else if (pose.current === 'sittingDown') {
         pose.current = 'seated';
         play(seatedAction(), false);
@@ -327,8 +350,14 @@ function Seat({
   const planePoint = useMemo(() => new Vector3(), []);
   const planeNormal = useMemo(() => new Vector3(), []);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     const dt = Math.min(delta, 0.1);
+    // A break from typing begins or ends.
+    const now = clock.elapsedTime;
+    if (now >= pause.current.until) {
+      const on = !pause.current.on;
+      pause.current = { on, until: now + between(on ? BREAK_FOR : BREAK_EVERY) };
+    }
     const stand = heightNow() >= standFrom;
     if (pose.current === 'seated' && stand && actions.rising) {
       pose.current = 'rising';
@@ -337,10 +366,10 @@ function Seat({
       pose.current = 'sittingDown';
       play(actions.sittingDown, true);
     }
-    // Seated: the clip follows what the agent is doing.
+    // Seated or standing: the clip follows what the agent is doing.
     const activity = agentActivity();
-    if (pose.current === 'seated') {
-      const wanted = seatedAction();
+    if (pose.current === 'seated' || pose.current === 'standing') {
+      const wanted = pose.current === 'seated' ? seatedAction() : standingAction();
       if (wanted && wanted !== playing.current) play(wanted, false);
     }
     mixer.update(dt);
@@ -424,7 +453,7 @@ function Seat({
       // On the desk while typing: seated (an agent writing, or anyone at a desk with no agent),
       // or standing at a raised desk while an agent writes.
       const typing =
-        (pose.current === 'seated' && (activity === null || activity === 'typing')) ||
+        (pose.current === 'seated' && playing.current === actions.working) ||
         (pose.current === 'standing' && activity === 'typing');
       handsOn.current = MathUtils.damp(handsOn.current, typing ? 1 : 0, 6, dt);
       arms.forEach((arm, i) => {

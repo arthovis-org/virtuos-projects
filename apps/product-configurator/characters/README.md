@@ -14,10 +14,15 @@ characters/<Name>/
 Clips are named after their files: "Sit To Stand.fbx" becomes `sitToStand`. A desk's occupant
 (product.json `occupant`) uses `typing` (else `sittingIdle`) while seated, `standingIdle` while
 standing, and `sitToStand` / `standToSit` between them (src/viewer/people/Occupant.tsx).
+Optional: `sittingWriting` (notes by hand: while an agent reads, and now and then at a desk with
+no agent) and `thinking` (a standing clip: while an agent thinks at a raised desk, and now and
+then at one with no agent). `walking`, `startWalking` and `stopWalking` are in Megan's file but
+not used yet.
 
 Every clip must measure from the same spot, the seat. Mixamo's standing clips start where its
 Sit To Stand ends, a step in front of the chair, so `shift` moves them back onto it:
-`{ "shift": { "standingIdle": [0, 0, 0.465], "standToSit": [0, 0, 0.465] } }`.
+`{ "shift": { "standingIdle": [0, 0, 0.465], "standToSit": [0, 0, 0.465] } }`. A seated clip
+recorded on another seat is moved onto ours the same way (Megan's `sittingWriting`).
 
 Props such as chairs live in `props/<name>/` the same way: `source/` holds the download (.glb,
 .gltf or .fbx), `prop.json` its `height` in metres and `rotation` in degrees, and the build
