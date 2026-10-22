@@ -3,7 +3,7 @@
   "summary": "A 3D project-management workspace where components run: boards, timelines, AI generation and client hubs on a 3D canvas.",
   "order": 2,
   "site": {
-    "exclude": ["node_modules", "test-results", "playwright-report", ".playwright", "project.json"]
+    "exclude": ["node_modules", "test", "test-results", "playwright-report", ".playwright", "project.json"]
   },
   "links": [
     {

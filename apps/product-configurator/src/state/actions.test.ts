@@ -14,6 +14,7 @@ import {
 import { currentDesk, initialSetup } from './setup';
 import { currentSetup, useSetupStore } from './setupStore';
 import { encodeSetupSearch } from './setupUrl';
+import { useSiteZoomStore } from './siteZoomStore';
 import { useViewStore } from './viewStore';
 
 const product = getProduct('smart-desk');
@@ -286,5 +287,24 @@ describe('the pages sites in windows go to', () => {
     setup().visitWindow(desk.id, desk.windows.order[0]!, 'https://example.com/a');
     setup().resetWindows();
     expect(setup().single.windows.visited).toBeUndefined();
+  });
+});
+
+describe('window zoom', () => {
+  it('a window opened on a site starts at its last zoom, then keeps its own', () => {
+    enterWorkspace('crypto');
+    const screen = product.screens[0]!.id;
+    useSiteZoomStore.getState().remember('example.com', 0.61);
+    setup().openWindow(screen, { title: 'Example', url: 'https://example.com/a' });
+    const first = setup().single.windows.opened.at(-1)!.id;
+    expect(setup().single.windows.zoom?.[first]).toBe(0.61);
+    // Another window of the site set to another zoom: the first keeps its own.
+    setup().openWindow(screen, { title: 'Example', url: 'https://example.com/b' });
+    const second = setup().single.windows.opened.at(-1)!.id;
+    setup().zoomWindow(second, 1.5);
+    useSiteZoomStore.getState().remember('example.com', 1.5);
+    expect(setup().single.windows.zoom?.[first]).toBe(0.61);
+    expect(setup().single.windows.zoom?.[second]).toBe(1.5);
+    useSiteZoomStore.getState().remember('example.com', 1);
   });
 });

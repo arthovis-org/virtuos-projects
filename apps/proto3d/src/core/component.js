@@ -12,6 +12,7 @@
 //   onEvent?(ctx, inputKey, pulse),
 //   face?: { render(g, w, h, ctx), onPointer?(ctx, ev), live?: boolean, fps?: number },
 //   onCreate?(instance), onDestroy?(instance),
+//   ambient?: [outputKey],         // simulated background signals (device sensors): they update, but do not keep the frame loop at full speed by themselves
 // }
 // ctx = { inputs, params, state, time, dt, emit(key, payload), touch(key), instance, upstream(key), engine }
 import { TYPES, SUBTYPES } from './types.js';

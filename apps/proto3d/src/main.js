@@ -27,7 +27,7 @@ import { Overlays } from './ui/overlays.js';
 import { Tour, tourSeen } from './ui/tour.js';
 import { createInstance } from './instance.js';
 import { updateLOD } from './lod.js';
-import { serializeWorld, serializeSelection, importCommand, loadWorld, downloadJSON, pickJSONFile, safeFileName } from './serialize.js';
+import { serializeWorld, serializeSelection, importCommand, loadWorld, upgradeDoc, downloadJSON, pickJSONFile, safeFileName } from './serialize.js';
 import { Tabs } from './tabs.js';
 import { projectStore } from './project-store.js';
 import { TabStrip, timeAgo } from './ui/tab-strip.js';
@@ -270,11 +270,12 @@ async function saveProjectAs() {
 }
 /** Open a document (Open…, a file): a new tab, or the active tab when it is an untouched empty project. */
 function openDoc(doc, name) {
+  upgradeDoc(doc);   // throws before a tab opens when the file is not a Proto3D document or comes from a newer format (the callers toast it)
   const tab = tabs.openDoc(doc, { name: name || (doc?.name && doc.name !== 'untitled' ? doc.name : null) });
   if (!tab) return null;
   const r = lastLoad;
   if (!doc.camera) frameAll({ instant: true });
-  if (r?.skipped?.length) overlays.toast(`Opened · ${r.skipped.length} unknown component${r.skipped.length > 1 ? 's' : ''} skipped`, 2400);
+  if (r?.skipped?.length) overlays.toast(`Opened · ${r.skipped.length} component${r.skipped.length > 1 ? 's' : ''} of an unknown type hidden (kept in the file)`, 2800);
   else overlays.toast(`Opened ${tabs.displayName(tab)} · ${world.nodes.length} components`, 1600);
   return tab;
 }
@@ -982,14 +983,41 @@ function updateConnectionLabel() {
   connLabel.classList.toggle('selected', c !== hoveredConnection);
   connLabel.innerHTML = `<b style="color:${hex(c.color.getHex())}">${typeText}</b> ${meaning}`;
 }
+/*
+ * Idle mode: a still scene does not need 60 frames a second. While anything happens — input, an
+ * output value changing in the graph, the camera moving (flights and damping included), a layout
+ * tween, a queued or running AI job, the tour, a pending pulse, a structural change — every frame
+ * runs. After IDLE_AFTER seconds of none of that, the loop runs one frame every IDLE_INTERVAL ms
+ * (the engine gets the real elapsed time, so timers keep their pace) until the next event wakes it.
+ */
+const IDLE_AFTER = 3000, IDLE_INTERVAL = 250;   // ms
+let lastActive = performance.now(), lastFrameAt = 0, seenChanges = -1, skippedFrames = 0;   // skippedFrames: animation frames the idle gate passed over (tests read it)
+const lastCam = new THREE.Vector3(), lastTarget = new THREE.Vector3();
+const wake = () => { lastActive = performance.now(); };
+for (const type of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'keyup', 'click', 'input', 'change', 'dragover', 'drop', 'touchstart', 'resize', 'focus']) window.addEventListener(type, wake, { capture: true, passive: true });
+world.onChange(wake);
+function noteActivity(now) {
+  if (engine.pending.length || jobs.active.length || tweening() || tour.active || thumbResolve) lastActive = now;
+  if (engine.changes !== seenChanges) { seenChanges = engine.changes; lastActive = now; }
+  const cam = ws.camera.position, target = ws.controls.target;
+  if (cam.distanceToSquared(lastCam) > 1e-8 || target.distanceToSquared(lastTarget) > 1e-8) { lastCam.copy(cam); lastTarget.copy(target); lastActive = now; }
+}
+/** Whether the loop is in idle mode right now (stats overlay, tests). */
+const isIdle = () => performance.now() - lastActive > IDLE_AFTER;
 function frame() {
   if (home.isOpen && !thumbResolve) { requestAnimationFrame(frame); return; }   // Home covers the viewport: no render, no per-frame work (a pending thumbnail still gets its frame)
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const now = performance.now();
+  noteActivity(now);
+  const idle = now - lastActive > IDLE_AFTER;
+  if (idle && now - lastFrameAt < IDLE_INTERVAL) { skippedFrames++; requestAnimationFrame(frame); return; }
+  lastFrameAt = now;
+  const elapsed = clock.getDelta();
+  const dt = Math.min(elapsed, 0.05);
   const t = clock.elapsedTime;
   ws.updateFlight(dt);
   ws.controls.update();
   ws.updateFog();
-  engine.tick(dt);
+  engine.tick(idle ? Math.min(elapsed, 2 * IDLE_INTERVAL / 1000) : dt);
   updateTweens(dt);          // Auto-layout glides blocks to their places
   world.detectMoves();
   world.nodes.forEach((b) => b.update(t, dt));
@@ -1024,6 +1052,7 @@ window.__proto = {
   plan: { isOn: isPlanOn, set: setPlanView, toggle: () => setPlanView(!isPlanOn()), snap, toggleSnap, setSnapOption, GRID_SIZES, SNAP_KINDS, ROTATION_STEPS, SCALE_STEPS, fmtDeg, fmtScale },
   cables, setCableOption, bundles,
   layout: { arrange: autoLayoutSelection, plan: (nodes) => layoutPlan(world, nodes), tweening },
+  loop: { isIdle, wake, get skipped() { return skippedFrames; } },
   newProject, closeTab, renameProject, saveProject, saveProjectAs, openProject, openRecent, openDoc, importDoc, copySelection, cutSelection, pasteClipboard, exportSelection, exportScreenshot, toggleBypass, dropFileOn, blockAt,
   wiring: { isOn: isWiringOn, set: setWiring, toggle: toggleWiring },
   ai: { vault, jobs, spend, store, providers: providerRegistry, providerStatus, connections, modelBrowser, jobsTray },

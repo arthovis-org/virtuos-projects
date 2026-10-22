@@ -236,7 +236,7 @@ export class Panel {
     registry.categories().forEach((c) => this._readonly(reg, c.label, () => c.components.map((d) => d.label).join(', ')));
   }
 
-  /** Navigation presets (Blender default, Unreal, Maya, Simple) and their per-preset settings. */
+  /** Navigation presets (Simple default, Blender, Unreal, Maya, Trackpad) and their per-preset settings. */
   _buildControls() {
     const c = this._section('Controls');
     const sel = this._select(c, 'preset', PRESET_IDS, () => nav.presetId, (v) => { nav.setPreset(v); this.build(); }, 'navPreset');

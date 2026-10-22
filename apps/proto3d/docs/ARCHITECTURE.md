@@ -99,7 +99,7 @@ port labels), `onRegister(cb)`. The registry is the **single source of truth** f
 - the properties panel (`params` → controls; `inputs`/`outputs` → the Ports list),
 - node construction (`Node3D` / `Device3D` build their ports and face from the definition),
 - the engine (`def.evaluate`, `def.onEvent`, `def.face`),
-- serialization (`type` id + `params` + `state`; unknown ids are skipped and reported on load).
+- serialization (`type` id + `params` + `state`; unknown ids are not built but kept and saved back).
 
 ## 4. Port types (`core/types.js`)
 
@@ -179,6 +179,13 @@ if an upstream output had fired, once):
 
 Values are cached on `connection.value` for the hover label and the panel; every port keeps
 `value, changedAt, lastPulseAt, rate, changes`.
+
+**Idle mode (`main.js` `frame`).** `engine.changes` counts output changes, except the outputs a
+definition lists in `ambient` (the devices' simulated sensors). The frame loop runs every frame
+while anything happens — input on the window, `engine.changes` growing, pending pulses, the camera
+moving (flights and damping), layout tweens, active AI jobs, the tour, a pending thumbnail, any
+`world.changed` — and after 3 s of none of that runs one frame every 250 ms, giving the engine the
+real elapsed time so timers keep their pace. `window.__proto.loop` exposes `isIdle()` and `wake()`.
 
 ## 6. World model (`core/world.js`)
 
@@ -1222,9 +1229,14 @@ saved: a document written while it is on carries the remembered 3D camera (`pose
 `serializeWorld`), and loading a document while it is on keeps the plan (`main.js →
 afterLoadInPlan`).
 
-`loadWorld` clears the world, instantiates known types (unknown ids are reported in `skipped`),
+`loadWorld` upgrades the document (`upgradeDoc`: `MIGRATIONS` step by step from `doc.version`
+to `FORMAT_VERSION` on a copy; newer formats throw), clears the world, instantiates known types,
 reconnects by uid + port key, rebuilds groups (collapsing after their members exist) and restores
-the camera. Autosave and the recent list moved to `tabs.js` / `project-store.js` (§10b).
+the camera. Unknown type ids are reported in `skipped`; their node records and every connection
+touching them go to `world.carried`, which `serializeWorld` appends to `nodes` / `connections`
+unchanged, `World.detach` / `attach` carry with the scene and `World.clear` empties. A tab whose
+document throws on load turns read-only (`tab.preview`, `tab.loadError`) so autosave never
+overwrites its record. Autosave and the recent list moved to `tabs.js` / `project-store.js` (§10b).
 
 Also in `serialize.js`: `serializeSelection`, `importCommand`, `safeFileName` and
 `pickJSONFile({ withName })` (§9b).

@@ -106,7 +106,9 @@ export const PRESETS = {
   },
 };
 export const PRESET_IDS = Object.keys(PRESETS);
-export const DEFAULT_PRESET = 'blender';
+// Simple for everyone on first run: left-drag orbits, right-drag pans, the wheel zooms — no middle button or numpad needed.
+// The 3D-tool presets (Blender, Unreal, Maya) are one pick away under View → Navigation; a trackpad still gets the suggestion pill.
+export const DEFAULT_PRESET = 'simple';
 
 /** Human names for actions (help sheet, panel). */
 export const ACTION_LABELS = {

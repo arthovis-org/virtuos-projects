@@ -67,12 +67,9 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
   const embeddable = useEmbeddable(win.url);
   // A blocked site shown anyway, to see for oneself that it stays blank.
   const [tryAnyway, setTryAnyway] = useState(false);
-  // The window's own zoom (saved in layouts), else the zoom this browser remembered for the site
-  // when the window opened: setting one window's zoom changes only that window, also when
-  // others show the same site.
-  const ownZoom = useSetupStore((s) => (currentDesk(s) ?? s.single).windows.zoom?.[win.id]);
-  const [siteZoom] = useState(() => useSiteZoomStore.getState().zooms[host]);
-  const zoom = ownZoom ?? siteZoom ?? 1;
+  // The window's own zoom (saved in layouts; a window opened on a site starts at the zoom last
+  // set for it, see `withSiteZoom`): setting one window's zoom changes only that window.
+  const zoom = useSetupStore((s) => (currentDesk(s) ?? s.single).windows.zoom?.[win.id]) ?? 1;
   // Where the site opens: the page it was last on, if it is still on the same site (in the
   // desktop app, which sees where sites go: a TinyGnomes task, not its start page, after
   // another desk and back). Read once, as the window appears; the site goes on by itself.
