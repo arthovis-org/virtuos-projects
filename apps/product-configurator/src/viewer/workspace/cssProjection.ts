@@ -31,14 +31,38 @@ export const cssProjection = {
   frames: new Map<string, ScreenFrame>(),
   /** Asks the canvas for a frame, e.g. when an element was just mounted. */
   invalidate: null as (() => void) | null,
-  /** When the view last moved (`performance.now()`), and what it was drawn with then. */
+  /**
+   * When the screens last moved on the page (`performance.now()`): the camera, or a desk going
+   * up or down. While they move, the layer is marked `data-moving` (see `MOVING_REST`).
+   */
   movedAt: 0,
+  /** What the screens were last laid out with. */
   view: null as { camera: PerspectiveCamera; size: { width: number; height: number } } | null,
   pixelsPerMetre: 1,
+  /**
+   * Called once, right after the next frame of the scene is drawn, with its WebGL context and
+   * pixel ratio: what is drawn can be read then (`readPixels`). Ask for a frame after adding one.
+   */
+  probes: [] as ((gl: WebGLRenderingContext, pixelRatio: number) => void)[],
 };
 
-const lastView = new Matrix4();
-const lastProjection = new Matrix4();
+/**
+ * How long the screens must stay still before the layer's `data-moving` mark goes (ms). While
+ * it is on, screens with a recent picture show it in place of their live pages, which then need
+ * no redrawing at every new angle (`screenSnapshots`): that redrawing made moving the camera
+ * stutter with a few busy sites on view, the more the closer.
+ */
+const MOVING_REST = 250;
+let restTimer = 0;
+
+/** What each element was last given, so it is only written (and counted as a move) on change. */
+const placed = new WeakMap<HTMLElement, string>();
+const place = (element: HTMLElement, transform: string) => {
+  if (placed.get(element) === transform) return false;
+  placed.set(element, transform);
+  element.style.transform = transform;
+  return true;
+};
 
 const epsilon = (value: number) => (Math.abs(value) < 1e-10 ? 0 : value);
 const matrix3d = (e: ArrayLike<number>) =>
@@ -74,22 +98,12 @@ export function updateCssProjection(
   cameraElement.style.height = `${size.height}px`;
 
   camera.updateMatrixWorld();
-  if (
-    !lastView.equals(camera.matrixWorldInverse) ||
-    !lastProjection.equals(camera.projectionMatrix) ||
-    cssProjection.view?.size.width !== size.width ||
-    cssProjection.view.size.height !== size.height
-  ) {
-    lastView.copy(camera.matrixWorldInverse);
-    lastProjection.copy(camera.projectionMatrix);
-    cssProjection.movedAt = performance.now();
-  }
   cssProjection.view = { camera, size };
   cssProjection.pixelsPerMetre = pixelsPerMetre;
   const v = view.copy(camera.matrixWorldInverse).elements;
   const k = PX_PER_METRE;
   // prettier-ignore
-  cameraElement.style.transform =
+  let moved = place(cameraElement,
     `translateZ(${focal}px)` +
     matrix3d([
       v[0], -v[1], v[2], v[3],
@@ -97,7 +111,7 @@ export function updateCssProjection(
       v[8], -v[9], v[10], v[11],
       v[12] * k, -v[13] * k, v[14] * k, v[15],
     ]) +
-    `translate(${size.width / 2}px,${size.height / 2}px)`;
+    `translate(${size.width / 2}px,${size.height / 2}px)`);
 
   const s = k / pixelsPerMetre;
   for (const [id, element] of cssProjection.surfaces) {
@@ -109,14 +123,22 @@ export function updateCssProjection(
     rotation.multiplyQuaternions(meshRotation, frame.quaternion);
     const w = world.compose(centre, rotation, unit).elements;
     // prettier-ignore
-    element.style.transform =
+    const surfaceMoved = place(element,
       'translate(-50%,-50%)' +
       matrix3d([
         w[0] * s, w[1] * s, w[2] * s, 0,
         -w[4] * s, -w[5] * s, -w[6] * s, 0,
         w[8] * s, w[9] * s, w[10] * s, 0,
         w[12] * k, w[13] * k, w[14] * k, 1,
-      ]);
+      ]));
+    moved ||= surfaceMoved;
+  }
+
+  if (moved) {
+    cssProjection.movedAt = performance.now();
+    layer.dataset.moving = '';
+    window.clearTimeout(restTimer);
+    restTimer = window.setTimeout(() => delete layer.dataset.moving, MOVING_REST);
   }
 }
 

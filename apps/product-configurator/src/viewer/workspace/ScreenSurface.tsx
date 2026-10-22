@@ -7,7 +7,9 @@ import { deskDropAttribute } from '@/ui/workspace/deskDrag';
 import { Divider } from '@/ui/workspace/Divider';
 import { EmptyScreen } from '@/ui/workspace/EmptyScreen';
 import { WindowFrame } from '@/ui/workspace/WindowFrame';
+import { posterId } from '@/state/posterStore';
 import { cssProjection } from './cssProjection';
+import { quadToBox, useSnapshotStore } from './screenSnapshots';
 import styles from './ScreenSurface.module.css';
 
 interface ScreenSurfaceProps {
@@ -21,7 +23,8 @@ interface ScreenSurfaceProps {
  * The live content of one screen: a DOM element the viewer lays exactly over the display
  * surface every frame (see `cssProjection`), so it rises with the desk. Every screen uses the
  * same pixel density, so text is the same physical size everywhere and a portrait screen gets
- * the narrow layout a real one would.
+ * the narrow layout a real one would. While the view moves, a recent picture of the screen
+ * stands in for its pages (see `screenSnapshots`).
  */
 export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) {
   const { screen, widthPx, heightPx } = surface;
@@ -35,6 +38,8 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
   const drop = useViewStore((s) => (s.drag?.over?.screen === screen.id ? s.drag.over : null));
   const dropLabel = useViewStore((s) => (s.drag ? dropDescription(s.drag, windows) : ''));
   const dropAction = useViewStore((s) => s.drag?.over?.action);
+  const shot = useSnapshotStore((s) => s.shots[posterId(deskId, screen.id)]);
+  const part = useSnapshotStore((s) => s.parts[posterId(deskId, screen.id)]);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -51,6 +56,7 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
       ref={ref}
       className={styles.screen}
       data-portrait={portrait || undefined}
+      data-shot={shot || part ? '' : undefined}
       {...(deskId !== SINGLE_DESK && deskDropAttribute(deskId))}
       style={{ width: widthPx, height: heightPx }}
       aria-label={`${screen.label} screen`}
@@ -64,6 +70,24 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
             <WindowFrame window={window} screenId={screen.id} grow={weights[i] ?? 1} />
           </Fragment>
         ))
+      )}
+      {/* The whole screen's picture, and over it a sharper close-up of part of it. */}
+      {[shot, part].map(
+        (picture, i) =>
+          picture && (
+            <img
+              key={i}
+              className={styles.motionShot}
+              src={picture.url}
+              alt=""
+              draggable={false}
+              style={{
+                width: picture.width,
+                height: picture.height,
+                transform: quadToBox(picture.corners, widthPx, heightPx),
+              }}
+            />
+          ),
       )}
       {drop && (
         <div

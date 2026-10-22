@@ -30,6 +30,9 @@ export function CssProjectionDriver() {
       previous(renderer, scene, drawn, ...rest);
       if (drawn === camera) {
         updateCssProjection(camera as PerspectiveCamera, size, product.pixelsPerMetre);
+        // Whoever asked to read this frame's pixels, while they are still there.
+        const probes = cssProjection.probes.splice(0);
+        for (const probe of probes) probe(renderer.getContext(), renderer.getPixelRatio());
       }
     };
     invalidate();

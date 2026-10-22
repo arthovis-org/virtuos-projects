@@ -76,3 +76,34 @@
     transform: scale(0.98);
   }
 }
+
+/*
+ * A recent picture of the screen, over its pages while the view moves (the layer is marked
+ * data-moving): the pages are hidden then, so they are not redrawn at every new angle. Once the
+ * view rests, the pages show again at once and the picture fades a moment later, while they
+ * redraw underneath.
+ */
+.motionShot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  max-width: none;
+  transform-origin: 0 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 150ms ease 120ms,
+    visibility 0s linear 270ms;
+}
+
+:global([data-moving]) .screen[data-shot] .motionShot {
+  visibility: visible;
+  opacity: 1;
+  transition: none;
+}
+
+:global([data-moving]) .screen[data-shot] iframe {
+  visibility: hidden;
+}
