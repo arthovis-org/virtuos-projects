@@ -26,10 +26,8 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
   const desks = useSetupStore((s) => s.room);
   const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
   const hasAgent = useAgentStore((s) => !!s.agents[deskId]);
-  const shot = useSnapshotStore((s) => s.shots[id]);
-  // A close-up of part of the screen, when that is all there is (or sharper than the whole).
-  const part = useSnapshotStore((s) => s.parts[id]);
-  const pictures = [shot, part].filter((p) => p !== undefined);
+  // Its pictures, newest on top (parts of it, or with what covered it cut out, over older ones).
+  const pictures = useSnapshotStore((s) => s.shots[id]) ?? [];
 
   useLayoutEffect(() => {
     const element = ref.current;

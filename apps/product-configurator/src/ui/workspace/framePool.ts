@@ -9,8 +9,8 @@ import { currentSetup } from '@/state/setupStore';
  * (TinyGnomes through its welcome page). Now a frame is moved, without a reload
  * (`moveBefore`), into a hidden parking place off the page, which the browser doesn't draw,
  * and back into its window when the desk returns: as it was, open dialogs and all. The
- * frames of the last few desks left are kept; older ones are let go (and load afresh, at the
- * page they were on). Moving a window to another screen keeps its frame too.
+ * frames of the last few desks left are kept, and TinyGnomes' on every desk; older ones are let
+ * go (and load afresh, at the page they were on). Moving a window to another screen keeps its frame too.
  *
  * On the website, or a browser without `moveBefore`, a window's frame is made and let go
  * with the window, as before (video on a parked desk couldn't be paused there).
@@ -18,6 +18,20 @@ import { currentSetup } from '@/state/setupStore';
 
 /** Desks left whose frames are kept loaded, besides the one the visitor is at. */
 const KEPT_DESKS = 3;
+
+/**
+ * Sites kept loaded on every desk left, however many: the ones worked in across desks
+ * (TinyGnomes), so going back to one carries on where it was, never from its welcome page.
+ */
+const ALWAYS_KEPT = /(^|\.)tinygnomes\.com$/i;
+
+const alwaysKept = (url: string) => {
+  try {
+    return ALWAYS_KEPT.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+};
 
 export interface PooledFrame {
   key: string;
@@ -148,7 +162,7 @@ export function releaseFrame(entry: PooledFrame, width: number, height: number) 
 
 /**
  * Lets go of parked frames no longer wanted: their window closed or its desk gone, and those
- * of all but the last few desks left.
+ * of all but the last few desks left (but TinyGnomes').
  */
 function tidy() {
   const setup = currentSetup();
@@ -175,6 +189,8 @@ function tidy() {
     .slice(KEPT_DESKS)
     .map(([deskId]) => deskId);
   for (const entry of [...pool.values()]) {
-    if (entry.parkedAt !== null && away.includes(entry.deskId)) dropFrame(entry);
+    if (entry.parkedAt !== null && away.includes(entry.deskId) && !alwaysKept(entry.url)) {
+      dropFrame(entry);
+    }
   }
 }

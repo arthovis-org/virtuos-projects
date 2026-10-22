@@ -10,20 +10,21 @@ import { cssProjection, screenCorners } from './cssProjection';
 /**
  * Pictures of the screens of the desk the visitor is at (desktop app), for two things:
  *
- * - While the camera (or the desk) moves, each screen shows its picture instead of its live
- *   pages (`data-moving`, see `cssProjection`): live pages are redrawn at every new angle, and
- *   with a few busy sites on view (TinyGnomes) that made moving stutter, the more the closer.
- *   The picture is laid flat onto the screen, so it turns with it as the page would.
+ * - While the camera (or the desk) moves, a busy site's screen shows its pictures instead of its
+ *   live pages (`data-moving`, see `cssProjection`): live pages are redrawn at every new angle,
+ *   and with a few busy sites on view (TinyGnomes) that made moving stutter, the more the
+ *   closer. A picture is laid flat onto its screen, so it turns with it as the page would.
  * - In multiple desks mode, the posters of a desk the visitor left show them, so the room's
  *   other desks show what was on their screens instead of their workspace's icon.
  *
  * Taken once the view has been still for a moment, and again now and then while it stays so.
- * A screen that is partly out of the picture, under the toolbars or behind something (the
- * person, another monitor: read from the scene's own pixels) keeps its last picture, and so
- * does one seen much smaller than in its last picture, unless that one is getting old.
+ * A screen keeps a few pictures, newest on top: what covered part of it (the person, another
+ * monitor's frame: read from the scene's own pixels) is cut out of a picture, so an older one
+ * shows through there; a screen partly out of the view or under the toolbars is pictured as far
+ * as it is in view, and a newer whole, uncovered picture replaces them all.
  */
 export interface ScreenSnapshot {
-  /** The picture (an object URL), of the box around the screen as drawn. */
+  /** The picture (an object URL), of the box around the screen (or its part in view) as drawn. */
   url: string;
   width: number;
   height: number;
@@ -31,49 +32,49 @@ export interface ScreenSnapshot {
   corners: [number, number][];
   /** When it was taken (`performance.now()`). */
   at: number;
+  /** All of the screen was in view. */
+  whole: boolean;
+  /** Something covered part of it: those pixels are transparent. */
+  holes: boolean;
 }
 
 interface SnapshotState {
   /**
-   * Pictures of whole screens, by poster id (`<desk>/<screen>`; the one desk outside the room
-   * is `SINGLE_DESK`).
+   * Each screen's pictures, oldest first, by poster id (`<desk>/<screen>`; the one desk
+   * outside the room is `SINGLE_DESK`).
    */
-  shots: Readonly<Record<string, ScreenSnapshot>>;
-  /**
-   * Close up, sharper pictures of the part of a screen that was in view (it did not all fit),
-   * shown over the whole one while the view moves; by the same id. A newer whole picture
-   * replaces them.
-   */
-  parts: Readonly<Record<string, ScreenSnapshot>>;
-  setShot: (id: string, shot: ScreenSnapshot, part: boolean) => void;
+  shots: Readonly<Record<string, readonly ScreenSnapshot[]>>;
+  addShot: (id: string, shot: ScreenSnapshot) => void;
 }
+
+/** Pictures kept of a screen, at most. */
+const LAYERS = 3;
 
 export const useSnapshotStore = create<SnapshotState>()((set, get) => ({
   shots: {},
-  parts: {},
-  setShot: (id, shot, part) => {
-    const { shots, parts } = get();
-    const replaced = [part ? undefined : shots[id], parts[id]];
-    set(
-      part
-        ? { parts: { ...parts, [id]: shot } }
-        : {
-            shots: { ...shots, [id]: shot },
-            parts: Object.fromEntries(Object.entries(parts).filter(([key]) => key !== id)),
-          },
-    );
-    for (const old of replaced) if (old) URL.revokeObjectURL(old.url);
+  addShot: (id, shot) => {
+    const before = get().shots[id] ?? [];
+    const after = shot.whole && !shot.holes ? [shot] : [...before, shot].slice(-LAYERS);
+    set((state) => ({ shots: { ...state.shots, [id]: after } }));
+    for (const old of before) if (!after.includes(old)) URL.revokeObjectURL(old.url);
   },
 }));
+
+/** A screen's pictures can stand in for its live pages: the lowest one has nothing cut out. */
+export const showsWhole = (shots: readonly ScreenSnapshot[] | undefined) =>
+  !!shots?.[0] && !shots[0].holes;
 
 /** How long the view stays still before a picture, and how often one is taken again (ms). */
 const SETTLE = 500;
 const REFRESH = 4000;
-/** A picture smaller than this share of the last one waits until that one is this old (ms). */
+/** A picture smaller than this share of the last whole one waits until that one is this old. */
 const SMALLER = 0.6;
 const STALE = 30_000;
-/** The share of a screen's pixels something may cover before its picture is not taken. */
-const COVERED = 0.002;
+/** A close-up part is only worth taking this much bigger than the last whole picture. */
+const CLOSER = 1.5;
+/** Covered beyond this share, a screen is not pictured; up to this one, nothing is cut out. */
+const MOSTLY_COVERED = 0.5;
+const UNCOVERED = 0.002;
 
 type Quad = [number, number][];
 
@@ -124,7 +125,7 @@ export function useScreenSnapshots() {
 /** A picture to take: of the box `x, y, width, height` (CSS pixels of the layer). */
 interface Wanted {
   id: string;
-  part: boolean;
+  whole: boolean;
   corners: Quad;
   x: number;
   y: number;
@@ -132,8 +133,14 @@ interface Wanted {
   height: number;
 }
 
-/** A close-up part is only worth taking this much bigger than the whole picture (by area). */
-const CLOSER = 1.5;
+/** What covers a screen to picture: its share, and which pixels of its box (device pixels). */
+interface Cover {
+  share: number;
+  /** Per pixel of the box, from the top left: 0 where something covers the screen, else 255. */
+  mask: Uint8Array;
+  width: number;
+  height: number;
+}
 
 async function takeAll(
   capture: NonNullable<NonNullable<typeof desktopWindows>['capture']>,
@@ -160,9 +167,10 @@ async function takeAll(
       bottom: Math.max(...ys),
     };
     const area = (outline.right - outline.left) * (outline.bottom - outline.top);
-    if (area < 20_000) continue;
+    // Big enough to be worth a picture (the other desks are seen far smaller in the room).
+    if (area < 5_000) continue;
     const id = posterId(deskId, screen.id);
-    const last = shots[id];
+    const last = [...(shots[id] ?? [])].reverse().find((s) => s.whole);
     const whole =
       outline.left >= view.left &&
       outline.right <= view.right &&
@@ -188,7 +196,7 @@ async function takeAll(
     const y = Math.floor(crop.top);
     wanted.push({
       id,
-      part: !whole,
+      whole,
       corners,
       x,
       y,
@@ -197,67 +205,117 @@ async function takeAll(
     });
   }
   if (wanted.length === 0) return;
-  const covered = await coveredScreens(wanted);
-  for (const [i, { id, part, corners, x, y, width, height }] of wanted.entries()) {
-    if (covered[i] ?? true) continue;
+  const covers = await coveredScreens(wanted);
+  for (const [i, { id, whole, corners, x, y, width, height }] of wanted.entries()) {
+    const cover = covers[i];
+    if (!cover || cover.share > MOSTLY_COVERED) continue;
     const jpeg = await capture({ x: box.left + x, y: box.top + y, width, height });
     // Moved meanwhile: the picture may be of the view on its way elsewhere.
     if (!jpeg || cssProjection.movedAt !== movedAt) return;
-    useSnapshotStore.getState().setShot(
-      id,
-      {
-        url: URL.createObjectURL(new Blob([jpeg as BlobPart], { type: 'image/jpeg' })),
-        width,
-        height,
-        corners: corners.map(([cx, cy]) => [cx - x, cy - y]),
-        at: performance.now(),
-      },
-      part,
-    );
+    const holes = cover.share > UNCOVERED;
+    const picture = holes
+      ? await cutOut(jpeg, cover)
+      : new Blob([jpeg as BlobPart], { type: 'image/jpeg' });
+    if (!picture) continue;
+    useSnapshotStore.getState().addShot(id, {
+      url: URL.createObjectURL(picture),
+      width,
+      height,
+      corners: corners.map(([cx, cy]) => [cx - x, cy - y]),
+      at: performance.now(),
+      whole,
+      holes,
+    });
+  }
+}
+
+/** The picture with the covered pixels made transparent (WebP keeps them so). */
+async function cutOut(jpeg: Uint8Array, cover: Cover): Promise<Blob | null> {
+  try {
+    const bitmap = await createImageBitmap(new Blob([jpeg as BlobPart], { type: 'image/jpeg' }));
+    const canvas = new OffscreenCanvas(cover.width, cover.height);
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.drawImage(bitmap, 0, 0, cover.width, cover.height);
+    bitmap.close();
+    const image = context.getImageData(0, 0, cover.width, cover.height);
+    for (let i = 0; i < cover.mask.length; i++) {
+      if (cover.mask[i] === 0) image.data[i * 4 + 3] = 0;
+    }
+    context.putImageData(image, 0, 0);
+    return await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+  } catch {
+    return null;
   }
 }
 
 /**
- * Whether something in the scene is in front of each screen to picture, within its box, from
- * the next frame's pixels: a screen is drawn as a transparent hole, so anything covering it
- * shows as opaque pixels inside its outline.
+ * What in the scene is in front of each screen to picture, within its box, from the next
+ * frame's pixels: a screen is drawn as a transparent hole, so anything covering it shows as
+ * opaque pixels inside its outline.
  */
-function coveredScreens(wanted: Wanted[]): Promise<boolean[]> {
+function coveredScreens(wanted: Wanted[]): Promise<(Cover | null)[]> {
   return new Promise((resolve) => {
-    cssProjection.probes.push((gl, ratio) => resolve(wanted.map((w) => covered(gl, ratio, w))));
+    cssProjection.probes.push((gl, ratio) => resolve(wanted.map((w) => coverOf(gl, ratio, w))));
     cssProjection.invalidate?.();
   });
 }
 
-function covered(gl: WebGLRenderingContext, ratio: number, wanted: Wanted): boolean {
+function coverOf(gl: WebGLRenderingContext, ratio: number, wanted: Wanted): Cover | null {
   const quad = wanted.corners;
   // In device pixels, a little inside the outline, clear of its soft (antialiased) edge.
   const cx = quad.reduce((t, [x]) => t + x, 0) / 4;
   const cy = quad.reduce((t, [, y]) => t + y, 0) / 4;
   const inner: Quad = quad.map(([x, y]) => [
-    (cx + (x - cx) * 0.96) * ratio,
-    (cy + (y - cy) * 0.96) * ratio,
+    (cx + (x - cx) * 0.98) * ratio,
+    (cy + (y - cy) * 0.98) * ratio,
   ]);
   const bufferHeight = gl.drawingBufferHeight;
   const left = Math.max(0, Math.floor(wanted.x * ratio));
   const top = Math.max(0, Math.floor(wanted.y * ratio));
   const w = Math.min(gl.drawingBufferWidth, Math.ceil((wanted.x + wanted.width) * ratio)) - left;
   const h = Math.min(bufferHeight, Math.ceil((wanted.y + wanted.height) * ratio)) - top;
-  if (w <= 0 || h <= 0) return true;
+  if (w <= 0 || h <= 0) return null;
   const pixels = new Uint8Array(w * h * 4);
   // WebGL's rows run from the bottom.
   gl.readPixels(left, bufferHeight - top - h, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  const mask = new Uint8Array(w * h).fill(255);
   let inside = 0;
   let opaque = 0;
-  const step = Math.max(2, Math.round(ratio * 3));
-  for (let py = 0; py < h; py += step) {
-    for (let px = 0; px < w; px += step) {
+  for (let py = 0; py < h; py++) {
+    // Along the row, only between the outline's edges.
+    for (let px = 0; px < w; px++) {
       if (!insideQuad(inner, left + px, top + py)) continue;
       inside++;
-      if ((pixels[((h - 1 - py) * w + px) * 4 + 3] ?? 0) > 16) opaque++;
+      if ((pixels[((h - 1 - py) * w + px) * 4 + 3] ?? 0) > 8) {
+        opaque++;
+        mask[py * w + px] = 0;
+      }
     }
   }
-  return inside === 0 || opaque > inside * COVERED;
+  if (inside === 0) return null;
+  return { share: opaque / inside, mask: grow(mask, w, h), width: w, height: h };
+}
+
+/** The cut-out a pixel wider all round, so no soft edge of what covered the screen is left. */
+function grow(mask: Uint8Array, w: number, h: number): Uint8Array {
+  const out = mask.slice();
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (mask[y * w + x] !== 0) continue;
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ] as const) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < w && ny < h) out[ny * w + nx] = 0;
+      }
+    }
+  }
+  return out;
 }
 
 /** Whether (x, y) is inside a convex quadrilateral, its corners in order. */

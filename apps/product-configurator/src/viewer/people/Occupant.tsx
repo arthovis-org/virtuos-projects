@@ -19,6 +19,7 @@ import {
   MeshBasicMaterial,
   MathUtils,
   Matrix4,
+  SkinnedMesh,
   Vector3,
   type AnimationAction,
   type Group,
@@ -54,6 +55,20 @@ const CLIPS = {
 
 const isMesh = (node: Object3D): node is Mesh => 'isMesh' in node;
 
+/** The hair's own material, cut where its texture is less than half covered: drawn solid. */
+const solidHairs = new WeakMap<Material, Material>();
+function solidHair(material: Material): Material {
+  let solid = solidHairs.get(material);
+  if (!solid) {
+    solid = material.clone();
+    solid.alphaToCoverage = false;
+    solid.alphaTest = 0.5;
+    solid.transparent = false;
+    solidHairs.set(material, solid);
+  }
+  return solid;
+}
+
 /** Seconds two clips blend over. */
 const FADE = 0.35;
 /**
@@ -62,6 +77,8 @@ const FADE = 0.35;
  */
 const BREAK_EVERY = [20, 40] as const;
 const BREAK_FOR = [8, 13] as const;
+/** The share of breaks a standing person spends thinking (else they just stand). */
+const THINKING_BREAKS = 0.35;
 const between = ([low, high]: readonly [number, number]) => low + Math.random() * (high - low);
 /**
  * How far the person and chair roll back from the desk before standing up (and in again after
@@ -208,6 +225,7 @@ function Seat({
     const copy = clone(scene);
     // Hair cards: their faint strands drawn partly covering (multisampling) rather than cut
     // at a threshold, which close up (the texture at full detail) cut most of the hair away.
+    const hair: SkinnedMesh[] = [];
     copy.traverse((node) => {
       if (!isMesh(node)) return;
       // Always drawn: a skinned mesh's bounds are measured once, in whatever pose it was in,
@@ -219,8 +237,24 @@ function Seat({
           material.alphaTest = 0.05;
           material.needsUpdate = true;
         }
+        if (material.alphaToCoverage && node instanceof SkinnedMesh) hair.push(node as SkinnedMesh);
       }
     });
+    // Under the soft strands, the same hair solid where it is dense: the canvas lets the page
+    // below show through whatever is not wholly covered, and over a screen the soft hair let
+    // the screen show through all of it. Only the strands' fine ends stay soft.
+    for (const strands of new Set(hair)) {
+      if (Array.isArray(strands.material) || !strands.parent) continue;
+      const solid = new SkinnedMesh(strands.geometry, solidHair(strands.material));
+      solid.name = `${strands.name} (solid)`;
+      solid.position.copy(strands.position);
+      solid.quaternion.copy(strands.quaternion);
+      solid.scale.copy(strands.scale);
+      solid.bind(strands.skeleton, strands.bindMatrix);
+      solid.frustumCulled = false;
+      solid.renderOrder = strands.renderOrder - 1;
+      strands.parent.add(solid);
+    }
     return copy;
   }, [scene]);
   const arms = useMemo(() => findArms(person), [person]);
@@ -281,7 +315,7 @@ function Seat({
     return activityOf(taskOf(mission, agent.id));
   };
   /** A break from typing at a desk with no agent: whether one is on, and when that changes. */
-  const pause = useRef({ on: false, until: between(BREAK_EVERY) });
+  const pause = useRef({ on: false, think: false, until: between(BREAK_EVERY) });
   /**
    * The clip for sitting, by activity: typing while the agent writes (and with no agent, but
    * for a break now and then to write a note), notes by hand while it reads, else sitting
@@ -299,7 +333,8 @@ function Seat({
   /** The clip for standing: thinking (once) while the agent thinks or on a break, else idle. */
   const standingAction = () => {
     const activity = agentActivity();
-    const thinking = activity === 'thinking' || (activity === null && pause.current.on);
+    const thinking =
+      activity === 'thinking' || (activity === null && pause.current.on && pause.current.think);
     if (!thinking) thought.current = false;
     return thinking && !thought.current ? actions.thinking : actions.standing;
   };
@@ -308,6 +343,8 @@ function Seat({
     if (!action) return;
     action.reset();
     action.setLoop(once ? LoopOnce : LoopRepeat, once ? 1 : Infinity);
+    // A loop starts anywhere in it: every desk's person began typing (or standing) in step.
+    if (!once) action.time = Math.random() * action.getClip().duration;
     action.clampWhenFinished = once;
     action.play();
     if (playing.current && playing.current !== action) {
@@ -363,7 +400,11 @@ function Seat({
     const now = clock.elapsedTime;
     if (now >= pause.current.until) {
       const on = !pause.current.on;
-      pause.current = { on, until: now + between(on ? BREAK_FOR : BREAK_EVERY) };
+      pause.current = {
+        on,
+        think: on && Math.random() < THINKING_BREAKS,
+        until: now + between(on ? BREAK_FOR : BREAK_EVERY),
+      };
     }
     const stand = heightNow() >= standFrom;
     if (pose.current === 'seated' && stand && actions.rising) {

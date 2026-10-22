@@ -9,7 +9,7 @@ import { EmptyScreen } from '@/ui/workspace/EmptyScreen';
 import { WindowFrame } from '@/ui/workspace/WindowFrame';
 import { posterId } from '@/state/posterStore';
 import { cssProjection } from './cssProjection';
-import { quadToBox, stillWhileMoving, useSnapshotStore } from './screenSnapshots';
+import { quadToBox, showsWhole, stillWhileMoving, useSnapshotStore } from './screenSnapshots';
 import styles from './ScreenSurface.module.css';
 
 interface ScreenSurfaceProps {
@@ -38,10 +38,10 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
   const drop = useViewStore((s) => (s.drag?.over?.screen === screen.id ? s.drag.over : null));
   const dropLabel = useViewStore((s) => (s.drag ? dropDescription(s.drag, windows) : ''));
   const dropAction = useViewStore((s) => s.drag?.over?.action);
-  const shot = useSnapshotStore((s) => s.shots[posterId(deskId, screen.id)]);
-  const part = useSnapshotStore((s) => s.parts[posterId(deskId, screen.id)]);
-  // While the view moves, a busy site's screen shows its picture instead (TinyGnomes).
-  const still = stillWhileMoving(windows.map((w) => w.url));
+  const shots = useSnapshotStore((s) => s.shots[posterId(deskId, screen.id)]);
+  // While the view moves, a busy site's screen shows its pictures instead (TinyGnomes): when
+  // they cover it all (the lowest has nothing cut out).
+  const still = stillWhileMoving(windows.map((w) => w.url)) && showsWhole(shots);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -58,7 +58,7 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
       ref={ref}
       className={styles.screen}
       data-portrait={portrait || undefined}
-      data-shot={(shot || part) && still ? '' : undefined}
+      data-shot={still ? '' : undefined}
       {...(deskId !== SINGLE_DESK && deskDropAttribute(deskId))}
       style={{ width: widthPx, height: heightPx }}
       aria-label={`${screen.label} screen`}
@@ -73,25 +73,22 @@ export function ScreenSurface({ surface, windows, closed }: ScreenSurfaceProps) 
           </Fragment>
         ))
       )}
-      {/* The whole screen's picture, and over it a sharper close-up of part of it. */}
+      {/* The screen's pictures, newest on top (a sharper close-up, or one with cut-outs). */}
       {still &&
-        [shot, part].map(
-          (picture, i) =>
-            picture && (
-              <img
-                key={i}
-                className={styles.motionShot}
-                src={picture.url}
-                alt=""
-                draggable={false}
-                style={{
-                  width: picture.width,
-                  height: picture.height,
-                  transform: quadToBox(picture.corners, widthPx, heightPx),
-                }}
-              />
-            ),
-        )}
+        shots?.map((picture) => (
+          <img
+            key={picture.url}
+            className={styles.motionShot}
+            src={picture.url}
+            alt=""
+            draggable={false}
+            style={{
+              width: picture.width,
+              height: picture.height,
+              transform: quadToBox(picture.corners, widthPx, heightPx),
+            }}
+          />
+        ))}
       {drop && (
         <div
           className={styles.dropPreview}
