@@ -197,12 +197,14 @@ function planMove(from: Pose, to: Pose, onDone?: () => void): Move {
   turn = Math.atan2(Math.sin(turn), Math.cos(turn));
   toAngle.theta = fromAngle.theta + turn;
   const sweep = Math.min(1, (Math.abs(turn) + Math.abs(toAngle.phi - fromAngle.phi)) / Math.PI);
+  // A whole set-up just brought in: straight there (see `jumpNext`).
+  const jump = useViewStore.getState().takeJump();
   return {
     from,
     to,
     fromAngle,
     toAngle,
-    seconds: MathUtils.lerp(MOVE_SECONDS.min, MOVE_SECONDS.max, sweep),
+    seconds: jump ? 1e-3 : MathUtils.lerp(MOVE_SECONDS.min, MOVE_SECONDS.max, sweep),
     t: 0,
     started: false,
     straight,

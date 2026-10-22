@@ -120,13 +120,16 @@ export function switchWorkspace(workspaceId: string) {
 
 /**
  * Brings a whole set-up in (a saved layout, the sheet): back at its desk, or the overview.
- * With `sit` (opening a saved layout, which is its desks' windows as much as their set-up), a
- * single desk is sat at with its sites on; else its sites are off, and the screens dark.
+ * With `sit` (opening a saved layout, which is its desks' windows as much as their set-up), the
+ * desk it was at is sat at with its sites on (in the room, the overview without one); else the
+ * room's desk is looked at from the overview, and a single desk's sites are off. The camera
+ * jumps there: every desk is new, so flying from the old view went through the scene.
  */
 export function loadSetup(next: Setup, { sit = false }: { sit?: boolean } = {}) {
   singleView = null;
+  view().jumpNext();
   setup().replace(next);
-  if (next.mode === 'desks' && currentDesk(next)) view().showSites(false);
+  if (next.mode === 'desks' && currentDesk(next)) view().showSites(sit);
   else if (sit && next.mode !== 'desks') view().showSites(true);
   else view().close();
 }

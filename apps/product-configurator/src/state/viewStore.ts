@@ -96,6 +96,14 @@ interface ViewState {
   room: Room;
   /** Presentation mode: only the 3D view, for recording (see `PresentationMode`). */
   presenting: boolean;
+  /**
+   * The camera's next move is a jump, not a flight (a whole set-up brought in: its desks are
+   * new, and the old view means nothing there). Lapses after a moment if no move comes.
+   */
+  jump: boolean;
+  jumpNext: () => void;
+  /** Whether the move about to start is a jump; it takes the jump. */
+  takeJump: () => boolean;
 
   /** Turns the sites on: seated in front of the screens, or looking around. */
   /** Shows the sites, seated or not; not seated, `around` keeps looking around the desk. */
@@ -131,6 +139,10 @@ const SITES_OFF = {
   drag: null,
 } as const;
 
+/** How long a jump waits for the camera's next move (ms). */
+const JUMP_LAPSE = 1500;
+let jumpTimer = 0;
+
 export const useViewStore = create<ViewState>()((set, get) => ({
   ...SITES_OFF,
   cameraFree: true,
@@ -143,6 +155,7 @@ export const useViewStore = create<ViewState>()((set, get) => ({
   hudInsetBottom: 0,
   room: { width: 0, depth: 0 },
   presenting: false,
+  jump: false,
 
   showSites: (seat, around = false) =>
     set({
@@ -166,6 +179,16 @@ export const useViewStore = create<ViewState>()((set, get) => ({
   setHudInset: (hudInset) => set({ hudInset }),
   setHudInsetBottom: (hudInsetBottom) => set({ hudInsetBottom }),
   setPresenting: (presenting) => set({ presenting }),
+  jumpNext: () => {
+    set({ jump: true });
+    window.clearTimeout(jumpTimer);
+    jumpTimer = window.setTimeout(() => set({ jump: false }), JUMP_LAPSE);
+  },
+  takeJump: () => {
+    const { jump } = get();
+    if (jump) set({ jump: false });
+    return jump;
+  },
   setRoom: (room) => {
     const current = get().room;
     if (current.width !== room.width || current.depth !== room.depth) set({ room });
