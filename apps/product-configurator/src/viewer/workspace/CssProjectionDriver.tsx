@@ -2,6 +2,7 @@ import { useThree } from '@react-three/fiber';
 import { useEffect } from 'react';
 import type { PerspectiveCamera } from 'three';
 import { useProduct } from '@/state/setupStore';
+import { perfProbe } from '@/ui/perf/perfProbe';
 import { cssProjection, updateCssProjection } from './cssProjection';
 
 /**
@@ -16,6 +17,15 @@ export function CssProjectionDriver() {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
   const invalidate = useThree((s) => s.invalidate);
+  const gl = useThree((s) => s.gl);
+
+  // The renderer, for the performance panel's draw calls and triangles.
+  useEffect(() => {
+    perfProbe.renderer = gl;
+    return () => {
+      perfProbe.renderer = null;
+    };
+  }, [gl]);
 
   useEffect(() => {
     cssProjection.invalidate = invalidate;

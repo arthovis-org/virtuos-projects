@@ -125,6 +125,13 @@ export function takeFrame(deskId: string, windowId: string, settings: FrameSetti
   return entry;
 }
 
+/** How many windows' frames are on screens, and how many are parked (performance panel). */
+export function frameCounts() {
+  let parked = 0;
+  for (const entry of pool.values()) if (entry.parkedAt !== null) parked++;
+  return { live: pool.size - parked, parked };
+}
+
 /** Puts a window's frame into it. */
 export function showFrame(entry: PooledFrame, host: HTMLElement) {
   moveInto(host, entry.frame);

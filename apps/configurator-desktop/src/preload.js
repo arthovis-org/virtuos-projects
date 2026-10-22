@@ -49,6 +49,14 @@ contextBridge.exposeInMainWorld('virtuosDesktop', {
     /** A JPEG of part of the app's own window ({ x, y, width, height }), or null. */
     capture: (rect) => ipcRenderer.invoke('virtuos:capture', rect),
   },
+  /** The app's processes' CPU and memory, for the performance panel (metrics.js). */
+  metrics: () => ipcRenderer.invoke('virtuos:metrics'),
+  /** Calls back when Ctrl+Shift+P is pressed anywhere in the window; returns a function to stop. */
+  onTogglePerf: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('virtuos:toggle-perf', listener);
+    return () => ipcRenderer.removeListener('virtuos:toggle-perf', listener);
+  },
   /** The layouts adapting some desktop-only sites to narrow screens (siteStyles.js). */
   siteStyles: {
     /** Whether they apply, and the sites (hosts) they are for. */

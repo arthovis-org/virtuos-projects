@@ -22,20 +22,27 @@ interface DeskLabelProps {
 
 /**
  * The name tag floating over a desk in the room overview: clicking it picks that desk, dragging
- * it onto another desk swaps the two. In the overview of all desks, the click also opens a small
- * bar of icons over the tag to sit at the desk or look around it, right where the pointer is.
+ * it onto another desk swaps the two. In the overview of all desks, pointing at it (or the
+ * click) also opens a small bar of icons over the tag to sit at the desk or look around it,
+ * right where the pointer is.
  */
+/** How long a menu opened by pointing stays once the pointer has left it (ms). */
+const HOVER_LINGER = 250;
+
 export function DeskLabel({ deskId, name, number, workspace, height, active }: DeskLabelProps) {
   const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
   const dragged = useViewStore((s) => s.deskDrag?.deskId === deskId);
   const agent = useAgentStore((s) => s.agents[deskId]);
   // Overlooking all the desks (not seated at one, nor looking around one).
   const overview = useViewStore((s) => !s.seated && !s.aroundDesk);
-  const sit = useViewStore((s) => s.sit);
   const standUp = useViewStore((s) => s.standUp);
   const [menuOpen, setMenuOpen] = useState(false);
-  const menu = menuOpen && overview && active;
+  const dragging = useViewStore((s) => !!s.deskDrag);
+  const menu = menuOpen && overview && !dragging;
   const tag = useRef<HTMLDivElement>(null);
+  // Opened by pointing (not a click): it goes once the pointer has left for a moment.
+  const hovered = useRef(false);
+  const leaving = useRef(0);
 
   // Gone with a press anywhere else (another desk's tag opens its own) or Escape, and for good
   // once the view changes: back in the overview later, it waits for another click.
@@ -60,8 +67,26 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
     const { seated, aroundDesk } = useViewStore.getState();
     const opens = !seated && !aroundDesk;
     selectDesk(deskId);
+    hovered.current = false;
     if (opens) setMenuOpen(true);
   };
+
+  const enter = () => {
+    window.clearTimeout(leaving.current);
+    const { seated, aroundDesk, deskDrag } = useViewStore.getState();
+    if (menuOpen || seated || aroundDesk || deskDrag) return;
+    hovered.current = true;
+    setMenuOpen(true);
+  };
+  const leave = () => {
+    if (!hovered.current) return;
+    window.clearTimeout(leaving.current);
+    leaving.current = window.setTimeout(() => {
+      hovered.current = false;
+      setMenuOpen(false);
+    }, HOVER_LINGER);
+  };
+  useEffect(() => () => window.clearTimeout(leaving.current), []);
 
   return (
     // Nearer tags cover farther ones: drei orders them by distance over the camera's whole
@@ -72,6 +97,10 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
       <div
         ref={tag}
         className={styles.tag}
+        onPointerEnter={(event) => {
+          if (event.pointerType === 'mouse') enter();
+        }}
+        onPointerLeave={leave}
         style={{ '--desk-accent': workspace?.accent ?? '#888888' } as CSSProperties}
       >
         <button
@@ -114,7 +143,7 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
               title="Seated view"
               onClick={() => {
                 setMenuOpen(false);
-                sit();
+                selectDesk(deskId, true);
               }}
             >
               <Armchair size={20} strokeWidth={1.75} aria-hidden="true" />
@@ -127,6 +156,7 @@ export function DeskLabel({ deskId, name, number, workspace, height, active }: D
               title="Look around"
               onClick={() => {
                 setMenuOpen(false);
+                selectDesk(deskId);
                 standUp(true);
               }}
             >

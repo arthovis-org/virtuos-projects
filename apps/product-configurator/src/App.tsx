@@ -5,6 +5,7 @@ import { syncAddressBar } from '@/state/shareLink';
 import { ConfiguratorPanel } from '@/ui/ConfiguratorPanel';
 import { Header } from '@/ui/Header';
 import { SheetBar } from '@/ui/SheetBar';
+import { PerfStats } from '@/ui/perf/PerfStats';
 import { UpdateNotice } from '@/ui/UpdateNotice';
 import { PresentationMode } from '@/ui/PresentationMode';
 import { useViewStore } from '@/state/viewStore';
@@ -58,6 +59,7 @@ export function App() {
         </div>
       </aside>
       <UpdateNotice />
+      <PerfStats />
       <PresentationMode />
     </div>
   );

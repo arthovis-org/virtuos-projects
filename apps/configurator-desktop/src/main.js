@@ -13,6 +13,7 @@ const { allowFraming } = require('./frames');
 const { watchSiteStyles } = require('./siteStyles');
 const { watchForUpdates } = require('./updates');
 const { watchVideosEmbedded } = require('./youtube');
+const { handleMetrics, watchPerfShortcut } = require('./metrics');
 const { handleCapture, handlePauseMedia, watchWindowVisits } = require('./windowVisits');
 
 /** The bundled configurator is served from here, like a website. */
@@ -99,6 +100,8 @@ function createWindow() {
   watchWindowVisits(window.webContents);
   handlePauseMedia();
   handleCapture();
+  handleMetrics();
+  watchPerfShortcut(window.webContents);
   void window.loadURL(DEV_URL ?? APP_URL);
 }
 

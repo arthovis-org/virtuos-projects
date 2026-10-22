@@ -93,6 +93,16 @@
   animation: menu-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* The gap down to the name, part of the menu: the pointer crosses it without closing it. */
+.menu::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 14px;
+}
+
 /* A pointer down to the desk's name. */
 .menu::after {
   content: '';

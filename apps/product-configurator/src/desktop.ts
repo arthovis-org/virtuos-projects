@@ -15,6 +15,17 @@ interface DesktopBridge {
   siteStyles?: DesktopSiteStyles;
   /** Where the sites in windows go (from 0.1.16 on). */
   windows?: DesktopWindows;
+  /** Its processes' CPU and memory, for the performance panel (from 0.1.22 on). */
+  metrics?: () => Promise<ProcessMetric[] | null>;
+  /** Calls back on Ctrl+Shift+P anywhere in the window, a site's frame too (from 0.1.22 on). */
+  onTogglePerf?: (callback: () => void) => () => void;
+}
+
+/** One of the app's processes: its kind, CPU (% of a core) and memory (kilobytes). */
+export interface ProcessMetric {
+  type: string;
+  cpu: number;
+  memory: number;
 }
 
 interface DesktopWindows {
@@ -106,6 +117,12 @@ export const windowOfFrame = (name: string) => windowFrames.get(name) ?? null;
 
 /** Where the sites in windows go, when in the desktop app (a recent enough version). */
 export const desktopWindows: DesktopWindows | undefined = bridge?.windows;
+
+/** The desktop app's processes' CPU and memory, when in it (a recent enough version). */
+export const desktopMetrics = bridge?.metrics;
+
+/** The desktop app's Ctrl+Shift+P, wherever the focus is, when in it (a recent enough version). */
+export const onDesktopTogglePerf = bridge?.onTogglePerf;
 
 /** The desktop app's adapted site layouts and their switch, when in it (a recent enough version). */
 export const desktopSiteStyles: DesktopSiteStyles | undefined = bridge?.siteStyles;
