@@ -25,16 +25,23 @@ export function UpdateNotice() {
   useEffect(() => {
     if (!desktopUpdates) return;
     let live = true;
-    void desktopUpdates.ready().then((ready) => {
-      if (live && ready) setVersion(ready);
-    });
+    // A copy run from source has no updater (nothing answers): nothing to show then.
+    void desktopUpdates
+      .ready()
+      .then((ready) => {
+        if (live && ready) setVersion(ready);
+      })
+      .catch(() => undefined);
     const stop = desktopUpdates.onReady((ready) => {
       setVersion(ready);
       setLater(false);
     });
-    void desktopUpdates.status?.().then((s) => {
-      if (live) setStatus(s);
-    });
+    void desktopUpdates
+      .status?.()
+      .then((s) => {
+        if (live) setStatus(s);
+      })
+      .catch(() => undefined);
     const stopStatus = desktopUpdates.onStatus?.(setStatus);
     return () => {
       live = false;

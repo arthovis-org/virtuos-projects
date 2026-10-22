@@ -228,6 +228,45 @@ test("tells the page where the sites in its windows go", async () => {
   );
 });
 
+test("pauses the video and audio in a window's frame when asked", async () => {
+  const page = await app.firstWindow();
+  const name = "virtuos-window:media-test";
+  await page.evaluate(
+    ({ src, name }) => {
+      const frame = document.createElement("iframe");
+      frame.name = name;
+      frame.src = src;
+      document.body.append(frame);
+    },
+    { src: `${base}/dashboard`, name },
+  );
+  await expect.poll(() => page.frame({ name })?.url()).toContain("/dashboard");
+  const frame = page.frame({ name })!;
+  // A stand-in video that counts its pauses.
+  await frame.evaluate(() => {
+    const video = document.createElement("video");
+    video.pause = () => {
+      (window as unknown as { paused: number }).paused =
+        ((window as unknown as { paused?: number }).paused ?? 0) + 1;
+    };
+    document.body.append(video);
+  });
+  await page.evaluate((n) => {
+    (
+      window as unknown as {
+        virtuosDesktop: { windows: { pauseMedia: (name: string) => void } };
+      }
+    ).virtuosDesktop.windows.pauseMedia(n);
+  }, name);
+  await expect
+    .poll(() =>
+      frame.evaluate(
+        () => (window as unknown as { paused?: number }).paused ?? 0,
+      ),
+    )
+    .toBe(1);
+});
+
 test("switches the site styles off and on again from the page", async () => {
   const page = await app.firstWindow();
   type Bridge = {

@@ -1422,13 +1422,16 @@ const SITE_STYLES = [
         max-width: none !important;
       }
       /* A week's days: by their first letter (the dates are in the title), and no "now" line,
-         which the app places by an offset for desktop-wide columns. */
+         which the app places by an offset for desktop-wide columns. The letter by clipping the
+         name to it (one monospaced letter, one line): a ::first-letter rule here made the browser check every link of every
+         TinyGnomes page whenever it changed (seven windows: 100 times its style work). */
       table.c-day td[class*="header"] a.text {
-        display: block;
-        font-size: 0 !important;
-      }
-      table.c-day td[class*="header"] a.text::first-letter {
-        font-size: 12px;
+        display: inline-block;
+        width: 1ch;
+        height: 1.25em;
+        overflow: hidden;
+        font: 600 12px/1.25 ui-monospace, Consolas, monospace !important;
+        vertical-align: top;
       }
       .q-calendar:has(td.header ~ td.header) .timeline {
         display: none !important;

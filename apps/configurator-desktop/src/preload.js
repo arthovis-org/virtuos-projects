@@ -44,6 +44,8 @@ contextBridge.exposeInMainWorld('virtuosDesktop', {
       ipcRenderer.on('virtuos:window-visit', listener);
       return () => ipcRenderer.removeListener('virtuos:window-visit', listener);
     },
+    /** Pauses the video and audio in a window's frame, by its name (a parked window). */
+    pauseMedia: (name) => ipcRenderer.send('virtuos:pause-media', name),
   },
   /** The layouts adapting some desktop-only sites to narrow screens (siteStyles.js). */
   siteStyles: {

@@ -1,6 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from 'react';
 import type { WorkspaceWindow } from '@/catalog/schema';
-import { framesAnySite, registerWindowFrame, windowFrameName } from '@/desktop';
+import { framesAnySite } from '@/desktop';
 import {
   currentDesk,
   FIT_WIDTH,
@@ -21,6 +29,7 @@ import { AgentAppView } from '@/agents/apps/AgentApps';
 import { screenUrl } from './embedUrls';
 import { siteUrl, windowTitle } from './siteUrl';
 import { ZoomControl } from './ZoomControl';
+import { releaseFrame, showFrame, takeFrame, type PooledFrame } from './framePool';
 import styles from './WindowFrame.module.css';
 
 interface WindowFrameProps {
@@ -78,10 +87,6 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
     const visited = (currentDesk(state) ?? state.single).windows.visited?.[win.id];
     return visited && sameSite(visited, shownUrl) ? visited : shownUrl;
   }, [shownUrl, win.id]);
-  // The frame's name, for the desktop app to say where its site went, and which desk and
-  // window it is now.
-  const [frameName] = useState(windowFrameName);
-  useEffect(() => registerWindowFrame(frameName, deskId, win.id), [frameName, deskId, win.id]);
   const zoomWindow = useSetupStore((s) => s.zoomWindow);
   const rememberZoom = useSiteZoomStore((s) => s.remember);
   const [zoomBox, setZoomBox] = useState<HTMLDivElement | null>(null);
@@ -194,24 +199,13 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
           {/* The page laid out larger or smaller than the window and scaled to fill it, as a
               browser zooms; the frame itself stays (a zoom never reloads the site). */}
           <div ref={setZoomBox} className={styles.viewport}>
-            <iframe
-              className={styles.frame}
-              src={startUrl}
-              name={frameName}
+            <FrameSlot
+              deskId={deskId}
+              windowId={win.id}
+              url={win.url}
+              startUrl={startUrl}
               title={title}
-              sandbox={SANDBOX}
-              allow="fullscreen; clipboard-read; clipboard-write"
-              referrerPolicy="strict-origin-when-cross-origin"
-              loading="lazy"
-              style={
-                factor === 1
-                  ? undefined
-                  : {
-                      width: `${100 / factor}%`,
-                      height: `${100 / factor}%`,
-                      transform: `scale(${factor})`,
-                    }
-              }
+              factor={factor}
             />
           </div>
         </>
@@ -236,6 +230,76 @@ export function WindowFrame({ window: win, screenId, grow }: WindowFrameProps) {
       )}
     </div>
   );
+}
+
+/** A frame laid out larger or smaller than its window and scaled to fill it (`factor`). */
+function sizeFrame(frame: HTMLIFrameElement, factor: number) {
+  const { style } = frame;
+  style.width = factor === 1 ? '' : `${100 / factor}%`;
+  style.height = factor === 1 ? '' : `${100 / factor}%`;
+  style.transform = factor === 1 ? '' : `scale(${factor})`;
+}
+
+/**
+ * Where a window's site is shown: its frame, from the frame pool (kept loaded while its desk is
+ * away, in the desktop app: see framePool.ts), laid out larger or smaller and scaled (`factor`).
+ */
+function FrameSlot({
+  deskId,
+  windowId,
+  url,
+  startUrl,
+  title,
+  factor,
+}: {
+  deskId: string;
+  windowId: string;
+  url: string;
+  startUrl: string;
+  title: string;
+  factor: number;
+}) {
+  const host = useRef<HTMLDivElement>(null);
+  const current = useRef<PooledFrame | null>(null);
+  // `startUrl` and `title` only matter when a frame is made: read as it is made.
+  const settings = useRef({ startUrl, title, factor });
+  useLayoutEffect(() => {
+    settings.current = { startUrl, title, factor };
+  });
+
+  useLayoutEffect(() => {
+    const box = host.current;
+    if (!box) return;
+    const taken = takeFrame(deskId, windowId, {
+      url,
+      startUrl: settings.current.startUrl,
+      title: settings.current.title,
+      sandbox: SANDBOX,
+      allow: 'fullscreen; clipboard-read; clipboard-write',
+    });
+    taken.frame.className = styles.frame ?? '';
+    sizeFrame(taken.frame, settings.current.factor);
+    showFrame(taken, box);
+    current.current = taken;
+    return () => {
+      current.current = null;
+      const rect = taken.frame.getBoundingClientRect();
+      releaseFrame(
+        taken,
+        taken.frame.offsetWidth || rect.width,
+        taken.frame.offsetHeight || rect.height,
+      );
+    };
+  }, [deskId, windowId, url]);
+
+  useLayoutEffect(() => {
+    const taken = current.current;
+    if (!taken) return;
+    taken.frame.title = title;
+    sizeFrame(taken.frame, factor);
+  }, [title, factor]);
+
+  return <div ref={host} className={styles.frameSlot} />;
 }
 
 /**

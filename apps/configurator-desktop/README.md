@@ -17,6 +17,8 @@ src/main.js      the window; serves the bundled site at app://configurator/; lin
 src/frames.js    for pages inside frames only: removes X-Frame-Options and CSP frame-ancestors,
                  and makes their cookies SameSite=None so logins stick
 src/preload.js   tells the page it runs in the app (window.virtuosDesktop); nothing else exposed
+src/windowVisits.js  tells the page where the sites in its windows go, and pauses a parked
+                 window's video and audio (windows of desks away stay loaded: framePool.ts)
 web/             the website's build (npm run build:web; not committed)
 ```
 

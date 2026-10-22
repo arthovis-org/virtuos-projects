@@ -134,6 +134,12 @@
   overflow: clip;
 }
 
+/* Holds the window's frame (moved in and out, kept loaded: see framePool.ts). */
+.frameSlot {
+  position: absolute;
+  inset: 0;
+}
+
 .frame {
   position: absolute;
   top: 0;
