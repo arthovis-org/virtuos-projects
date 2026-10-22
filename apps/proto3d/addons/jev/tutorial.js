@@ -138,6 +138,8 @@ export class Tutorial {
       e.preventDefault();
       const r = this.el.getBoundingClientRect();
       const d = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ox: e.clientX - r.left, oy: e.clientY - r.top, moved: false };
+      // capture the pointer: a drag that leaves the window keeps reporting moves (and its release), so the card clamps to the edge instead of stopping short
+      try { head.setPointerCapture(e.pointerId); } catch (_) { /* synthetic events have no active pointer */ }
       const move = (ev) => {
         if (ev.pointerId !== d.id) return;
         if (!d.moved) { if (Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < DEAD) return; d.moved = true; this.el.classList.add('dragging'); }

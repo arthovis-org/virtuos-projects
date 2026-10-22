@@ -9,6 +9,8 @@ import { formatValue } from '../util.js';
 export function deviceDefinition({ id, label, description, sensor, extraOutputs = [], extraEvaluate = () => ({}), seed = 0 }) {
   return {
     id, category: 'devices', label, description, icon: icons[id], device: id,
+    // the simulated sensors drift forever; on their own they do not keep the frame loop at full speed (main.js idle mode)
+    ambient: [sensor.key, ...extraOutputs.map((p) => p.key)],
     inputs: [{ key: 'screen', label: 'screen', type: 'any', optional: true }],
     outputs: [{ key: 'tap', label: 'tap', type: 'event' }, { key: sensor.key, label: sensor.label, type: 'number' }, ...extraOutputs],
     params: [

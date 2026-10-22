@@ -12,6 +12,7 @@ export class World {
     this.nodes = [];
     this.connections = [];
     this.groups = [];
+    this.carried = { nodes: [], connections: [] };   // records of components this page has no type for (serialize.js keeps and saves them)
     this.engine = null;
     this.version = 0;          // bumps on every structural / param change (autosave)
     this.layoutVersion = 0;    // bumps when anything moved (connection routing)
@@ -140,11 +141,11 @@ export class World {
    */
   detach() {
     this.selection?.clear?.();
-    const snap = { nodes: this.nodes, connections: this.connections, groups: this.groups, named: this.named || {} };
+    const snap = { nodes: this.nodes, connections: this.connections, groups: this.groups, named: this.named || {}, carried: this.carried };
     snap.groups.forEach((g) => this.scene.remove(g));
     snap.connections.forEach((c) => this.scene.remove(c));
     snap.nodes.forEach((n) => this.scene.remove(n));
-    this.nodes = []; this.connections = []; this.groups = []; this.named = {};
+    this.nodes = []; this.connections = []; this.groups = []; this.named = {}; this.carried = { nodes: [], connections: [] };
     this.bumpLayout();
     this.changed('detach');
     return snap;
@@ -152,7 +153,7 @@ export class World {
   /** Put a detached content back (the world must be empty). */
   attach(snap) {
     if (this.nodes.length || this.connections.length || this.groups.length) this.clear();
-    this.nodes = snap.nodes; this.connections = snap.connections; this.groups = snap.groups; this.named = snap.named || {};
+    this.nodes = snap.nodes; this.connections = snap.connections; this.groups = snap.groups; this.named = snap.named || {}; this.carried = snap.carried || { nodes: [], connections: [] };
     this.nodes.forEach((n) => { n.world = this; this.scene.add(n); });
     this.connections.forEach((c) => { c.world = this; this.scene.add(c); });
     this.groups.forEach((g) => { g.world = this; this.scene.add(g); });
@@ -173,6 +174,7 @@ export class World {
     this.connections = [];
     [...this.nodes].forEach((n) => { this.scene.remove(n); n.dispose(); });
     this.nodes = [];
+    this.carried = { nodes: [], connections: [] };
     this.bumpLayout();
     this.changed('clear');
   }

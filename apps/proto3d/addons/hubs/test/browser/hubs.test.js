@@ -8,6 +8,17 @@ import assert from 'node:assert/strict';
 import { createHarness } from '../../../sdk/testing/browser.js';
 
 const STUB = '<!doctype html><html><head><meta charset="utf-8"><title>stub</title></head><body style="margin:0;background:#1f4e79;color:#fff;font:600 32px/1.2 system-ui;padding:24px">stub page</body></html>';
+/** Wait until an Arrange glide has finished: no tween running and the pages' positions unchanged over 300 ms (a fixed wait raced the glide on slow CI renderers). */
+const settle = async (page, timeout = 15000) => {
+  const t0 = Date.now(); let last = null;
+  for (;;) {
+    const now = await page.evaluate(() => ({ tween: !!window.__proto.layout?.tweening?.(), pos: JSON.stringify(window.__proto.world.nodes.filter((n) => n.typeId === 'hub-page').map((n) => [n.position.toArray().map((v) => +v.toFixed(3)), +n.rotation.y.toFixed(4)])) }));
+    if (!now.tween && now.pos === last) return;
+    if (Date.now() - t0 > timeout) throw new Error('layout did not settle');
+    last = now.tween ? null : now.pos;
+    await page.waitForTimeout(300);
+  }
+};
 const positions = () => window.__proto.world.nodes.filter((n) => n.typeId === 'hub-page').map((n) => [n.uid, +n.position.x.toFixed(2), +n.position.y.toFixed(2), +n.position.z.toFixed(2), +n.rotation.y.toFixed(3)]).sort((a, b) => a[0].localeCompare(b[0]));
 const faceCentre = (uid) => {
   const P = window.__proto, n = P.world.nodes.find((x) => x.uid === uid), T = P.THREE;
@@ -75,13 +86,13 @@ test('hubs page: boots with zero errors, CTL OS demo, CSS3D live layer with stub
     /* ---- 5. flows: Audience (swimlanes) and Compare move the blocks, undoably, with zero errors ---- */
     const before = await page.evaluate(positions);
     await page.click('#hub-flowbar .hub-flow[data-flow="audience"]');
-    await page.waitForTimeout(1200);
+    await settle(page);
     const lanes = await page.evaluate(positions);
     assert.notDeepEqual(lanes, before, 'positions changed');
     assert.ok(new Set(lanes.map(([, , y]) => y)).size >= 5, 'audience: several floors (distinct y)');
     assert.ok(lanes.every(([, , , , ry]) => ry === 0), 'audience rows face the camera');
     await page.click('#hub-flowbar .hub-flow[data-flow="compare"]');
-    await page.waitForTimeout(1200);
+    await settle(page);
     const after = await page.evaluate(positions);
     assert.notDeepEqual(after, lanes, 'compare moved the pages again');
     assert.equal(new Set(after.map(([, x, y, z]) => `${x}|${y}|${z}`)).size, after.length, 'no two pages share a position');
@@ -89,7 +100,7 @@ test('hubs page: boots with zero errors, CTL OS demo, CSS3D live layer with stub
     assert.ok(before.some(([, , , , ry]) => Math.abs(ry) > 0.2), 'the delivery arc rotated cards toward its centre');
     const flowState = await page.evaluate(() => ({ active: document.querySelector('#hub-flowbar .hub-flow.is-active')?.dataset.flow, canUndo: window.__proto.history.canUndo, labels: window.__proto.history.undoStack.map((c) => c.label), saved: JSON.parse(localStorage.getItem('proto3d.addon.hubs.settings.v1')).flow }));
     assert.equal(flowState.active, 'compare'); assert.equal(flowState.canUndo, true); assert.match(flowState.labels.at(-1), /^Arrange · Compare/); assert.match(flowState.labels.at(-2), /^Arrange · Audience/); assert.equal(flowState.saved, 'compare');
-    await page.evaluate(() => { window.__proto.history.undo(); window.__proto.history.undo(); }); await page.waitForTimeout(1200);
+    await page.evaluate(() => { window.__proto.history.undo(); window.__proto.history.undo(); }); await settle(page);
     assert.deepEqual(await page.evaluate(positions), before, 'two undos put every page back');
 
     /* ---- 5b. the embed height: the flow bar slider resizes every card live, the CSS3D frames follow ---- */

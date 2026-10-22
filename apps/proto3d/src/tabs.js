@@ -63,7 +63,7 @@ export class Tabs {
   isUntouchedEmpty(tab) {
     if (!tab || tab.preview || tab.name || tab.dirty || tab.savedAt) return false;
     if (tab.history?.undo?.length || (tab === this.active && this.history.canUndo)) return false;
-    return tab === this.active ? this.world.nodes.length === 0 : !(tab.doc?.nodes?.length);
+    return tab === this.active ? this.world.nodes.length === 0 && !this.world.carried?.nodes.length : !(tab.doc?.nodes?.length);
   }
   displayName(tab) { return tab?.name || 'Untitled'; }
 
@@ -225,7 +225,17 @@ export class Tabs {
   _show(tab) {
     this._suspend++;
     if (tab.live) { this.world.attach(tab.live); tab.live = null; }
-    else if (tab.doc) { try { this.hooks.load(tab.doc); } catch (e) { console.warn('tab load failed:', e.message); this.world.clear(); } }
+    else if (tab.doc) {
+      try { this.hooks.load(tab.doc); }
+      catch (e) {
+        // A document this page cannot read (a newer format, a broken record): show nothing and turn
+        // the tab read-only like a version preview, so no autosave replaces the stored project with
+        // the empty scene. The record stays in browser storage (Open recent) for a page that can read it.
+        console.warn('tab load failed:', e.message); this.world.clear();
+        tab.preview = true; tab.loadError = e.message;
+        this.hooks.toast?.(`Could not open ${this.displayName(tab)}: ${e.message}`, 4000);
+      }
+    }
     this.history.swap(tab.history || { undo: [], redo: [] }); tab.history = null;
     this.history.locked = !!tab.preview;
     if (typeof tab.wiring === 'boolean') setWiring(tab.wiring);
