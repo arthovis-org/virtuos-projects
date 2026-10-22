@@ -27,6 +27,9 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
   const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
   const hasAgent = useAgentStore((s) => !!s.agents[deskId]);
   const shot = useSnapshotStore((s) => s.shots[id]);
+  // A close-up of part of the screen, when that is all there is (or sharper than the whole).
+  const part = useSnapshotStore((s) => s.parts[id]);
+  const pictures = [shot, part].filter((p) => p !== undefined);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -59,7 +62,7 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
       className={styles.poster}
       data-portrait={heightPx > widthPx || undefined}
       data-agent={app ? '' : undefined}
-      data-shot={!app && shot ? '' : undefined}
+      data-shot={!app && pictures.length > 0 ? '' : undefined}
       data-drop={dropTarget || undefined}
       {...deskDropAttribute(deskId)}
       style={
@@ -78,18 +81,21 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
     >
       {app ? (
         <AgentAppView app={app} deskId={deskId} compact />
-      ) : shot ? (
-        <img
-          className={styles.shot}
-          src={shot.url}
-          alt=""
-          draggable={false}
-          style={{
-            width: shot.width,
-            height: shot.height,
-            transform: quadToBox(shot.corners, widthPx, heightPx),
-          }}
-        />
+      ) : pictures.length > 0 ? (
+        pictures.map((picture) => (
+          <img
+            key={picture.url}
+            className={styles.shot}
+            src={picture.url}
+            alt=""
+            draggable={false}
+            style={{
+              width: picture.width,
+              height: picture.height,
+              transform: quadToBox(picture.corners, widthPx, heightPx),
+            }}
+          />
+        ))
       ) : (
         <>
           <span className={styles.icon} aria-hidden="true">
