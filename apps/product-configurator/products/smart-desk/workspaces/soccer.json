@@ -3,11 +3,11 @@
   "icon": "goal",
   "accent": "#00a651",
   "order": 40,
-  "description": "Live scores from every league, highlights, transfers and market values on Transfermarkt, the Premier League and a tactics board.",
+  "description": "Scores and fixtures on BBC Sport and Flashscore, highlights, transfers and market values on Transfermarkt, the Premier League and a tactics board.",
   "windows": [
     {
-      "title": "Live scores",
-      "url": "https://www.fotmob.com/",
+      "title": "BBC Sport",
+      "url": "https://www.bbc.com/sport/football/scores-fixtures",
       "screen": "MainMonitor"
     },
     {
@@ -19,6 +19,11 @@
       "title": "Transfermarkt",
       "url": "https://www.transfermarkt.com/premier-league/startseite/wettbewerb/GB1",
       "screen": "MonitorLeft"
+    },
+    {
+      "title": "Flashscore",
+      "url": "https://www.flashscore.com/football/",
+      "screen": "MonitorRight"
     },
     {
       "title": "Premier League",

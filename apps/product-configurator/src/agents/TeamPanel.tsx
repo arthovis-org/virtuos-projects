@@ -96,7 +96,7 @@ function Team({
       <div className={styles.headRow}>
         <p className={styles.eyebrow}>AI team</p>
         <div className={styles.speed} role="radiogroup" aria-label="Speed">
-          {[1, 2, 4].map((s) => (
+          {[1, 2, 4, 8, 16].map((s) => (
             <button
               key={s}
               type="button"
