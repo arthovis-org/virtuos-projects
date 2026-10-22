@@ -735,23 +735,29 @@ rules.
 **Bodies.** Every body — node cards, device slabs, group slabs and frames, the board's back
 panel, plinth, column panels and cards, timeline bars, the sticky note, the milestone flag and
 base, the flow step — is one shape: `geometry.js → panelGeometry(w, h, depth, { radius, bevel })`,
-a **2D rounded rectangle extruded** a little (nodes 0.16 units) with `bevelEnabled`, a **tiny
-bevel** (0.02, two segments) and 12+ curve segments. The front and back faces are flat and crisp,
+a **2D rounded rectangle extruded** (nodes 0.26 units thick) with `bevelEnabled`, a **rounded
+bevel** (nodes 0.05, four segments) and 16 curve segments. The front and back faces are flat and crisp,
 the sides straight; only the bevel catches the light. The outer size is what you ask for (the
 bevel is inside it), the front cap's UVs map the cap exactly to 0..1 so a canvas texture lands
 corner to corner (board cards use this: one mesh, the canvas on the front-cap material group,
 plain sides), and `slabGeometry` is the same shape lying flat. Materials are satin
 `MeshPhysicalMaterial` (roughness 0.45, clearcoat 0.4, clearcoat roughness 0.3, no metalness) lit
 by a small procedural **environment map** (a sky / horizon / ground gradient with one soft
-highlight, run through PMREM, rebuilt per theme) so bevels read without gloss. Selection / hover
+highlight, run through PMREM, rebuilt per theme) so bevels read without gloss. The **edge is
+machined**: `panelGeometry` marks the side walls and bevel (`aEdge`), and the panel materials give
+them their own finish — the body colour times the theme's `edge.tint` (a brushed-aluminium rim on
+white bodies, a lighter slate rim on dark ones), a little metal, lower roughness — so every body
+reads as a solid object with a defined outline instead of a flat card. Selection / hover
 / error is a **thin outline**: a back-face shell 0.04 wider than the body.
 
 **Two themes.** Dark is deep navy greys. Light is a cool, paper-like room layered so every surface
 stands off the next: a mid-grey **floor pool** (fading to the background, with a soft grid), **white
 bodies** lit a touch brighter (the light palette carries its own exposure, key-light and face
-emissive tokens; the dark theme's stay untouched) and **white faces with a hairline edge**. Measured
-on screen, a node body sits 1.3 : 1 off the floor and the board 1.5 : 1 (round 6 had both within
-1.1 : 1), face text reads at 14 : 1. `T` toggles.
+emissive tokens; the dark theme's stay untouched) and **white faces with a hairline edge**. **Faces, labels and category accents are unlit and outside
+tone mapping**: the canvas colours reach the screen exactly, so white is white and the light
+theme's ink (`#0d1220`, dim `#454d5d`) keeps its full contrast — 17 : 1 and 7.9 : 1 on white. (Lit,
+tone-mapped faces greyed their whites, lifted the dark text and caught the environment's sheen.)
+`T` toggles.
 
 **Faces** are flat, modern UI drawn on canvas at 120 px / unit (`faces.js`): the type stack is
 *Inter → SF Pro Text → Segoe UI → system-ui* (Inter via Google Fonts when online), titles 600,

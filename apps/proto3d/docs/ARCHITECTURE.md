@@ -538,14 +538,17 @@ light room read as one wash of near-identical greys (body vs floor 1.06 : 1, fac
 with the face the darker one). The fix keeps the three surfaces in a fixed order — **floor pool
 (mid grey `ground` 0xc6ccd4, fading to `bg` 0xdfe3e8) < body (near white) < face (white with a
 hairline)** — and gives the light palette render tokens that leave the dark theme pixel-identical
-(`exposure` 1.2 / `keyLight` 2.0 / `faceBoost` 1 / `fogScale` 1 / `poolScale` 1 there):
+(`exposure` 1.2 / `keyLight` 2.0 / `fogScale` 1 / `poolScale` 1 there):
 `exposure` 1.5 and `keyLight` 2.6 lift the lit surfaces (`workspace.js` reads them on boot and on
-theme change), `faceBoost` 2.4 multiplies every face material's emissive (`materials.face` records
-the base value, `retuneFace` re-applies it in `Block3D.refreshTheme`, `Node3D` scales its state
-and LOD intensities by it), `faceEdge` strokes the face card, `fogScale` 0.55 thins the fog and
+theme change), `faceEdge` strokes the face card, `fogScale` 0.55 thins the fog and
 `poolScale` 1.7 widens the floor pool so far blocks stay on the grey mat. Sampled on the Showcase
 after the change: node body vs floor 1.31 : 1, board vs floor 1.49 : 1, face brighter than the body
-with the hairline drawing the edge, grid line vs floor 1.85 : 1, face text 14 : 1. The CSS tokens
+with the hairline drawing the edge, grid line vs floor 1.85 : 1, face text 14 : 1. **Round 8**
+went further: faces are `MeshBasicMaterial({ map, toneMapped: false })` (`materials.face`), labels
+and accents skip tone mapping too, so canvas colours reach the screen exactly (no emissive tuning
+left; a disabled block fades its face with `materials.faceDim`), the light ink went to `#0d1220` /
+`#454d5d`, and bodies got thicker (0.26) with a rounded 0.05 bevel whose side walls take the
+theme's `edge` finish (`aEdge` in `panelGeometry`, patched into the panel materials). The CSS tokens
 (`--bg`, `--panel-solid`, `--field-solid`, `--dim`) follow the same cooler greys so the shell and
 the room agree.
 

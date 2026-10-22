@@ -9,7 +9,9 @@
 //     • the front / back caps carry UVs that map the cap exactly to 0..1 (a canvas texture on
 //       the front face lands corner to corner); the side walls get a neutral UV;
 //     • ExtrudeGeometry makes two material groups: 0 = caps, 1 = sides + bevel, so a mesh may
-//       use `[faceMaterial, sideMaterial]` (a card with its canvas on the front).
+//       use `[faceMaterial, sideMaterial]` (a card with its canvas on the front);
+//   • a float attribute `aEdge` marks the same split (caps 0, sides + bevel 1): the panel
+//     materials (theme.js) give the edge its own machined finish from it.
 import * as THREE from 'three';
 
 /** A rounded rectangle centred on the origin (arcs, not quadratic curves, so the bevel stays even). */
@@ -44,7 +46,7 @@ function capUVGenerator(capW, capH) {
  * Extruded, bevelled rounded rectangle. Defaults: radius = 18 % of the short side, bevel 0.02.
  * `geo.userData.panel` keeps the parameters for tests and for rebuilding with a new size.
  */
-export function panelGeometry(w, h, depth = 0.16, { radius = null, bevel = 0.02, bevelSegments = 2, curveSegments = 12 } = {}) {
+export function panelGeometry(w, h, depth = 0.16, { radius = null, bevel = 0.02, bevelSegments = 4, curveSegments = 16 } = {}) {
   const r = Math.max(0.01, radius ?? Math.min(w, h) * 0.18);
   const b = Math.max(0, Math.min(bevel, r * 0.6, depth * 0.3));
   const capW = Math.max(0.02, w - 2 * b), capH = Math.max(0.02, h - 2 * b);
@@ -56,6 +58,9 @@ export function panelGeometry(w, h, depth = 0.16, { radius = null, bevel = 0.02,
   });
   geo.translate(0, 0, -extrudeDepth / 2);      // the bevels extend ±b beyond the extrusion → centred on z = 0
   geo.computeVertexNormals();
+  const edge = new Float32Array(geo.attributes.position.count);
+  for (const g of geo.groups) if (g.materialIndex === 1) edge.fill(1, g.start, g.start + g.count);
+  geo.setAttribute('aEdge', new THREE.BufferAttribute(edge, 1));
   geo.type = 'PanelGeometry';
   geo.userData.panel = { w, h, depth, radius: r, bevel: b, capW, capH };
   return geo;
