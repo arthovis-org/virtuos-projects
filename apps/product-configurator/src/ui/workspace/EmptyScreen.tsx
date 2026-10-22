@@ -1,5 +1,5 @@
-import { useState, type CSSProperties, type SyntheticEvent } from 'react';
-import { ArrowLeft, ChevronRight, History, Search } from 'lucide-react';
+import { useEffect, useState, type CSSProperties, type SyntheticEvent } from 'react';
+import { History, Search, X } from 'lucide-react';
 import type { Screen, WorkspaceWindow } from '@/catalog/schema';
 import { workspaceById } from '@/state/setup';
 import { useCurrentWindows, useProduct, useSetupStore } from '@/state/setupStore';
@@ -66,8 +66,8 @@ function SiteTile({ site, accent, onOpen }: { site: Site; accent: string; onOpen
 
 /**
  * What an empty screen (or a new window) shows: a way to put something on it. Recently closed
- * windows can be reopened; sites are in folders (project management, each workspace, tools),
- * one tap to open a folder and one to open a site; typing filters every folder's sites, and any
+ * windows can be reopened; sites are in folders (project management, each workspace, tools):
+ * a tap opens a folder in a popup over the picker, a tap there opens the site; typing filters every folder's sites, and any
  * https address can be opened. Light, and sized from the screen, for every screen's shape.
  */
 export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
@@ -126,6 +126,16 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
   const [openFolder, setOpenFolder] = useState<string | null>(null);
   const folder = folders.find((f) => f.key === openFolder);
 
+  // The open folder closes with Escape too.
+  useEffect(() => {
+    if (!openFolder) return;
+    const key = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenFolder(null);
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [openFolder]);
+
   // Typing filters every folder's sites by name or address.
   const query = address.trim().toLowerCase();
   const matches = query
@@ -147,70 +157,164 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
   };
 
   return (
-    <div className={styles.empty}>
-      <div className={styles.inner}>
-        {/* A blank window's title bar names it already. */}
-        <header className={styles.top}>
-          {!blankId && <h2 className={styles.heading}>{screen.label} screen</h2>}
-          <p className={styles.hint}>
-            {blankId ? 'Open a site in this window' : 'Drag a window here, or open a site'}
-          </p>
-        </header>
+    <div className={styles.picker}>
+      <div className={styles.empty} inert={folder ? true : undefined}>
+        <div className={styles.inner}>
+          {/* A blank window's title bar names it already. */}
+          <header className={styles.top}>
+            {!blankId && <h2 className={styles.heading}>{screen.label} screen</h2>}
+            <p className={styles.hint}>
+              {blankId ? 'Open a site in this window' : 'Drag a window here, or open a site'}
+            </p>
+          </header>
 
-        <form className={styles.form} onSubmit={submit}>
-          <label className={styles.field}>
-            <Search className={styles.fieldIcon} size="1.1em" strokeWidth={2} aria-hidden="true" />
-            <input
-              className={styles.input}
-              type="text"
-              inputMode="url"
-              placeholder="Search sites or type an address"
-              aria-label={`Search sites or type a web address to open on the ${screen.label} screen`}
-              value={address}
-              onChange={(event) => {
-                setAddress(event.target.value);
-                setError(null);
-              }}
-            />
-          </label>
-          <button type="submit" className={styles.open}>
-            Open
-          </button>
-        </form>
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
+          <form className={styles.form} onSubmit={submit}>
+            <label className={styles.field}>
+              <Search
+                className={styles.fieldIcon}
+                size="1.1em"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <input
+                className={styles.input}
+                type="text"
+                inputMode="url"
+                placeholder="Search sites or type an address"
+                aria-label={`Search sites or type a web address to open on the ${screen.label} screen`}
+                value={address}
+                onChange={(event) => {
+                  setAddress(event.target.value);
+                  setError(null);
+                }}
+              />
+            </label>
+            <button type="submit" className={styles.open}>
+              Open
+            </button>
+          </form>
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          )}
 
-        {query ? (
-          <section className={styles.section} aria-label="Matching sites">
-            <h3 className={styles.sectionLabel}>
-              {matches.length > 0
-                ? 'Matching sites'
-                : 'No site by that name: Open goes to the address'}
-            </h3>
-            <div className={styles.sites}>
-              {matches.map(({ site, accent }) => (
-                <SiteTile key={site.url} site={site} accent={accent} onOpen={() => open(site)} />
-              ))}
-            </div>
-          </section>
-        ) : folder ? (
-          <section className={styles.section} aria-label={folder.label}>
-            <div className={styles.folderBar}>
-              <button type="button" className={styles.back} onClick={() => setOpenFolder(null)}>
-                <ArrowLeft size="1.05em" strokeWidth={2} aria-hidden="true" />
-                All folders
-              </button>
-              <span className={styles.folderTitle} style={accentStyle(folder.accent)}>
-                <span className={styles.folderIcon} aria-hidden="true">
-                  <WorkspaceIcon name={folder.icon} size={16} />
-                </span>
-                {folder.label}
+          {query ? (
+            <section className={styles.section} aria-label="Matching sites">
+              <h3 className={styles.sectionLabel}>
+                {matches.length > 0
+                  ? 'Matching sites'
+                  : 'No site by that name: Open goes to the address'}
+              </h3>
+              <div className={styles.sites}>
+                {matches.map(({ site, accent }) => (
+                  <SiteTile key={site.url} site={site} accent={accent} onOpen={() => open(site)} />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <>
+              {closed.length > 0 && (
+                <section className={styles.section} aria-label="Recently closed">
+                  <h3 className={styles.sectionLabel}>
+                    <History size="1.1em" strokeWidth={2} aria-hidden="true" />
+                    Recently closed
+                  </h3>
+                  <div className={styles.chips}>
+                    {closed.map((w) => (
+                      <button
+                        key={w.id}
+                        type="button"
+                        className={styles.chip}
+                        onClick={() => open(w)}
+                      >
+                        {w.title}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+              <section className={styles.section} aria-label="Folders">
+                <h3 className={styles.sectionLabel}>Folders</h3>
+                <div className={styles.folders}>
+                  {folders.map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      className={styles.folder}
+                      style={accentStyle(f.accent)}
+                      onClick={() => setOpenFolder(f.key)}
+                      aria-haspopup="dialog"
+                      aria-label={`${f.label}: ${f.sites.length} ${f.sites.length === 1 ? 'site' : 'sites'}`}
+                    >
+                      <span className={styles.folderIcon} aria-hidden="true">
+                        <WorkspaceIcon name={f.icon} size={18} />
+                      </span>
+                      <span className={styles.folderName}>{f.label}</span>
+                      {/* A peek at what is inside: its sites' initials, and how many. */}
+                      <span className={styles.peek} aria-hidden="true">
+                        {f.sites.slice(0, 4).map((site) => (
+                          <span key={site.url} className={styles.peekBadge}>
+                            {site.title.trim().charAt(0).toUpperCase()}
+                          </span>
+                        ))}
+                        <span className={styles.folderCount}>
+                          {f.sites.length} {f.sites.length === 1 ? 'site' : 'sites'}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          <p className={styles.note}>
+            Some sites refuse to be shown inside another page and stay blank.
+          </p>
+        </div>
+      </div>
+      {folder && (
+        // The folder opens over the picker, which dims behind it: no page of its own to find
+        // the way back from.
+        <div
+          className={styles.scrim}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setOpenFolder(null);
+          }}
+        >
+          <section
+            className={styles.popup}
+            role="dialog"
+            aria-modal="true"
+            aria-label={folder.label}
+            style={
+              {
+                ...accentStyle(folder.accent),
+                '--count': Math.min(folder.sites.length, 3),
+              } as CSSProperties
+            }
+          >
+            <header className={styles.popupHead}>
+              <span className={styles.folderIcon} aria-hidden="true">
+                <WorkspaceIcon name={folder.icon} size={18} />
               </span>
-            </div>
-            <div className={styles.sites}>
+              <span className={styles.popupTitle}>
+                <span className={styles.popupName}>{folder.label}</span>
+                <span className={styles.folderCount}>
+                  {folder.sites.length} {folder.sites.length === 1 ? 'site' : 'sites'}
+                </span>
+              </span>
+              <button
+                type="button"
+                className={styles.close}
+                onClick={() => setOpenFolder(null)}
+                aria-label="Close folder"
+              >
+                <X size="1.1em" strokeWidth={2} aria-hidden="true" />
+              </button>
+            </header>
+            <div className={styles.popupSites}>
               {folder.sites.map((site) => (
                 <SiteTile
                   key={site.url}
@@ -221,66 +325,8 @@ export function EmptyScreen({ screen, closed, blankId }: EmptyScreenProps) {
               ))}
             </div>
           </section>
-        ) : (
-          <>
-            {closed.length > 0 && (
-              <section className={styles.section} aria-label="Recently closed">
-                <h3 className={styles.sectionLabel}>
-                  <History size="1.1em" strokeWidth={2} aria-hidden="true" />
-                  Recently closed
-                </h3>
-                <div className={styles.chips}>
-                  {closed.map((w) => (
-                    <button
-                      key={w.id}
-                      type="button"
-                      className={styles.chip}
-                      onClick={() => open(w)}
-                    >
-                      {w.title}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
-            <section className={styles.section} aria-label="Folders">
-              <h3 className={styles.sectionLabel}>Folders</h3>
-              <div className={styles.folders}>
-                {folders.map((f) => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    className={styles.folder}
-                    style={accentStyle(f.accent)}
-                    onClick={() => setOpenFolder(f.key)}
-                    aria-label={`${f.label}: ${f.sites.length} ${f.sites.length === 1 ? 'site' : 'sites'}`}
-                  >
-                    <span className={styles.folderIcon} aria-hidden="true">
-                      <WorkspaceIcon name={f.icon} size={18} />
-                    </span>
-                    <span className={styles.folderText}>
-                      <span className={styles.folderName}>{f.label}</span>
-                      <span className={styles.folderCount}>
-                        {f.sites.length} {f.sites.length === 1 ? 'site' : 'sites'}
-                      </span>
-                    </span>
-                    <ChevronRight
-                      className={styles.folderArrow}
-                      size="1em"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                  </button>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-
-        <p className={styles.note}>
-          Some sites refuse to be shown inside another page and stay blank.
-        </p>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
