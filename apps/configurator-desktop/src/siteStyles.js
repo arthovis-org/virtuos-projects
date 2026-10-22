@@ -1614,12 +1614,16 @@ function addStyleInPage(id, css, on) {
   const state = (window.__virtuosSiteStyle ??= {});
   state.off = !on;
   const add = () => {
+    // Added as the page starts, there may be no document element yet: the observer adds it
+    // once there is.
+    const root = document.head ?? document.documentElement;
+    if (!root) return;
     let style = document.getElementById(id);
     if (!style) {
       style = document.createElement("style");
       style.id = id;
       style.textContent = css;
-      (document.head ?? document.documentElement).appendChild(style);
+      root.appendChild(style);
     }
     const media = state.off ? "not all" : "";
     if (style.media !== media) style.media = media;
@@ -1627,7 +1631,7 @@ function addStyleInPage(id, css, on) {
   add();
   if (!state.observer) {
     state.observer = new MutationObserver(add);
-    state.observer.observe(document.documentElement, {
+    state.observer.observe(document, {
       childList: true,
       subtree: true,
     });
@@ -1705,25 +1709,43 @@ function handleSwitch() {
   });
 }
 
-/** Applies site styles to the pages on the configurator's screens (frames, not the window). */
+/**
+ * Applies site styles to the pages on the configurator's screens (frames, not the window): as
+ * soon as a page starts (its address is known), so it is laid out adapted from the first, and
+ * again once its document is parsed and once it has loaded, in case it dropped the style
+ * meanwhile (adding it again changes nothing). Only once it had loaded, a busy site like
+ * TinyGnomes was first shown as it is, for a while.
+ */
 function watchSiteStyles(webContents) {
   handleSwitch();
+  const apply = (isMainFrame, processId, routingId) => {
+    if (isMainFrame) return;
+    let frame;
+    try {
+      frame = webFrameMain.fromId(processId, routingId);
+    } catch {
+      return;
+    }
+    const style = frame && styleFor(frame.url);
+    if (!style) return;
+    frame.executeJavaScript(scriptFor(style)).catch(() => {
+      // The frame navigated away or closed meanwhile.
+    });
+  };
+  webContents.on(
+    "did-frame-navigate",
+    (_event, _url, _code, _status, isMainFrame, processId, routingId) =>
+      apply(isMainFrame, processId, routingId),
+  );
+  webContents.on("frame-created", (_event, { frame }) => {
+    frame?.on("dom-ready", () =>
+      apply(frame === webContents.mainFrame, frame.processId, frame.routingId),
+    );
+  });
   webContents.on(
     "did-frame-finish-load",
-    (_event, isMainFrame, processId, routingId) => {
-      if (isMainFrame) return;
-      let frame;
-      try {
-        frame = webFrameMain.fromId(processId, routingId);
-      } catch {
-        return;
-      }
-      const style = frame && styleFor(frame.url);
-      if (!style) return;
-      frame.executeJavaScript(scriptFor(style)).catch(() => {
-        // The frame navigated away or closed meanwhile.
-      });
-    },
+    (_event, isMainFrame, processId, routingId) =>
+      apply(isMainFrame, processId, routingId),
   );
 }
 
