@@ -69,3 +69,75 @@
     var(--shadow-soft);
   color: var(--text);
 }
+
+/* The tag and, in the overview of all desks, its bar of icons just over it. */
+.tag {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 8%),
+    0 10px 28px rgb(0 0 0 / 16%);
+  transform: translateX(-50%);
+  pointer-events: auto;
+  animation: menu-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* A pointer down to the desk's name. */
+.menu::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border: solid var(--border-strong);
+  border-width: 0 1px 1px 0;
+  background: var(--surface);
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: color-mix(in srgb, var(--desk-accent) 14%, transparent);
+  color: var(--desk-accent);
+  outline: none;
+}
+
+.item:active {
+  transform: scale(0.94);
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.96);
+  }
+}
