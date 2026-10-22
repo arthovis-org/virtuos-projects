@@ -8,7 +8,7 @@ interface OptionGroupControlProps {
   group: OptionGroup;
   selectedOptionId: string;
   onSelect: (optionId: string) => void;
-  /** Leaves prices out (the virtual desks of unlimited desks mode). */
+  /** Leaves prices out (the virtual desks of multiple desks mode). */
   hidePrices?: boolean;
 }
 

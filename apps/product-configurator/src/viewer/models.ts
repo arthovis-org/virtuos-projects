@@ -35,7 +35,7 @@ export function preloadCurrentProduct(): () => void {
 
 /**
  * Untouched copies of loaded scenes, taken before the configurator changes anything on them
- * (visibility, finishes, desk height), so every desk of unlimited desks mode starts from the
+ * (visibility, finishes, desk height), so every desk of multiple desks mode starts from the
  * model as exported.
  */
 const pristine = new WeakMap<Object3D, Object3D>();

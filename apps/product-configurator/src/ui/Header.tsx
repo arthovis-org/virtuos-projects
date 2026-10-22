@@ -114,7 +114,7 @@ export function Header() {
               onClick={enterRoom}
               title="A desk for every kind of work: finance, crypto, sports and more"
             >
-              Unlimited desks
+              Multiple desks
             </button>
           </div>
         )}

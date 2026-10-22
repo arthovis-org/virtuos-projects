@@ -1,5 +1,5 @@
 /**
- * The posters of unlimited desks mode: what the screens of the desks the visitor is not at
+ * The posters of multiple desks mode: what the screens of the desks the visitor is not at
  * show (the desk's workspace and its windows, without loading the sites). Published by the
  * viewer per desk, drawn by the screen layer.
  */

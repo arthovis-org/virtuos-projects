@@ -1,5 +1,5 @@
 /*
- * The live demo card: a band across the top of the viewer (intro, workspaces, unlimited desks)
+ * The live demo card: a band across the top of the viewer (intro, workspaces, multiple desks)
  * rather than a column down the side, so it covers as little of the desk as possible; the
  * camera frames the desk below it (see Refit).
  */
@@ -22,7 +22,7 @@
   container-type: inline-size;
 }
 
-/* Wide: intro, workspaces and unlimited desks side by side. */
+/* Wide: intro, workspaces and multiple desks side by side. */
 .cardBody {
   display: grid;
   grid-template-columns: minmax(150px, 200px) minmax(0, 1fr) minmax(160px, 200px);
@@ -223,7 +223,7 @@
   background: var(--surface-hover);
 }
 
-/* The way into unlimited desks mode, beside the workspaces. */
+/* The way into multiple desks mode, beside the workspaces. */
 .more {
   display: flex;
   flex-direction: column;
@@ -233,7 +233,7 @@
   border-left: 1px solid var(--border);
 }
 
-/* Narrower: the intro and the way into unlimited desks share the top row, the tiles go under. */
+/* Narrower: the intro and the way into multiple desks share the top row, the tiles go under. */
 @container (max-width: 900px) {
   .cardBody {
     grid-template-columns: minmax(0, 1fr) auto;

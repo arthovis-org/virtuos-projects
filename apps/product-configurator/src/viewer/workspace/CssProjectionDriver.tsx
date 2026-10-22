@@ -5,7 +5,7 @@ import { useProduct } from '@/state/setupStore';
 import { cssProjection, updateCssProjection } from './cssProjection';
 
 /**
- * Lays the DOM screens (live sites, and the posters of unlimited desks mode) over their display
+ * Lays the DOM screens (live sites, and the posters of multiple desks mode) over their display
  * surfaces each time the scene is drawn, after everything moved this frame (camera, desk
  * height), so they never lag behind. Always mounted: the posters need it with no desk live.
  * Other renders of the scene (contact shadows, the height side view) use other cameras.

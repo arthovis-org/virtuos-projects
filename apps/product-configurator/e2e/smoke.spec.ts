@@ -51,7 +51,7 @@ test('loads, draws the desk and configures it', async ({ page }) => {
 test('the room keeps each desk’s own setup', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/');
-  await page.getByRole('radio', { name: 'Unlimited desks' }).click();
+  await page.getByRole('radio', { name: 'Multiple desks' }).click();
   await expect(deskBar(page).locator('button[title^="Desk "]')).toHaveCount(4);
 
   // The single desk came along as desk 1; the others are new.
@@ -107,7 +107,7 @@ test('a desk dragged to the trash is removed; the trash shows only while draggin
 }) => {
   const errors = watchErrors(page);
   await page.goto('/');
-  await page.getByRole('radio', { name: 'Unlimited desks' }).click();
+  await page.getByRole('radio', { name: 'Multiple desks' }).click();
   const desks = deskBar(page).locator('button[title^="Desk "]');
   await expect(desks).toHaveCount(4);
   const trash = page.getByText('Drop here to remove');

@@ -41,7 +41,7 @@ const GLIDE_RATE = 6;
 const LABEL_LIFT = 0.22;
 
 /**
- * Loads the product glTF and shows it as configured: one desk, or in unlimited desks mode a
+ * Loads the product glTF and shows it as configured: one desk, or in multiple desks mode a
  * room of desks, each a copy of the model with its own configuration. The workspace (live
  * sites, seated camera) belongs to the desk the visitor is at.
  */
@@ -168,7 +168,7 @@ interface DeskInstanceProps {
   inSeat: boolean;
   /** The desk this is (its height). */
   deskId: string;
-  /** In unlimited desks mode: which desk this is. */
+  /** In multiple desks mode: which desk this is. */
   desk:
     | { desk: DeskSetup; number: number; name: string; active: boolean; showLabel: boolean }
     | undefined;

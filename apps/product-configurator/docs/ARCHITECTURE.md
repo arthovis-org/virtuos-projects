@@ -101,7 +101,7 @@ is found by raycasting the screen meshes, and `dropTarget.ts` turns the hit into
 the set-up; whether the sites are on and where the camera is are view state, and nothing loads
 until a visitor turns the sites on.
 
-**Unlimited desks**
+**Multiple desks**
 A second mode: a room of desks, each a copy of the model (`deskModel` in `viewer/models.ts`,
 cloned from an untouched copy taken before the configurator changes the loaded scene) with its
 own selections, height and windows, all in the set-up; the panel edits the desk the visitor is

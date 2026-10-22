@@ -128,7 +128,7 @@ export interface DeskSetup {
 
 export interface Setup {
   productId: string;
-  /** The single desk, or unlimited desks mode: the room. */
+  /** The single desk, or multiple desks mode: the room. */
   mode: DeskMode;
   single: DeskSetup;
   /** The room's desks; kept while the visitor is back at the single desk. */

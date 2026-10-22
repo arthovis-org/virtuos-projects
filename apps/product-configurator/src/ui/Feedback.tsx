@@ -69,7 +69,7 @@ export function Feedback() {
     if (setup.mode === 'desks') {
       const desk = currentDesk(setup);
       parts.push(
-        `Unlimited desks (${setup.room.length})`,
+        `Multiple desks (${setup.room.length})`,
         desk
           ? `at desk ${setup.room.indexOf(desk) + 1}, ${deskName(product, setup.room, desk)}`
           : 'overview',

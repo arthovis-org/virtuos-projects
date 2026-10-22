@@ -21,7 +21,7 @@ function decimalsFor(step: number) {
  */
 export function MotionControl({ motion }: MotionControlProps) {
   // Until the viewer has measured the model, a motion without `initial` has no value yet.
-  // The desk the visitor is at (each desk of unlimited desks mode has its own height).
+  // The desk the visitor is at (each desk of multiple desks mode has its own height).
   const deskId = useSetupStore((state) => currentDesk(state)?.id ?? SINGLE_DESK);
   const current = useMotionStore((state) => state.current[motionKey(deskId, motion.id)]);
   const target = useSetupStore((state) => currentDesk(state)?.motions[motion.id]) ?? current;

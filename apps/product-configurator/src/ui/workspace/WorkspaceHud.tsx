@@ -16,7 +16,7 @@ const MAX_TABS = 4;
 
 /**
  * The workspace demo's own controls, over the viewer: a card to start it (one desk, or the
- * room of unlimited desks), then a toolbar while it runs (switch workspace, seated view or
+ * room of multiple desks), then a toolbar while it runs (switch workspace, seated view or
  * looking around, reset, close; in the desktop app, sites in their adapted layouts or as
  * they are) and the label that follows the pointer while a window is
  * dragged between screens. In the room, the desk switcher runs along the bottom.
@@ -151,7 +151,7 @@ export function WorkspaceHud() {
                 ))}
               </div>
               <div className={styles.more}>
-                <h3 className={styles.moreTitle}>Unlimited desks</h3>
+                <h3 className={styles.moreTitle}>Multiple desks</h3>
                 <p className={styles.description}>
                   Every workspace on its own desk, around you. Add as many as you like.
                 </p>
@@ -160,7 +160,7 @@ export function WorkspaceHud() {
                   className={`${styles.button} ${styles.primary}`}
                   onClick={enterRoom}
                 >
-                  Try unlimited desks →
+                  Try multiple desks →
                 </button>
               </div>
             </>
@@ -245,10 +245,10 @@ export function WorkspaceHud() {
               type="button"
               className={styles.button}
               onClick={enterRoom}
-              aria-label="Unlimited desks"
+              aria-label="Multiple desks"
               title="A desk for every workspace"
             >
-              <span className={styles.long}>Unlimited desks</span>
+              <span className={styles.long}>Multiple desks</span>
               <span className={styles.short} aria-hidden="true">
                 ∞ Desks
               </span>

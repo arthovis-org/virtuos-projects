@@ -15,7 +15,7 @@ import { TeamPanel } from '@/agents/TeamPanel';
 
 /**
  * Lists the product's motions (live demo controls), then every option group, followed by the
- * price summary. In unlimited desks mode it configures the desk the visitor is at, without
+ * price summary. In multiple desks mode it configures the desk the visitor is at, without
  * prices: the desks are virtual.
  */
 export function ConfiguratorPanel() {

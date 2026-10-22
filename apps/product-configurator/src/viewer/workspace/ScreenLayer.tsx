@@ -12,7 +12,7 @@ import { ScreenSurface } from './ScreenSurface';
 /**
  * The websites of workspace mode, in a DOM layer over the canvas. The viewer publishes which
  * screens are on and positions each surface every frame; nothing is mounted (or loaded) until
- * a visitor enters the mode. In unlimited desks mode the other desks' screens show posters.
+ * a visitor enters the mode. In multiple desks mode the other desks' screens show posters.
  */
 export function ScreenLayer() {
   const product = useProduct();

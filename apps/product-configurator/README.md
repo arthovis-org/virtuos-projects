@@ -34,9 +34,9 @@ Open a product with `?product=<id>`; the current configuration is kept in the UR
 (`&c=group:option,...`) so the address bar is always a shareable link.
 
 Products with screens get a **workspace demo** (live websites on the monitors). With several
-workspaces, **Unlimited desks** opens a room of desks, one per workspace (finance, crypto, NBA,
+workspaces, **Multiple desks** opens a room of desks, one per workspace (finance, crypto, NBA,
 soccer, developer and more), each with its own configuration; the room is in the URL too
-(`&desks=finance,crypto,...`). See [`products/README.md`](products/README.md#unlimited-desks).
+(`&desks=finance,crypto,...`). See [`products/README.md`](products/README.md#multiple-desks).
 
 ## Adding a product
 

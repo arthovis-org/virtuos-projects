@@ -19,7 +19,7 @@ function isEditable(target: EventTarget | null) {
 }
 
 /**
- * The desks of unlimited desks mode along the bottom of the viewer, like virtual desktops:
+ * The desks of multiple desks mode along the bottom of the viewer, like virtual desktops:
  * one button per desk, a way to remove one, and "Add desk" with a workspace picker.
  * Ctrl + ← / → steps between desks.
  */

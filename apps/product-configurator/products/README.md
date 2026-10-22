@@ -200,15 +200,15 @@ toggle; windows on a switched-off screen move to the main screen until it's back
 
 - `icon` (a [Lucide](https://lucide.dev/icons) icon name) and `accent` (`#rrggbb`) mark the
   workspace on the demo card, in the desk switcher, on desk name tags and on the posters of
-  unlimited desks mode. Both also work in `product.json`. Only the icons listed in
+  multiple desks mode. Both also work in `product.json`. Only the icons listed in
   `src/ui/WorkspaceIcon.tsx` are bundled; add a name there to use another one (an unknown name
   shows a monitor).
 - `{host}` in a `url` becomes the page's host name. Twitch embeds need it:
   `https://player.twitch.tv/?channel=monstercat&parent={host}`.
 
-### Unlimited desks
+### Multiple desks
 
-With more than one workspace, the demo card and the header offer **Unlimited desks**: a room of
+With more than one workspace, the demo card and the header offer **Multiple desks**: a room of
 desks, side by side on arcs around one point so they all face it, each a copy of the model with its own workspace and its own configuration, to show what
 having a desk for every kind of work is like. The room starts with the visitor's desk and the
 `finance`, `crypto`, `nba` and `soccer` workspaces, where they exist (`STARTER_DESKS` in

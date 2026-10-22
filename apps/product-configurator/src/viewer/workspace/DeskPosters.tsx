@@ -16,7 +16,7 @@ interface DeskPostersProps {
 }
 
 /**
- * The screens of a desk the visitor is not at, in unlimited desks mode: each shows a poster
+ * The screens of a desk the visitor is not at, in multiple desks mode: each shows a poster
  * of the desk's workspace (a DOM surface, like the live sites, but nothing loads), so the
  * room looks alive and a click sits the visitor down there.
  */

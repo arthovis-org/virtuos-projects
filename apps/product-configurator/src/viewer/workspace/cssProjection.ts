@@ -22,7 +22,7 @@ const PX_PER_METRE = 1000;
  * The DOM elements the viewer positions every frame: the camera element (inside the layer
  * that sets the perspective) and one element per screen, registered by the screen layer,
  * which lives outside the canvas; and the display surface each one is laid over, by the
- * same id, registered from inside the canvas (the live screens, and in unlimited desks mode
+ * same id, registered from inside the canvas (the live screens, and in multiple desks mode
  * the posters on the other desks).
  */
 export const cssProjection = {

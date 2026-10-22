@@ -33,7 +33,7 @@ export interface DeskLayout {
 }
 
 /**
- * The room of unlimited desks mode: desks side by side on arcs around one focal point, each
+ * The room of multiple desks mode: desks side by side on arcs around one focal point, each
  * turned to face it, like seats on a huge sphere, so wherever the visitor looks from the
  * middle they see a desk's screens. A full arc continues on a wider one behind it (which
  * holds more desks). Centred on the origin.
