@@ -20,6 +20,13 @@ interface DesktopBridge {
 interface DesktopWindows {
   /** Calls back with a window frame's name and its page whenever its site goes to another. */
   onVisit: (callback: (name: string, url: string) => void) => () => void;
+  /** A JPEG of part of the app's own window, in CSS pixels, or null (from 0.1.19 on). */
+  capture?: (rect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => Promise<Uint8Array | null>;
   /** Pauses the video and audio in a window's frame, by its name (from 0.1.18 on). */
   pauseMedia?: (name: string) => void;
 }

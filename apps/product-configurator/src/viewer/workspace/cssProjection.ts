@@ -31,7 +31,14 @@ export const cssProjection = {
   frames: new Map<string, ScreenFrame>(),
   /** Asks the canvas for a frame, e.g. when an element was just mounted. */
   invalidate: null as (() => void) | null,
+  /** When the view last moved (`performance.now()`), and what it was drawn with then. */
+  movedAt: 0,
+  view: null as { camera: PerspectiveCamera; size: { width: number; height: number } } | null,
+  pixelsPerMetre: 1,
 };
+
+const lastView = new Matrix4();
+const lastProjection = new Matrix4();
 
 const epsilon = (value: number) => (Math.abs(value) < 1e-10 ? 0 : value);
 const matrix3d = (e: ArrayLike<number>) =>
@@ -67,6 +74,18 @@ export function updateCssProjection(
   cameraElement.style.height = `${size.height}px`;
 
   camera.updateMatrixWorld();
+  if (
+    !lastView.equals(camera.matrixWorldInverse) ||
+    !lastProjection.equals(camera.projectionMatrix) ||
+    cssProjection.view?.size.width !== size.width ||
+    cssProjection.view.size.height !== size.height
+  ) {
+    lastView.copy(camera.matrixWorldInverse);
+    lastProjection.copy(camera.projectionMatrix);
+    cssProjection.movedAt = performance.now();
+  }
+  cssProjection.view = { camera, size };
+  cssProjection.pixelsPerMetre = pixelsPerMetre;
   const v = view.copy(camera.matrixWorldInverse).elements;
   const k = PX_PER_METRE;
   // prettier-ignore
@@ -99,6 +118,45 @@ export function updateCssProjection(
         w[12] * k, w[13] * k, w[14] * k, 1,
       ]);
   }
+}
+
+const corner = new Vector3();
+const toCamera = new Vector3();
+const normal = new Vector3();
+
+/**
+ * Where the corners of the screen `id` (its DOM surface of `width` × `height` CSS pixels) are
+ * drawn in the layer, in CSS pixels from its top left: top left, top right, bottom right,
+ * bottom left. Null when the screen is behind the camera or turned away from it.
+ */
+export function screenCorners(id: string, width: number, height: number) {
+  const frame = cssProjection.frames.get(id);
+  const { view: drawn, pixelsPerMetre } = cssProjection;
+  if (!frame || !drawn) return null;
+  const { camera, size } = drawn;
+  frame.mesh.updateWorldMatrix(true, false);
+  frame.mesh.matrixWorld.decompose(meshPosition, meshRotation, meshScale);
+  centre.copy(frame.position).applyMatrix4(frame.mesh.matrixWorld);
+  rotation.multiplyQuaternions(meshRotation, frame.quaternion);
+  normal.set(0, 0, 1).applyQuaternion(rotation);
+  if (toCamera.copy(camera.position).sub(centre).dot(normal) <= 0) return null;
+  const corners: [number, number][] = [];
+  for (const [u, v] of [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1],
+  ] as const) {
+    // One CSS pixel of the surface spans 1 / pixelsPerMetre; CSS y points down.
+    corner
+      .set((u * width) / 2 / pixelsPerMetre, (-v * height) / 2 / pixelsPerMetre, 0)
+      .applyQuaternion(rotation)
+      .add(centre);
+    if (corner.clone().applyMatrix4(camera.matrixWorldInverse).z >= -camera.near) return null;
+    corner.project(camera);
+    corners.push([((corner.x + 1) / 2) * size.width, ((1 - corner.y) / 2) * size.height]);
+  }
+  return corners;
 }
 
 let hole: MeshBasicMaterial | null = null;

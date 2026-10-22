@@ -69,4 +69,38 @@ function handlePauseMedia() {
   });
 }
 
-module.exports = { watchWindowVisits, handlePauseMedia };
+let captureHandled = false;
+
+/**
+ * The configurator asks (preload.js) for a picture of part of its own window: the screens of
+ * the desk the visitor is at, to show on that desk's screens once they leave it. JPEG bytes,
+ * or null (a minimised window, say).
+ */
+function handleCapture() {
+  if (captureHandled) return;
+  captureHandled = true;
+  ipcMain.handle("virtuos:capture", async (event, rect) => {
+    if (event.senderFrame !== event.sender.mainFrame) return null;
+    const { x, y, width, height } = rect ?? {};
+    if (
+      ![x, y, width, height].every(Number.isFinite) ||
+      width < 1 ||
+      height < 1
+    )
+      return null;
+    const area = {
+      x: Math.round(x),
+      y: Math.round(y),
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+    try {
+      const image = await event.sender.capturePage(area);
+      return image.isEmpty() ? null : image.toJPEG(82);
+    } catch {
+      return null;
+    }
+  });
+}
+
+module.exports = { watchWindowVisits, handlePauseMedia, handleCapture };

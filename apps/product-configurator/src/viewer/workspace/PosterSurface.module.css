@@ -80,3 +80,18 @@
   box-shadow: inset 0 0 0 8cqmin var(--desk-accent);
   filter: brightness(1.3);
 }
+
+/* A picture of the screen as the visitor left it, laid flat over the whole screen. */
+.poster[data-shot] {
+  padding: 0;
+  background: #0b0d14;
+}
+
+.shot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  pointer-events: none;
+}

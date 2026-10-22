@@ -8,6 +8,7 @@ import { cssProjection } from './cssProjection';
 import { PosterSurface } from './PosterSurface';
 import styles from './ScreenLayer.module.css';
 import { ScreenSurface } from './ScreenSurface';
+import { useScreenSnapshots } from './screenSnapshots';
 
 /**
  * The websites of workspace mode, in a DOM layer over the canvas. The viewer publishes which
@@ -27,6 +28,8 @@ export function ScreenLayer() {
   const shown = active || hasPosters;
   const camera = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLDivElement>(null);
+  // Desktop app: pictures of this desk's screens, for its posters once the visitor leaves.
+  useScreenSnapshots();
 
   // Browsers don't hit-test the mouse wheel into this 3D-transformed layer: a wheel over a
   // screen goes to whatever is under the layer (the orbit surface), so lists on the screens

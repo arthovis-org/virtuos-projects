@@ -7,6 +7,7 @@ import { useViewStore } from '@/state/viewStore';
 import { deskDropAttribute, pressDesk } from '@/ui/workspace/deskDrag';
 import { cssProjection } from './cssProjection';
 import styles from './PosterSurface.module.css';
+import { quadToBox, useSnapshotStore } from './screenSnapshots';
 import { WorkspaceIcon } from '@/ui/WorkspaceIcon';
 import { agentAppOf } from '@/agents/agentDesk';
 import { useAgentStore } from '@/agents/agentStore';
@@ -14,7 +15,8 @@ import { AgentAppView } from '@/agents/apps/AgentApps';
 
 /**
  * What a screen of a desk the visitor is not at shows: the desk's workspace and the windows
- * waiting on this screen (as they were left, if the visitor was there before). Nothing
+ * waiting on this screen (as they were left, if the visitor was there before), or in the
+ * desktop app a picture of the screen as the visitor left it (`screenSnapshots`). Nothing
  * loads until the visitor sits down, which a click does.
  */
 export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
@@ -24,6 +26,7 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
   const desks = useSetupStore((s) => s.room);
   const dropTarget = useViewStore((s) => s.deskDrag?.over === deskId);
   const hasAgent = useAgentStore((s) => !!s.agents[deskId]);
+  const shot = useSnapshotStore((s) => s.shots[id]);
 
   useLayoutEffect(() => {
     const element = ref.current;
@@ -56,6 +59,7 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
       className={styles.poster}
       data-portrait={heightPx > widthPx || undefined}
       data-agent={app ? '' : undefined}
+      data-shot={!app && shot ? '' : undefined}
       data-drop={dropTarget || undefined}
       {...deskDropAttribute(deskId)}
       style={
@@ -74,6 +78,18 @@ export function PosterSurface({ poster }: { poster: PosterSurfaceInfo }) {
     >
       {app ? (
         <AgentAppView app={app} deskId={deskId} compact />
+      ) : shot ? (
+        <img
+          className={styles.shot}
+          src={shot.url}
+          alt=""
+          draggable={false}
+          style={{
+            width: shot.width,
+            height: shot.height,
+            transform: quadToBox(shot.corners, widthPx, heightPx),
+          }}
+        />
       ) : (
         <>
           <span className={styles.icon} aria-hidden="true">
