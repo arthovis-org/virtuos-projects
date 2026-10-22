@@ -5,14 +5,13 @@
 // History so every edit is undoable.
 import { registry } from './core/registry.js';
 import { formatValue, compatiblePorts, typeInfo, portTypeText, portTypeName, mismatchReason } from './core/types.js';
-import { hex, getTheme, setTheme, sizes } from './theme.js';
+import { hex, sizes } from './theme.js';
 import { describeLink } from './pm/relations.js';
 import * as cmd from './core/commands.js';
 import { icons } from './icons.js';
 import { nav } from './controls/navigation.js';
 import { attachScrub } from './ui/scrub.js';
 import { PRESET_IDS } from './controls/presets.js';
-import { UI_SCALES, fmtScale } from './ui/ui-prefs.js';
 import { SCALE_MIN, SCALE_MAX } from './block3d.js';
 
 const RAD = 180 / Math.PI;
@@ -202,27 +201,16 @@ export class Panel {
   }
 
   _buildWorkspace() {
-    const { world, ws, flow, engine, history } = this;
+    const { world, ws, engine, history } = this;
     this._header('workspace', 'Workspace', 'nothing selected');
+    // Only what has no other home: theme and UI scale live in Preferences (theme also on the sun
+    // button, T), wiring, flow and cables in the viewport header's Wiring popover, 2D mode on its
+    // button (2) — one control per setting, so the panel never shows a second copy of a toolbar.
     const s = this._section('Workspace');
-    this._select(s, 'theme', ['dark', 'light'], () => getTheme(), (v) => setTheme(v));
-    if (this.ui) {
-      const P = this.ui.prefs;
-      const opts = [...new Set([...UI_SCALES, P.scale])].sort((a, b) => a - b);
-      const sel = this._select(s, 'UI scale', opts, () => P.scale, (v) => P.setScale(+v), 'uiScale');
-      sel.querySelectorAll('option').forEach((o) => { o.textContent = fmtScale(+o.value); });
-      this._action(s, 'Preferences…', () => this.ui.openPreferences());
-    }
-    if (this.wiring) {
-      this._check(s, 'wiring (P)', () => this.wiring.isOn(), (v) => this.wiring.set(v), 'wiring');
-      s.appendChild(this._h('div', 'panel-note', 'Wiring off hides every port and cable. Drop a component onto another to link them; a block can still show its own ports (eye icon in its header).'));
-    }
-    this._check(s, 'grid', () => ws.isGridVisible(), (v) => ws.setGridVisible(v));
-    if (this.plan) this._check(s, '2D editing mode (2)', () => this.plan.isOn(), (v) => this.plan.set(v));
-    this._check(s, 'flow animation', () => flow.isEnabled(), (v) => flow.setEnabled(v));
-    this._num(s, 'flow speed', () => flow.getSpeed(), (v) => flow.setSpeed(v), { step: 0.1, min: 0, max: 5 });
+    if (this.ui) this._action(s, 'Preferences…', () => this.ui.openPreferences());
+    this._check(s, 'floor grid', () => ws.isGridVisible(), (v) => ws.setGridVisible(v));
     this._num(s, 'LOD distance', () => sizes.lod.far, (v) => { sizes.lod.far = Math.max(10, v); }, { step: 2, min: 10, max: 200 });
-    s.appendChild(this._h('div', 'panel-note', 'Wiring, snap, the gizmo and the cable settings are in the header at the top of the viewport (and under View).'));
+    s.appendChild(this._h('div', 'panel-note', 'Wiring, flow, cables, snap and the gizmo are in the bar at the top of the viewport; theme and 2D mode are buttons at the top right.'));
     this._buildControls();
     const sum = this._section('Scene');
     this._readonly(sum, 'components', () => `${world.nodes.length} (${world.nodes.filter((b) => b.kind === 'device').length} devices)`);

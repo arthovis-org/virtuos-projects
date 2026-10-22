@@ -939,7 +939,7 @@ vpHeader = new ViewportHeader({
   setGizmoMode: (m) => { if (!gizmo.enabled) setGizmo(true); gizmo.setMode(m); syncToolbar(); }, setCableOption: (k, v) => setCableOption(k, v),
   isWiringOn, toggleWiring: () => { toggleWiring(); overlays.toast(isWiringOn() ? 'Wiring on · ports and cables shown' : 'Wiring off · drop a component onto another to link them', 1800); },
   portsOnSelection: () => ({ n: selection.nodes.length, v: selection.nodes.length ? selection.nodes[selection.nodes.length - 1].showPorts : null }), setPortsOnSelection,
-  isFlowEnabled, setFlowEnabled: (v) => { setFlowEnabled(v); syncToolbar(); panel.refresh(); },
+  isFlowEnabled, setFlowEnabled: (v) => { setFlowEnabled(v); syncToolbar(); panel.refresh(); }, getFlowSpeed, setFlowSpeed,
   GRID_SIZES, ROTATION_STEPS, SCALE_STEPS, CABLE_STYLES, THICKNESSES, fmtDeg, fmtScale,
 });
 selection.onChange(() => vpHeader.sync());   // "ports on selection" follows the selection

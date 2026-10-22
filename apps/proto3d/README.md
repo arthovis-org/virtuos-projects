@@ -254,7 +254,7 @@ and milestones.
 
 | id | Size · body | Inputs | Outputs | Params | What it does |
 | --- | --- | --- | --- | --- | --- |
-| `kanban-board` | XL · standing board | `people` person\* · `milestone` milestone · `add task` event · `move task` event · `cover` media | `when a card moves` event · `when a card is done` event · `progress` stats · `tasks` tasks | board (columns, WIP limits, cards — edited in the panel) · people view auto / highlight / filter / swimlanes · dependency arcs | Columns are translucent panels on a plinth; cards are slabs stacked top-down (title, priority stripe, assignee initials, due date — red when overdue, tag pills, checklist progress, lock glyph when blocked, a flag when due after the milestone). **People plugged into `people`** change the layout: one connected person highlights their cards, two or more give a **swimlane per person** (the board grows taller), `filter` shows only theirs. Click a card to edit it, **drag it** to another column / lane (a lane change re-assigns), **drop it on a Person** to assign it, click the **+** tile to add one. The milestone shows in the header with its countdown. Far away, columns collapse to count bars. |
+| `kanban-board` | XL · standing board | `people` person\* · `milestone` milestone · `add task` event · `move task` event · `cover` media | `when a card moves` event · `when a card is done` event · `progress` stats · `tasks` tasks | board (columns, WIP limits, cards — edited in the panel) · people view auto / highlight / filter / swimlanes · dependency arcs | Columns are translucent panels on a plinth; cards are slabs stacked top-down (title, a short inset priority pill, assignee initials in the person's colour, due date — red when overdue, tag pills, checklist progress, lock glyph when blocked, a flag when due after the milestone). **People plugged into `people`** change the layout: one connected person highlights their cards, two or more give a **swimlane per person** (the board grows taller), `filter` shows only theirs. Click a card to edit it, **drag it** to another column / lane (a lane change re-assigns), **drop it on a Person** to assign it, click the **+** tile to add one. The milestone shows in the header with its countdown. Far away, columns collapse to count bars. |
 | `flow-terminal` | M · stadium | `start` event | `next` event | mode start / end · payload | Start: the **Run** disc or a trigger emits a token. End: counts arrivals. |
 | `flow-step` | M · rounded box | `start` event | `next` event | duration ms | Passes the token on (after an optional delay, with a progress bar); flashes as it goes. |
 | `flow-decision` | M · diamond | `start` event · `condition` boolean | `yes` event · `no` event | payload field · op · value | Routes the token by the boolean input or by a test on the payload (`priority = urgent`). |
@@ -631,7 +631,7 @@ and the drop creates the link (undoable *Connect* + a toast); with **several**, 
 lists the sentences at the drop point. The target block lights up while it is a drop target.
 Dropping a Person on a **card** still assigns the card.
 
-Turn wiring on with **`P`**, the **Wiring** button in the viewport header or the workspace panel: every pin, label,
+Turn wiring on with **`P`** or the **Wiring** button in the viewport header: every pin, label,
 caption, socket and cable appears and everything in [Wiring](#wiring) applies. The switch is
 persisted in `localStorage["proto3d.wiring.v1"]` and inside saved documents (`wiring`), so an
 autosaved world keeps its setting; the eye icon in a block's panel header overrides it for that
@@ -736,7 +736,10 @@ rules.
 panel, plinth, column panels and cards, timeline bars, the sticky note, the milestone flag and
 base, the flow step — is one shape: `geometry.js → panelGeometry(w, h, depth, { radius, bevel })`,
 a **2D rounded rectangle extruded** (nodes 0.26 units thick) with `bevelEnabled`, a **rounded
-bevel** (nodes 0.05, four segments) and 16 curve segments. The front and back faces are flat and crisp,
+bevel** (nodes 0.05, five segments) and 16 curve segments, **auto-smoothed** like Blender's Auto
+Smooth: the side walls and bevel share averaged normals within 50° (no facets on a close-up) while
+the caps keep exact flat normals; outlines are explicit polygons with near-duplicate points merged,
+so a capsule's cap is never notched. Built panels are cached by size and cloned. The front and back faces are flat and crisp,
 the sides straight; only the bevel catches the light. The outer size is what you ask for (the
 bevel is inside it), the front cap's UVs map the cap exactly to 0..1 so a canvas texture lands
 corner to corner (board cards use this: one mesh, the canvas on the front-cap material group,
@@ -782,7 +785,7 @@ pins and names and changes nothing else. **Devices** have thin bezels and satin 
 **Groups** are flat rounded frames on the floor with a title at the front edge; collapsed, a slab
 with the same accent line and proxy ports. **The board** is a bevelled back panel on a flat
 plinth: columns are frosted panels with a small-caps title and a count pill, cards are clean
-extruded cards with a 3-px priority stripe, swimlane labels are side tabs in the margin. **The
+extruded cards with a short inset priority pill (grey for low; the assignee's colour is on the avatar, so no second colour bar), swimlane labels are solid tabs in the margin. **The
 timeline** has thin bars with rounded ends, light week gridlines and small labels. **The
 dashboard** has stat tiles, a ring, bars, a burndown and people / checklist bars in a restrained
 palette. The HTML shell (menu bar, left rail, flyout, panel, tooltips, toasts, chooser, tour cards,
@@ -790,8 +793,8 @@ menus) uses the same type stack, 8-pt spacing, 10–12 px radii, subtle borders,
 hover states and focus rings; the menu bar's right end groups the quick toggles *Undo/Redo |
 2D | Theme · Frame all | Help · Properties*, and the viewport header holds *Wiring (with the cable settings) · Snap · Gizmo*.
 
-**Interface preferences** (*Edit → Preferences…*, `Ctrl+,`; also *View → UI scale* and the
-workspace panel) are kept in this browser (`ui/ui-prefs.js`). **UI scale** (80–200 %) zooms the
+**Interface preferences** (*Edit → Preferences…*, `Ctrl+,`, or *Preferences…* in the
+workspace panel; also *View → UI scale*; the theme is a Dark | Light switch there, on the sun button and `T`) are kept in this browser (`ui/ui-prefs.js`). **UI scale** (80–200 %) zooms the
 menus, toolbars, panel, dialogs and HUDs; the 3D view and the overlays pinned to it keep their own
 pixels. The **Add toolbar, its list, the properties panel and the Help drawer resize from their
 edges**, Blender style (drag; double-click an edge resets it; arrow keys nudge a focused edge), and

@@ -558,10 +558,10 @@ Type: `typography.family` (Inter → SF Pro Text → Segoe UI → system-ui), `t
 spacing and dividers, not boxes; tiles for sections; chips for tags and people; thin rounded bars
 (4–6 px) for progress; tabular numbers right-aligned; muted timestamps; colour only for meaning.
 Components: Person (avatar · name / role · load bar · tasks grouped by small-caps column with a
-3-px priority stripe and muted dates), Checklist (progress caps + bar, rows with 20 px rounded
+inset priority pill and muted dates), Checklist (progress caps + bar, rows with 20 px rounded
 boxes and dividers), Dashboard (board title · stat tiles · ring + column bars · burndown tile ·
 people / checklist tile), board cards (`drawCard`: edge-to-edge on the extruded card, 3-px
-priority stripe, title 600, assignee avatar, due, checklist bar, tag chips, estimate), timeline
+inset priority pill, title 600, assignee avatar, due, checklist bar, tag chips, estimate), timeline
 bar faces (title on the bar), device screens (`drawScreen`: flat gradient, slim status bar).
 Canvas labels (`makeLabel`) share the family and support `caps` + `spacing` for small caps (column
 titles, kind labels). Their textures are baked once at 96 px and sampled with trilinear mipmaps +
@@ -669,7 +669,7 @@ card's title), Timeline (its own bars' labels), Milestone (title, date) and the 
 **Settings** (`cables.js`, `localStorage["proto3d.cables.v1"]`, global like the theme — never in a
 document): `style` smooth | orthogonal | straight, `cornerRadius` 0..1 (orthogonal corners),
 `thickness` thin | normal | thick (a radius multiplier), `bundle` (on by default), `bundleDistance`
-(1.2 units) and `showWaypoints`. *View → Cables ▸*, the *Cables* section of the Workspace panel and
+(1.2 units) and `showWaypoints`. *View → Cables ▸*, the viewport header's Wiring popover (§9h) and
 the palette all call `main.js → setCableOption`; `cables.version` bumps on every change and each
 `Connection3D._computeOwn` compares it, so every cable — in 3D, in the plan, the trunks and the
 preview while wiring — re-routes on the next frame.
@@ -1098,8 +1098,8 @@ never saved, off at boot). Turning it on does four things at once:
   the flat card's projected box, the block tooltip sits past its top edge, `Shift` while dragging
   means "no snap" instead of "lift".
 
-**Snapping** (`snap` in `plan.js`, *View → Snap ▸*, the viewport header's magnet (§9h), the `M` key, the
-*Snap* section of the Workspace panel, `localStorage["proto3d.snap.v1"]`, 2D and 3D alike). The
+**Snapping** (`snap` in `plan.js`, *View → Snap ▸*, the viewport header's magnet (§9h), the `M` key,
+`localStorage["proto3d.snap.v1"]`, 2D and 3D alike). The
 settings are a **master switch** (`snap.on`, `set / toggle`; **off by default** for a new visitor, a stored record keeps the choice) plus independent, persisted toggles
 (`snap.setOption(key, v)`, `snap.active(kind)` = master and toggle both on): `grid` with `gridSize`
 (one of `GRID_SIZES` 0.25 / 0.5 / 1 / 2 units), `objects`, `ports`, `rotation` and `scale`, plus two
@@ -1207,6 +1207,13 @@ no longer lists Snap, Cables or Gizmo sections (it keeps the 2D checkbox and the
 Controls); the menu bar's quick toggles lost `#btn-wiring`, `#btn-flow`, `#btn-gizmo` and `#btn-snap`. `#hint-bar` sits under
 the header and the mini toolbar's `avoid()` list includes the header.
 
+
+**One control per setting.** A setting lives in one place: the viewport header (wiring, ports on
+selection, flow animation and **flow speed**, cables, snap, gizmo), the menu bar's quick toggles
+(2D mode, theme, frame, help, panel, palette) or *Preferences* (theme as a Dark | Light switch, UI
+scale, region sizes). The menus, keys and command palette call the same functions, but the
+properties panel never shows a second copy: its Workspace section holds only what has no other
+home — *Preferences…*, the floor grid and the LOD distance — plus Controls, Scene and Registry.
 ## 10. Serialization (`serialize.js`)
 
 ```json
