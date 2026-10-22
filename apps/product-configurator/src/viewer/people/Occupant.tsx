@@ -294,11 +294,14 @@ function Seat({
     if (activity === 'reading') return actions.writing;
     return actions.seated;
   };
-  /** The clip for standing: thinking while the agent thinks (or on a break), else idle. */
+  /** Whether the thinking clip has played this time (it plays once, then she stands idle). */
+  const thought = useRef(false);
+  /** The clip for standing: thinking (once) while the agent thinks or on a break, else idle. */
   const standingAction = () => {
     const activity = agentActivity();
-    if (activity === 'thinking' || (activity === null && pause.current.on)) return actions.thinking;
-    return actions.standing;
+    const thinking = activity === 'thinking' || (activity === null && pause.current.on);
+    if (!thinking) thought.current = false;
+    return thinking && !thought.current ? actions.thinking : actions.standing;
   };
 
   const play = (action: AnimationAction | undefined, once: boolean) => {
@@ -316,7 +319,11 @@ function Seat({
   useEffect(() => {
     play(pose.current === 'standing' ? standingAction() : seatedAction(), false);
     // A transition done: settle into what it led to.
-    const onFinished = () => {
+    const onFinished = (event: { action: AnimationAction }) => {
+      if (event.action === actions.thinking) {
+        thought.current = true;
+        return;
+      }
       if (pose.current === 'rising') {
         pose.current = 'standing';
         play(standingAction(), false);
@@ -370,7 +377,8 @@ function Seat({
     const activity = agentActivity();
     if (pose.current === 'seated' || pose.current === 'standing') {
       const wanted = pose.current === 'seated' ? seatedAction() : standingAction();
-      if (wanted && wanted !== playing.current) play(wanted, false);
+      if (wanted && wanted !== playing.current)
+        play(wanted, wanted === actions.thinking && wanted !== actions.standing);
     }
     mixer.update(dt);
 
